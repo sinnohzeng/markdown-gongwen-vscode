@@ -68,10 +68,47 @@ class MockTextDocument {
     return this.text;
   }
   positionAt(offset: number): { line: number; character: number } {
-    const lines = this.text.substring(0, offset).split('\n');
+    // Handle CRLF correctly: split on \r\n first, then handle remaining \n and \r
+    // This matches VS Code's behavior where \r\n is treated as a single line break
+    const textBeforeOffset = this.text.substring(0, offset);
+    
+    // Count lines by splitting on \r\n (CRLF), then on \n (LF), then on \r (CR)
+    // This ensures CRLF is treated as a single line break
+    let line = 0;
+    let character = 0;
+    let i = 0;
+    
+    while (i < textBeforeOffset.length) {
+      // Check for CRLF first (Windows line ending)
+      if (i + 1 < textBeforeOffset.length && 
+          textBeforeOffset[i] === '\r' && 
+          textBeforeOffset[i + 1] === '\n') {
+        line++;
+        character = 0;
+        i += 2; // Skip both \r and \n
+      } 
+      // Check for LF (Unix line ending)
+      else if (textBeforeOffset[i] === '\n') {
+        line++;
+        character = 0;
+        i++;
+      }
+      // Check for CR (old Mac line ending)
+      else if (textBeforeOffset[i] === '\r') {
+        line++;
+        character = 0;
+        i++;
+      }
+      // Regular character
+      else {
+        character++;
+        i++;
+      }
+    }
+    
     return {
-      line: lines.length - 1,
-      character: lines[lines.length - 1].length,
+      line,
+      character,
     };
   }
 }
@@ -84,7 +121,7 @@ class MockTextEditor {
     public selections: MockSelection[]
   ) {}
 
-  setDecorations(decorationType: any, ranges: MockRange[]): void {
+  setDecorations(_decorationType: any, _ranges: MockRange[]): void {
     // Mock implementation
   }
 }
@@ -92,7 +129,7 @@ class MockTextEditor {
 export const TextEditor = MockTextEditor as any;
 
 export const window = {
-  createTextEditorDecorationType: (options: any) => ({}),
+  createTextEditorDecorationType: (_options: any) => ({}),
   activeTextEditor: undefined as any,
   onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
   onDidChangeTextEditorSelection: () => ({ dispose: () => {} }),

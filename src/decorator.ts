@@ -677,11 +677,7 @@ export class Decorator {
         // Advance normalized index by 1 (for the single '\n' in normalized)
         normalizedIndex++;
         i++; // Skip the '\n' in original
-        // Check if we've reached target after processing CRLF
-        if (normalizedIndex === normalizedPos) {
-          // This shouldn't happen (we checked before), but handle it
-          return i;
-        }
+        // Continue to next iteration - don't check here, let the loop handle it
       } else {
         // Regular character: check if this is our target before incrementing
         if (normalizedIndex === normalizedPos) {
