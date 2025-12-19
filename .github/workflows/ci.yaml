@@ -68,6 +68,6 @@ jobs:
       - name: Build
         run: npm run build
       - name: Publish to Azure DevOps ${{ github.ref }}
-        run: vsce publish --packagePath dist/extension.vsix --pat ${{ secrets.AZURE_DEVOPS_TOKEN }}
+        run: npx vsce publish --packagePath dist/extension.vsix --pat ${{ secrets.AZURE_DEVOPS_TOKEN }}
       - name: Publish to OpenVSX ${{ github.ref }}
         run: npx ovsx publish dist/extension.vsix --pat ${{ secrets.OPENVSX_TOKEN }}
