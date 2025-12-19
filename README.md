@@ -136,8 +136,9 @@ See [`AGENTS.md`](AGENTS.md) for contribution guidelines and agent roles.
 
 ## Contributing
 
-Contributions welcome! Use [Conventional Commits](https://www.conventionalcommits.org/):
+Contributions welcome! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for detailed guidelines.
 
+**Quick start:**
 ```bash
 git checkout -b feat/my-feature
 # Make changes, write tests
@@ -147,7 +148,7 @@ git commit -m "feat(parser): add definition list support"
 
 **Commit types:** `feat`, `fix`, `docs`, `perf`, `test`, `refactor`
 
-See [`AGENTS.md`](AGENTS.md) for agent roles and guidelines.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for full contribution guidelines and [`AGENTS.md`](AGENTS.md) for agent roles.
 
 ## License
 
