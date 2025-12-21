@@ -22,6 +22,12 @@ AGENTS.md
 TEST_VALIDATION_REPORT.md
 docs/**
 
+# Demo assets (only needed for GitHub README, not in extension)
+assets/demo.gif
+assets/example-video.gif
+assets/example-ui.png
+assets/example-ui-selected-line.png
+
 # Build artifacts
 branding/**
 node_modules/**
