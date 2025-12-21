@@ -1,4 +1,4 @@
-import { MarkdownParser, DecorationRange } from '../../parser';
+import { MarkdownParser } from '../../parser';
 
 describe('MarkdownParser - LF Regression Tests (ensure CRLF fixes don\'t break LF)', () => {
   let parser: MarkdownParser;

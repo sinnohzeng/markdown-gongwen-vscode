@@ -17,6 +17,7 @@ export default tseslint.config(
         },
       ],
       '@typescript-eslint/no-var-requires': 'warn',
+      '@typescript-eslint/no-require-imports': 'off', // Allow require() for CommonJS compatibility
       curly: 'off',
       eqeqeq: 'warn',
       'no-throw-literal': 'warn',
@@ -32,6 +33,13 @@ export default tseslint.config(
       'test-report',
       '*.js',
     ],
+  },
+  // Allow require() in parser-remark.ts for CommonJS compatibility
+  {
+    files: ['**/parser-remark.ts'],
+    rules: {
+      '@typescript-eslint/no-var-requires': 'off',
+    },
   }
 );
 

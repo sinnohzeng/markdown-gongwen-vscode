@@ -716,7 +716,7 @@ export class Decorator {
       const start = this.activeEditor.document.positionAt(mappedStart);
       const end = this.activeEditor.document.positionAt(mappedEnd);
       return new Range(start, end);
-    } catch (error) {
+    } catch {
       // Invalid position
       return null;
     }

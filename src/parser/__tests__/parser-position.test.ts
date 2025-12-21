@@ -1,4 +1,4 @@
-import { MarkdownParser, DecorationRange } from '../../parser';
+import { MarkdownParser } from '../../parser';
 
 describe('MarkdownParser - Position Accuracy', () => {
   let parser: MarkdownParser;

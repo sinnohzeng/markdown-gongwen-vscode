@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { MarkdownParser, DecorationRange } from './parser';
+import { MarkdownParser } from './parser';
 
 /**
  * Provides clickable links for markdown documents.
@@ -20,7 +20,7 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
    */
   provideDocumentLinks(
     document: vscode.TextDocument,
-    token: vscode.CancellationToken
+    _token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.DocumentLink[]> {
     if (document.languageId !== 'markdown') {
       return [];
@@ -77,7 +77,7 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
    */
   resolveDocumentLink(
     link: vscode.DocumentLink,
-    token: vscode.CancellationToken
+    _token: vscode.CancellationToken
   ): vscode.ProviderResult<vscode.DocumentLink> {
     return link;
   }

@@ -1,9 +1,7 @@
-import { MarkdownParser, DecorationRange } from '../../parser';
+import { MarkdownParser } from '../../parser';
 import {
   normalizeToLF,
   createCRLFText,
-  extractDecorationText,
-  verifyDecorationPosition,
 } from './helpers/crlf-helpers';
 
 describe('MarkdownParser - CRLF Line Endings', () => {

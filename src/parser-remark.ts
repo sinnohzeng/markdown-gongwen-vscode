@@ -14,7 +14,7 @@ export async function getRemarkProcessor() {
       remarkParse = require('remark-parse');
       remarkGfm = require('remark-gfm');
       visit = require('unist-util-visit').visit;
-    } catch (e) {
+    } catch {
       // Fall back to ESM dynamic import (for Jest/testing)
       const unifiedModule = await import('unified');
       unified = unifiedModule.unified;

@@ -1,4 +1,3 @@
-import { TextDocument, TextEditor, Selection, Uri } from '../../test/__mocks__/vscode';
 import { mapNormalizedToOriginal, createCRLFText, normalizeToLF } from '../../parser/__tests__/helpers/crlf-helpers';
 import { MarkdownParser } from '../../parser';
 
@@ -46,7 +45,6 @@ describe('Decorator - Position Mapping with CRLF', () => {
 
     it('should map position exactly at line boundary with CRLF', () => {
       const crlfText = 'Line 1\r\nLine 2';
-      const normalizedText = normalizeToLF(crlfText);
       
       // Test position at line boundary (at '\n' in normalized, which is '\r' in original)
       const normalizedPos = 6; // At '\n' in normalized
@@ -56,7 +54,6 @@ describe('Decorator - Position Mapping with CRLF', () => {
 
     it('should map exclusive end positions at CRLF boundaries', () => {
       const crlfText = 'Line 1\r\nLine 2';
-      const normalizedText = normalizeToLF(crlfText);
       
       // Exclusive end position at '\n' in normalized should map to '\r' in original
       const normalizedEndPos = 6; // End position at '\n' in normalized
@@ -66,7 +63,6 @@ describe('Decorator - Position Mapping with CRLF', () => {
 
     it('should handle multiple consecutive CRLF sequences', () => {
       const crlfText = 'Line 1\r\n\r\nLine 2';
-      const normalizedText = normalizeToLF(crlfText);
       
       // Position at first '\n' in normalized (after first line)
       const normalizedPos1 = 6;
@@ -87,7 +83,6 @@ describe('Decorator - Position Mapping with CRLF', () => {
 
     it('should map positions in middle of lines with CRLF', () => {
       const crlfText = 'Line 1\r\nLine 2';
-      const normalizedText = normalizeToLF(crlfText);
       
       // Position at 'e' in "Line 1" (position 3)
       const normalizedPos = 3;
@@ -98,7 +93,6 @@ describe('Decorator - Position Mapping with CRLF', () => {
 
     it('should map positions across multiple lines with CRLF', () => {
       const crlfText = 'Line 1\r\nLine 2\r\nLine 3';
-      const normalizedText = normalizeToLF(crlfText);
       
       // Position at start of second line in normalized (at 'L' of "Line 2")
       const normalizedPos = 7; // At 'L' of "Line 2" in normalized
