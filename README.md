@@ -17,14 +17,26 @@
 
 ## Demo
 
-<p align="center">
-  <img src="assets/demo.gif" alt="Markdown Inline Editor Demo" width="80%">
+<p align="center" style="max-width:90%; margin-left:auto; margin-right:auto;">
+  <img src="assets/demo.gif" alt="Markdown Inline Editor Demo" width="90%"><br>
+  <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
+    <em>Figure: Interactive demo—see formatting applied inline, reveal raw Markdown with a click, and watch the extension adapt instantly to color theme changes.</em>
+  </span>
 </p>
-
-<p align="center">
-  <img src="assets/example-ui.png" alt="Markdown Inline Editor - formatted view" width="49%">
-  <img src="assets/example-ui-selected-line.png" alt="Raw Markdown revealed on selection" width="49%">
-</p>
+<div align="center" style="display:flex; justify-content:center; gap:2%; max-width:90%; margin-left:auto; margin-right:auto;">
+  <div style="width:44%;">
+    <img src="assets/example-ui.png" alt="Markdown Inline Editor - formatted view" style="width:100%;">
+    <span style="display:block; font-size:90%; color:#888; margin-bottom:12px;">
+      <em>Figure: Markdown as rendered—formatting is shown inline, raw syntax markers are hidden for clarity.</em>
+    </span>
+  </div>
+  <div style="width:44%;">
+    <img src="assets/example-ui-selected-line.png" alt="Raw Markdown revealed on selection" style="width:100%;">
+    <span style="display:block; font-size:90%; color:#888;">
+      <em>Figure: Selecting a line reveals the original Markdown syntax for direct editing.</em>
+    </span>
+  </div>
+</div>
 
 ## What You Get
 
