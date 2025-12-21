@@ -59,7 +59,8 @@ Enhance your Markdown workflow with these complementary extensions:
 ## Install
 
 **VS Code Marketplace:**
-1. Extensions → Search "Markdown Inline Editor" → Install
+- [Install from VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CodeSmith.markdown-inline-editor-vscode)
+- Or: Extensions → Search "Markdown Inline Editor" → Install
 
 **Quick Open:**  
 Press `Ctrl+P` / `Cmd+P`, type `ext install CodeSmith.markdown-inline-editor-vscode`
