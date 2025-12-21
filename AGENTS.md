@@ -20,7 +20,7 @@
     - `parser/__tests__/` – parser tests
 - `dist/` – compiled output (do not edit)
 - `docs/` – documentation, optimization notes
-- `images/` – icons and static files
+- `assets/` – icons and static files
 
 **Key Commands**
 - Build: `npm run compile`

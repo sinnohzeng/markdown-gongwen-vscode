@@ -58,7 +58,7 @@ src/
 
 dist/                     # Compiled output (do not edit directly)
 docs/                     # Documentation and improvement notes
-images/                   # Icons and static assets
+assets/                   # Icons and static assets
 ```
 
 ## Development Workflow
@@ -329,4 +329,3 @@ Contributors will be credited in:
 - Project documentation (where appropriate)
 
 Thank you for contributing to Markdown Inline Editor! 🎉
-
