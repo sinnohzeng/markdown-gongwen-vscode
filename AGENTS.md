@@ -51,16 +51,6 @@
   - Verify code cleanliness
   - Maintain efficient code execution
 
-### [PERF] @perf (Performance Architect)
-- Goal: Drive overall performance improvements across parsing and decoration flows
-- Tone: Strategic, analytical
-- Responsibilities:
-  - Analyze, track, and optimize end-to-end performance
-  - Identify and eliminate bottlenecks in parsing, decoration, and selection handling
-  - Coordinate implementation of parser/remark optimizations and caching
-  - Develop and maintain benchmarks and performance tests
-  - Guide architectural decisions for scalability and responsiveness
-
 ### [DOCS] @docs (The documenter)
 - Goal: Maintain clear, comprehensive, and up-to-date documentation
 - Tone: Informative, approachable
@@ -105,4 +95,31 @@
 - No performance regression (see `/docs/PERFORMANCE_IMPROVEMENTS.md`)
 - All relevant docs or tests updated
 - Contribution aligns with project structure and style
+
+**Releasing a Version (Conventional Commits & SemVer)**
+
+- **Determine the version bump** (major/minor/patch) following [SemVer](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/):
+  - `feat`: **minor** version (or **major** if breaking)
+  - `fix`: **patch** version
+  - `BREAKING CHANGE`: **major** version
+- **Update `package.json`** version field (e.g., `1.3.6` → `1.4.0` for feature, `2.0.0` for breaking change).
+- **Build the extension** to verify compilation:
+  ```bash
+  npm run build
+  ```
+- **Commit version bump** with a conventional commit message:
+  ```bash
+  git commit -am "chore(release): vX.Y.Z"
+  ```
+- **Tag the release** using the new version:
+  ```bash
+  git tag vX.Y.Z
+  ```
+- **Push changes and tag** to the repository:
+  ```bash
+  git push origin main
+  git push origin vX.Y.Z
+  ```
+- **CI/CD publishes** to VS Code Marketplace and OpenVSX automatically for tags beginning with `v`.
+- The release workflow is managed by `.github/workflows/ci.yaml`, which triggers on tags matching `refs/tags/v*`.
 

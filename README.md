@@ -234,13 +234,6 @@ Built with:
 - [remark-gfm](https://github.com/remarkjs/remark-gfm) – GitHub Flavored Markdown support
 - [VS Code Extension API](https://code.visualstudio.com/api) – Editor integration
 
-## Roadmap
-
-See [`TODO.md`](TODO.md) and [`docs/FEATURE_IDEAS.md`](docs/FEATURE_IDEAS.md) for planned features:
-- 🔴 **High Priority:** Ordered list auto-numbering, header line height fix
-- 🟡 **Medium Priority:** KaTeX/Math support, GFM enhancements, tables, Mermaid diagrams
-- 🟢 **Low Priority:** Customizable styles, wiki-links, footnotes, and more
-
 ---
 
 **Important:** Your files remain standard `.md` – this extension only affects the editor view. All markdown syntax is preserved in the file.
