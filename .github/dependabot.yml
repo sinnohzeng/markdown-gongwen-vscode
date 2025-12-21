@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: 1
+      time: "09:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    # Group updates to reduce PR noise
+    groups:
+      # Group all dev dependencies together
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "@typescript-eslint/*"
+          - "typescript*"
+          - "eslint*"
+          - "jest*"
+          - "ts-jest"
+          - "esbuild"
+          - "rimraf"
+          - "@vscode/*"
+          - "ovsx"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group production dependencies separately (more careful review)
+      production-dependencies:
+        patterns:
+          - "remark-*"
+          - "unified"
+          - "unist-*"
+        update-types:
+          - "patch"
+    # Ignore major version updates (require manual review)
+    ignore:
+      # Major version updates should be reviewed manually
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    # Versioning strategy
+    versioning-strategy: increase
+
