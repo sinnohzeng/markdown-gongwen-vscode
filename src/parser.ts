@@ -39,6 +39,8 @@ export type DecorationType =
   | 'image'
   | 'blockquote'
   | 'listItem'
+  | 'checkboxUnchecked'
+  | 'checkboxChecked'
   | 'horizontalRule';
 
 /**
@@ -726,8 +728,9 @@ export class MarkdownParser {
 
   /**
    * Processes a list item node.
-   * 
+   *
    * Replaces list markers (-, *, +) with a bullet point (•).
+   * Detects and decorates checkboxes ([ ] or [x]) after the marker.
    */
   private processListItem(
     node: ListItem,
@@ -753,6 +756,34 @@ export class MarkdownParser {
           markerEnd++;
         }
         
+        // Check for checkbox pattern: [ ] or [x] or [X]
+        // Pattern: "[" + (" " or "x" or "X") + "]"
+        if (markerEnd + 2 < end && text[markerEnd] === '[') {
+          const checkChar = text[markerEnd + 1];
+          if ((checkChar === ' ' || checkChar === 'x' || checkChar === 'X') && text[markerEnd + 2] === ']') {
+            // This is a task list item with checkbox
+            // Replace marker with bullet decoration (includes the space before checkbox)
+            decorations.push({
+              startPos: markerStart,
+              endPos: markerEnd,
+              type: 'listItem',
+            });
+
+            // Determine checkbox type and add decoration
+            // Only include [ ] or [x] (3 chars), not the trailing space
+            const isChecked = checkChar === 'x' || checkChar === 'X';
+            const checkboxEnd = markerEnd + 3; // Just [ ], [x], or [X]
+
+            decorations.push({
+              startPos: markerEnd,
+              endPos: checkboxEnd,
+              type: isChecked ? 'checkboxChecked' : 'checkboxUnchecked',
+            });
+            break;
+          }
+        }
+
+        // Not a checkbox - just a regular list item
         // Replace the marker (and space) with a bullet decoration
         decorations.push({
           startPos: markerStart,

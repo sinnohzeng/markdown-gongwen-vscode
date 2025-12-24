@@ -210,3 +210,37 @@ export function HorizontalRuleDecorationType() {
     isWholeLine: true,
   });
 }
+
+/**
+ * Creates a decoration type for unchecked checkbox styling.
+ *
+ * Replaces [ ] with an empty checkbox symbol (☐).
+ * Click inside the brackets to toggle.
+ *
+ * @returns {vscode.TextEditorDecorationType} A decoration type for unchecked checkboxes
+ */
+export function CheckboxUncheckedDecorationType() {
+  return window.createTextEditorDecorationType({
+    textDecoration: 'none; display: none;', // Hide the original [ ]
+    before: {
+      contentText: '☐',
+    },
+  });
+}
+
+/**
+ * Creates a decoration type for checked checkbox styling.
+ *
+ * Replaces [x] or [X] with a checked checkbox symbol (☑).
+ * Click inside the brackets to toggle.
+ *
+ * @returns {vscode.TextEditorDecorationType} A decoration type for checked checkboxes
+ */
+export function CheckboxCheckedDecorationType() {
+  return window.createTextEditorDecorationType({
+    textDecoration: 'none; display: none;', // Hide the original [x]
+    before: {
+      contentText: '☑',
+    },
+  });
+}

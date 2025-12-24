@@ -1,4 +1,4 @@
-import { Range, TextEditor, TextDocument, TextDocumentChangeEvent } from 'vscode';
+import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, Position, WorkspaceEdit, Selection } from 'vscode';
 import {
   HideDecorationType,
   BoldDecorationType,
@@ -19,6 +19,8 @@ import {
   BlockquoteDecorationType,
   ListItemDecorationType,
   HorizontalRuleDecorationType,
+  CheckboxUncheckedDecorationType,
+  CheckboxCheckedDecorationType,
 } from './decorations';
 import { MarkdownParser, DecorationRange, DecorationType } from './parser';
 
@@ -51,22 +53,22 @@ export class Decorator {
 
   private parser = new MarkdownParser();
   private updateTimeout: NodeJS.Timeout | undefined;
-  
+
   /** Cache for parsed decorations, keyed by document URI */
   private decorationCache = new Map<string, CacheEntry>();
-  
+
   /** Maximum number of documents to cache (LRU eviction) */
   private readonly maxCacheSize = 10;
-  
+
   /** Access counter for LRU eviction */
   private accessCounter = 0;
-  
+
   /** Pending update batching: track last document version that triggered an update */
   private pendingUpdateVersion = new Map<string, number>();
-  
+
   /** requestIdleCallback handle for idle updates */
   private idleCallbackHandle: number | undefined;
-  
+
   /** Whether decorations are enabled or disabled */
   private decorationsEnabled = true;
 
@@ -89,6 +91,8 @@ export class Decorator {
   private blockquoteDecorationType = BlockquoteDecorationType();
   private listItemDecorationType = ListItemDecorationType();
   private horizontalRuleDecorationType = HorizontalRuleDecorationType();
+  private checkboxUncheckedDecorationType = CheckboxUncheckedDecorationType();
+  private checkboxCheckedDecorationType = CheckboxCheckedDecorationType();
 
   /**
    * Sets the active text editor and immediately updates decorations.
@@ -107,13 +111,13 @@ export class Decorator {
       clearTimeout(this.updateTimeout);
       this.updateTimeout = undefined;
     }
-    
+
     if (!textEditor) {
       return;
     }
-    
+
     this.activeEditor = textEditor;
-    
+
     // Update immediately when switching editors (no debounce)
     this.updateDecorationsForSelection();
   }
@@ -124,7 +128,9 @@ export class Decorator {
    * This method is optimized for selection changes where the document content
    * hasn't changed. It uses cached decorations and only re-filters based on
    * the new selection.
-   * 
+   *
+   * Also handles checkbox toggle when clicking inside [ ] or [x].
+   *
    * @example
    * decorator.updateDecorationsForSelection();
    */
@@ -134,8 +140,67 @@ export class Decorator {
       return;
     }
 
+    // Check for checkbox click (single cursor, no selection)
+    // If checkbox was toggled, skip decoration update to avoid flicker
+    if (this.handleCheckboxClick()) {
+      return;
+    }
+
     // Immediate update without debounce for selection changes
     this.updateDecorationsInternal();
+  }
+
+  /**
+   * Handles checkbox toggle when user clicks inside [ ] or [x].
+   * Detects if cursor is positioned inside a checkbox and toggles it.
+   *
+   * @returns true if a checkbox was toggled, false otherwise
+   */
+  private handleCheckboxClick(): boolean {
+    if (!this.activeEditor) return false;
+
+    const selection = this.activeEditor.selection;
+
+    // Only handle single cursor clicks (no selection range)
+    if (!selection.isEmpty) return false;
+
+    const document = this.activeEditor.document;
+    const line = document.lineAt(selection.active.line);
+    const cursorChar = selection.active.character;
+
+    // Find checkbox pattern on this line: [ ] or [x] or [X]
+    const checkboxRegex = /\[([ xX])\]/g;
+    let match: RegExpExecArray | null;
+
+    while ((match = checkboxRegex.exec(line.text)) !== null) {
+      const bracketStart = match.index;
+      const bracketEnd = match.index + 3; // [ ] is 3 chars
+
+      // Check if cursor is on or inside the checkbox [ ] range
+      // Include bracketStart because clicking the ☐ decoration lands cursor there
+      if (cursorChar >= bracketStart && cursorChar <= bracketEnd) {
+        const currentState = match[1];
+        const newState = currentState === ' ' ? 'x' : ' ';
+
+        // Toggle the checkbox
+        const edit = new WorkspaceEdit();
+        const charPosition = new Position(selection.active.line, bracketStart + 1);
+        edit.replace(
+          document.uri,
+          new Range(charPosition, charPosition.translate(0, 1)),
+          newState
+        );
+
+        workspace.applyEdit(edit);
+
+        // Move cursor after the checkbox to avoid re-triggering
+        const newCursorPos = new Position(selection.active.line, bracketEnd + 1);
+        this.activeEditor.selection = new Selection(newCursorPos, newCursorPos);
+
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -158,7 +223,7 @@ export class Decorator {
 
     const document = event?.document || this.activeEditor.document;
     const cacheKey = document.uri.toString();
-    
+
     // Invalidate cache on document change
     if (event) {
       this.invalidateCache(document);
@@ -172,7 +237,7 @@ export class Decorator {
       clearTimeout(this.updateTimeout);
       this.updateTimeout = undefined;
     }
-    
+
     // Cancel any pending idle callback
     if (this.idleCallbackHandle !== undefined) {
       this.cancelIdleCallback(this.idleCallbackHandle);
@@ -184,16 +249,16 @@ export class Decorator {
     // 2. Fallback to idle callback for heavy work during continuous typing
     this.updateTimeout = setTimeout(() => {
       this.updateTimeout = undefined;
-      
+
       // Check if document version changed since we scheduled this update (batching)
       const latestVersion = this.activeEditor?.document.version;
       const scheduledVersion = this.pendingUpdateVersion.get(cacheKey);
-      
+
       if (latestVersion !== undefined && scheduledVersion !== undefined && latestVersion !== scheduledVersion) {
         // Document changed again, skip this update (another one is queued)
         return;
       }
-      
+
       // Use requestIdleCallback wrapper for non-urgent updates
       // This will use requestIdleCallback in browser or setTimeout in Node.js
       this.idleCallbackHandle = this.requestIdleCallback(() => {
@@ -226,7 +291,7 @@ export class Decorator {
    */
   toggleDecorations(): boolean {
     this.decorationsEnabled = !this.decorationsEnabled;
-    
+
     if (this.decorationsEnabled) {
       // Re-enable: update decorations immediately
       this.updateDecorationsForSelection();
@@ -234,10 +299,10 @@ export class Decorator {
       // Disable: clear all decorations
       this.clearAllDecorations();
     }
-    
+
     return this.decorationsEnabled;
   }
-  
+
   /**
    * Check if decorations are currently enabled.
    * 
@@ -246,7 +311,7 @@ export class Decorator {
   isEnabled(): boolean {
     return this.decorationsEnabled;
   }
-  
+
   /**
    * Clear all decorations from the active editor.
    * 
@@ -256,7 +321,7 @@ export class Decorator {
     if (!this.activeEditor) {
       return;
     }
-    
+
     // Set all decoration types to empty arrays
     for (const decorationType of this.decorationTypeMap.values()) {
       this.activeEditor.setDecorations(decorationType, []);
@@ -283,10 +348,10 @@ export class Decorator {
     }
 
     const document = this.activeEditor.document;
-    
+
     // Parse document (uses cache if version unchanged)
     const decorations = this.parseDocument(document);
-    
+
     // Re-validate version before applying (race condition protection)
     if (this.isDocumentStale(document)) {
       return; // Document changed during parse, skip this update
@@ -344,7 +409,7 @@ export class Decorator {
   private parseDocument(document: TextDocument): DecorationRange[] {
     const cacheKey = document.uri.toString();
     const cached = this.getCachedDecorations(document);
-    
+
     if (cached !== null) {
       // Update access time for LRU
       const entry = this.decorationCache.get(cacheKey);
@@ -380,7 +445,7 @@ export class Decorator {
     // Pre-compute selected line ranges for O(1) lookups
     const selectedLines = new Set<number>();
     const selectedRanges: Range[] = [];
-    
+
     for (const selection of this.activeEditor.selections) {
       // Add all lines in the selection to the set
       for (let line = selection.start.line; line <= selection.end.line; line++) {
@@ -402,7 +467,7 @@ export class Decorator {
       // Skip decorations to show raw markdown when:
       // 1. The decoration range directly intersects with any selection (precise overlap check)
       // 2. Any line containing the decoration has a selection/cursor (permissive line-based check)
-      // 
+      //
       // Note: The line-based check is intentionally permissive - if you click anywhere on a line
       // that contains a decoration, the decoration is hidden even if your selection doesn't overlap it.
       // This provides a better UX when editing markdown.
@@ -440,6 +505,8 @@ export class Decorator {
     ['blockquote', this.blockquoteDecorationType],
     ['listItem', this.listItemDecorationType],
     ['horizontalRule', this.horizontalRuleDecorationType],
+    ['checkboxUnchecked', this.checkboxUncheckedDecorationType],
+    ['checkboxChecked', this.checkboxCheckedDecorationType],
   ]);
 
   /**
@@ -456,7 +523,7 @@ export class Decorator {
     // Apply all decorations by iterating through the type map
     for (const [type, decorationType] of this.decorationTypeMap.entries()) {
       this.activeEditor.setDecorations(decorationType, filteredDecorations.get(type) || []);
-    }
+    };
   }
 
   /**
@@ -469,7 +536,7 @@ export class Decorator {
   private getCachedDecorations(document: TextDocument): DecorationRange[] | null {
     const cacheKey = document.uri.toString();
     const cached = this.decorationCache.get(cacheKey);
-    
+
     if (!cached) {
       return null;
     }
@@ -493,7 +560,7 @@ export class Decorator {
    */
   private setCachedDecorations(document: TextDocument, decorations: DecorationRange[], text: string): void {
     const cacheKey = document.uri.toString();
-    
+
     // Evict least recently used if cache is full
     if (this.decorationCache.size >= this.maxCacheSize && !this.decorationCache.has(cacheKey)) {
       this.evictLRU();
@@ -561,7 +628,7 @@ export class Decorator {
     // For now, always invalidate cache and do full parse
     // Future: could use calculateChangeSize to determine if incremental parsing is feasible
     this.invalidateCache(event.document);
-    
+
     // Update decorations with debounce
     this.updateDecorationsForDocument(event);
   }
@@ -576,7 +643,7 @@ export class Decorator {
   private calculateChangeSize(event: TextDocumentChangeEvent): number {
     const document = event.document;
     const totalLength = document.getText().length;
-    
+
     if (totalLength === 0) {
       return 0;
     }
@@ -607,7 +674,7 @@ export class Decorator {
     this.decorationCache.clear();
     this.pendingUpdateVersion.clear();
   }
-  
+
   /**
    * Wrapper for requestIdleCallback that falls back to setTimeout if not available.
    * 
@@ -624,7 +691,7 @@ export class Decorator {
     // In future, if running in browser context, we could check for requestIdleCallback
     return setTimeout(callback, options?.timeout || 50) as unknown as number;
   }
-  
+
   /**
    * Wrapper for cancelIdleCallback that falls back to clearTimeout if not available.
    * 
@@ -663,7 +730,7 @@ export class Decorator {
     // we want to map to the '\r' position (not '\n') so that the content range excludes '\r'
     // This ensures [start:end) in normalized maps to [start:end) in original with same content
     let normalizedIndex = 0;
-    
+
     for (let i = 0; i < originalText.length; i++) {
       // Check for CRLF first
       if (originalText[i] === '\r' && i + 1 < originalText.length && originalText[i + 1] === '\n') {
@@ -686,7 +753,7 @@ export class Decorator {
         normalizedIndex++;
       }
     }
-    
+
     // If we didn't find it (shouldn't happen), return the last position
     return originalText.length;
   }
@@ -712,7 +779,7 @@ export class Decorator {
       // Map normalized positions to original document positions
       const mappedStart = this.mapNormalizedToOriginal(startPos, originalText);
       const mappedEnd = this.mapNormalizedToOriginal(endPos, originalText);
-      
+
       const start = this.activeEditor.document.positionAt(mappedStart);
       const end = this.activeEditor.document.positionAt(mappedEnd);
       return new Range(start, end);
@@ -737,14 +804,14 @@ export class Decorator {
    */
   private isRangeSelected(range: Range, selectedRanges: Range[]): boolean {
     if (!this.activeEditor) return false;
-    
+
     // Check empty selections (cursors) - these need to be checked against the current editor state
     for (const selection of this.activeEditor.selections) {
       if (selection.isEmpty && range.contains(selection.start)) {
         return true;
       }
     }
-    
+
     // Check non-empty selections using pre-computed ranges
     return selectedRanges.some((selection) => {
       // intersection() returns undefined if ranges don't overlap, or a Range if they do
@@ -767,14 +834,14 @@ export class Decorator {
    */
   private isLineOfRangeSelected(range: Range, selectedLines: Set<number>): boolean {
     if (!this.activeEditor || selectedLines.size === 0) return false;
-    
+
     // Check if any line in the decoration range is in the selected lines set
     for (let line = range.start.line; line <= range.end.line; line++) {
       if (selectedLines.has(line)) {
         return true;
       }
     }
-    
+
     return false;
   }
 }
