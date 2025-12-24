@@ -84,8 +84,8 @@ export function activate(context: vscode.ExtensionContext) {
     decorator.setActiveEditor(editor);
   });
   
-  const changeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection(() => {
-    decorator.updateDecorationsForSelection();
+  const changeTextEditorSelection = vscode.window.onDidChangeTextEditorSelection((event) => {
+    decorator.updateDecorationsForSelection(event.kind);
   });
 
   const changeDocument = vscode.workspace.onDidChangeTextDocument((event) => {

@@ -1,4 +1,4 @@
-import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, Position, WorkspaceEdit, Selection } from 'vscode';
+import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, Position, WorkspaceEdit, Selection, TextEditorSelectionChangeKind } from 'vscode';
 import {
   HideDecorationType,
   BoldDecorationType,
@@ -124,17 +124,18 @@ export class Decorator {
 
   /**
    * Updates decorations for selection changes (immediate, no debounce).
-   * 
+   *
    * This method is optimized for selection changes where the document content
    * hasn't changed. It uses cached decorations and only re-filters based on
    * the new selection.
    *
    * Also handles checkbox toggle when clicking inside [ ] or [x].
    *
+   * @param kind - The kind of selection change (Mouse, Keyboard, or Command)
    * @example
-   * decorator.updateDecorationsForSelection();
+   * decorator.updateDecorationsForSelection(TextEditorSelectionChangeKind.Mouse);
    */
-  updateDecorationsForSelection() {
+  updateDecorationsForSelection(kind?: TextEditorSelectionChangeKind) {
     // Early exit for non-markdown files
     if (!this.activeEditor || !this.isMarkdownDocument()) {
       return;
@@ -142,7 +143,7 @@ export class Decorator {
 
     // Check for checkbox click (single cursor, no selection)
     // If checkbox was toggled, skip decoration update to avoid flicker
-    if (this.handleCheckboxClick()) {
+    if (kind === TextEditorSelectionChangeKind.Mouse && this.handleCheckboxClick()) {
       return;
     }
 
