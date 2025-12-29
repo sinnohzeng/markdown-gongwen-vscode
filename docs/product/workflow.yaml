@@ -1,0 +1,505 @@
+workflow:
+  name: "Software Development Lifecycle"
+  version: "1.0.0"
+  description: "Complete workflow from problem definition to stable release with iteration loop"
+
+nodes:
+  START:
+    id: "START"
+    uuid: "START"
+    display_number: 0
+    name: "Project Initiation"
+    role: "Product Owner"
+    type: "start"
+    description: "Initial project kickoff and charter definition"
+    dependencies: []
+    activities:
+      - "Project charter creation"
+      - "Initial stakeholder identification"
+      - "Project scope boundaries (high-level)"
+      - "Success criteria definition (high-level)"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/START-Project-Initiation.md"
+        template: "docs/product/templates/START-Project-Initiation.template.md"
+    done_criteria:
+      - "START-Project-Initiation.md exists and validated"
+      - "Project charter documented"
+      - "Initial stakeholders identified"
+      - "High-level scope boundaries defined"
+      - "High-level success criteria established"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  PO1:
+    id: "PO1"
+    uuid: "PO1"
+    display_number: 1
+    name: "Problem Definition"
+    role: "Product Owner"
+    type: "task"
+    description: "Root cause analysis and problem boundaries"
+    dependencies: ["START"]
+    activities:
+      - "Root cause analysis (RCA methodology)"
+      - "Current state analysis (as-is process mapping)"
+      - "Problem boundaries (scope definition)"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/PO1-Problem-Definition.md"
+        template: "docs/product/templates/PO1-Problem-Definition.template.md"
+    done_criteria:
+      - "PO1-Problem-Definition.md exists and validated"
+      - "Root cause identified and documented"
+      - "Current state analysis complete"
+      - "Problem boundaries defined"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  ST1:
+    id: "ST1"
+    uuid: "ST1"
+    display_number: 2
+    name: "Stakeholder Analysis"
+    role: "Product Owner"
+    type: "task"
+    description: "Stakeholder identification and engagement strategy"
+    dependencies: ["PO1"]
+    activities:
+      - "Stakeholder identification matrix"
+      - "Power/interest classification"
+      - "Engagement strategy mapping"
+      - "User personas definition"
+      - "RBAC role mapping"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/ST1-Stakeholder-Analysis.md"
+        template: "docs/product/templates/ST1-Stakeholder-Analysis.template.md"
+    done_criteria:
+      - "ST1-Stakeholder-Analysis.md exists and validated"
+      - "Power/interest matrix documented"
+      - "User personas defined"
+      - "RBAC roles mapped"
+      - "All stakeholders mapped"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  BN1:
+    id: "BN1"
+    uuid: "BN1"
+    display_number: 3
+    name: "Goals & Success Criteria"
+    role: "Product Owner"
+    type: "task"
+    description: "Define measurable objectives and KPIs"
+    dependencies: ["ST1"]
+    activities:
+      - "Measurable objectives (SMART criteria)"
+      - "Key performance indicators (KPIs)"
+      - "Success metrics definition"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/BN1-Goals-Success-Criteria.md"
+        template: "docs/product/templates/BN1-Goals-Success-Criteria.template.md"
+    done_criteria:
+      - "BN1-Goals-Success-Criteria.md exists and validated"
+      - "SMART objectives defined and validated"
+      - "KPI Framework defined"
+      - "Success criteria documented"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  BH1:
+    id: "BH1"
+    uuid: "BH1"
+    display_number: 4
+    name: "System Behavior Model"
+    role: "Product Owner"
+    type: "task"
+    description: "Use cases, process flows, and business rules"
+    dependencies: ["BN1"]
+    activities:
+      - "Use case specifications (actors, main/alternative flows)"
+      - "Process flow diagrams (BPMN notation)"
+      - "Decision rules & exception handling"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/BH1-System-Behavior-Model.md"
+        template: "docs/product/templates/BH1-System-Behavior-Model.template.md"
+    done_criteria:
+      - "BH1-System-Behavior-Model.md exists and validated"
+      - "All use cases documented"
+      - "BPMN flowcharts complete"
+      - "Decision tables defined"
+      - "Exception logic mapped"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  PM1:
+    id: "PM1"
+    uuid: "PM1"
+    display_number: 5
+    name: "Resource Planning"
+    role: "Project Manager"
+    type: "task"
+    description: "Team composition, budget, and timeline"
+    dependencies: ["BH1"]
+    activities:
+      - "Team composition (role allocation)"
+      - "Budget allocation (cost estimation)"
+      - "Timeline (schedule/Gantt chart)"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/PM1-Resource-Planning.md"
+        template: "docs/product/templates/PM1-Resource-Planning.template.md"
+    done_criteria:
+      - "PM1-Resource-Planning.md exists and validated"
+      - "Resource allocation matrix complete"
+      - "Budget approved"
+      - "Timeline defined"
+    automation:
+      agent: "project-manager-agent"
+      script: null
+
+  PM2:
+    id: "PM2"
+    uuid: "PM2"
+    display_number: 6
+    name: "Risk Assessment"
+    role: "Project Manager"
+    type: "task"
+    description: "Risk register and mitigation strategies"
+    dependencies: ["BH1"]
+    activities:
+      - "Risk register (identification matrix)"
+      - "Risk response planning"
+      - "Mitigation strategies"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/PM2-Risk-Assessment.md"
+        template: "docs/product/templates/PM2-Risk-Assessment.template.md"
+    done_criteria:
+      - "PM2-Risk-Assessment.md exists and validated"
+      - "Risk register complete"
+      - "Mitigation strategies defined"
+      - "Risk response plan approved"
+    automation:
+      agent: "project-manager-agent"
+      script: null
+
+  DM1:
+    id: "DM1"
+    uuid: "DM1"
+    display_number: 7
+    name: "Data Model"
+    role: "Solution Architecture Team"
+    type: "task"
+    description: "Data dictionary, ERD, and data constraints"
+    dependencies: ["BH1"]
+    activities:
+      - "Data dictionary (schema definitions)"
+      - "Entity-relationship diagrams (ERD)"
+      - "Data constraints & validation rules"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/DM1-Data-Model.md"
+        template: "docs/product/templates/DM1-Data-Model.template.md"
+    done_criteria:
+      - "DM1-Data-Model.md exists and validated"
+      - "Data dictionary complete"
+      - "ERD validated"
+      - "NFR specs defined"
+    automation:
+      agent: "solution-architect-agent"
+      script: null
+
+  DE1:
+    id: "DE1"
+    uuid: "DE1"
+    display_number: 8
+    name: "Design Model"
+    role: "Solution Architecture Team"
+    type: "task"
+    description: "User task flows, UI/UX specs, and interaction design"
+    dependencies: ["BH1"]
+    activities:
+      - "User task flows (interaction sequences)"
+      - "UI/UX specifications (wireframes/mockups)"
+      - "User interaction design (HCI patterns)"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/DE1-Design-Model.md"
+        template: "docs/product/templates/DE1-Design-Model.template.md"
+    done_criteria:
+      - "DE1-Design-Model.md exists and validated"
+      - "User task flows documented"
+      - "Design system defined"
+      - "Wireframes complete"
+      - "Edge cases addressed"
+    automation:
+      agent: "solution-architect-agent"
+      script: null
+
+  AR1:
+    id: "AR1"
+    uuid: "AR1"
+    display_number: 9
+    name: "Architecture Model"
+    role: "Solution Architecture Team"
+    type: "task"
+    description: "System architecture, technology stack, and technical design"
+    dependencies: ["BH1", "DM1"]
+    activities:
+      - "System architecture (component diagrams)"
+      - "Technology stack selection"
+      - "Technical design patterns"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/AR1-Architecture-Model.md"
+        template: "docs/product/templates/AR1-Architecture-Model.template.md"
+    done_criteria:
+      - "AR1-Architecture-Model.md exists and validated"
+      - "System architecture documented"
+      - "Technology stack selected"
+      - "API specification complete"
+    automation:
+      agent: "solution-architect-agent"
+      script: null
+
+  SC1:
+    id: "SC1"
+    uuid: "SC1"
+    display_number: 10
+    name: "Security Model"
+    role: "Solution Architecture Team"
+    type: "task"
+    description: "Security requirements, threat model, and security architecture"
+    dependencies: ["BH1", "AR1"]
+    activities:
+      - "Security requirements (constraints)"
+      - "Threat model (attack surface analysis)"
+      - "Security architecture (controls)"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/SC1-Security-Model.md"
+        template: "docs/product/templates/SC1-Security-Model.template.md"
+    done_criteria:
+      - "SC1-Security-Model.md exists and validated"
+      - "Security requirements defined"
+      - "Threat model complete"
+      - "Security architecture documented"
+    automation:
+      agent: "solution-architect-agent"
+      script: null
+
+  RD2:
+    id: "RD2"
+    uuid: "RD2"
+    display_number: 11
+    name: "Requirements Model"
+    role: "Product Owner + Project Manager"
+    type: "task"
+    description: "Complete requirements consolidation"
+    dependencies: ["BH1", "DM1", "DE1", "AR1", "SC1"]
+    activities:
+      - "Functional requirements (validated use cases)"
+      - "Non-functional requirements (quality attributes)"
+      - "Acceptance criteria (Gherkin BDD specs)"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/RD2-Requirements-Model.md"
+        template: "docs/product/templates/RD2-Requirements-Model.template.md"
+    done_criteria:
+      - "RD2-Requirements-Model.md exists and validated"
+      - "All functional requirements validated"
+      - "NFRs defined and measurable"
+      - "Gherkin acceptance criteria complete"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  RD1:
+    id: "RD1"
+    uuid: "RD1"
+    display_number: 12
+    name: "Release Planning"
+    role: "Product Owner + Project Manager"
+    type: "task"
+    description: "Feature prioritization and release scope"
+    dependencies: ["RD2"]
+    activities:
+      - "Feature prioritization (backlog/MoSCoW)"
+      - "Release scope (sprint planning)"
+      - "Release coordination"
+    outputs:
+      - type: "document"
+        format: "markdown"
+        path: "docs/product/RD1-Release-Planning.md"
+        template: "docs/product/templates/RD1-Release-Planning.template.md"
+    done_criteria:
+      - "RD1-Release-Planning.md exists and validated"
+      - "Release definition complete"
+      - "Features prioritized"
+      - "Sprint plan defined"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+  DEV1:
+    id: "DEV1"
+    uuid: "DEV1"
+    display_number: 13
+    name: "Code Generation & Testing"
+    role: "Development Team"
+    type: "task"
+    description: "Feature implementation and comprehensive testing"
+    dependencies: ["RD1"]
+    activities:
+      - "Feature implementation"
+      - "Testing (unit, integration, Gherkin BDD)"
+      - "Test coverage validation"
+    outputs:
+      - type: "code"
+        format: "source"
+        path: "src/"
+      - type: "test"
+        format: "gherkin"
+        path: "tests/features/*.feature"
+      - type: "report"
+        format: "coverage"
+        path: "coverage/lcov.info"
+    done_criteria:
+      - "All features implemented"
+      - "All tests passing (unit, integration, BDD)"
+      - "Test coverage >= threshold"
+    automation:
+      agent: "development-agent"
+      script: "scripts/run-tests.sh"
+
+  REL1:
+    id: "REL1"
+    uuid: "REL1"
+    display_number: 15
+    name: "Stable Release"
+    role: "Product Owner"
+    type: "task"
+    description: "UAT, release preparation, and deployment"
+    dependencies: ["DEV1"]
+    activities:
+      - "User acceptance testing (UAT)"
+      - "Release preparation"
+      - "Deployment"
+    outputs:
+      - type: "report"
+        format: "text"
+        path: "docs/product/RELEASE-UAT-Report.md"
+      - type: "artifact"
+        format: "package"
+        path: "dist/*.vsix"
+    done_criteria:
+      - "UAT passed"
+      - "Release artifacts prepared"
+      - "Deployment successful"
+    automation:
+      agent: "product-owner-agent"
+      script: "scripts/deploy.sh"
+
+  BL1:
+    id: "BL1"
+    uuid: "BL1"
+    display_number: 16
+    name: "New Work Item"
+    role: "Product Owner"
+    type: "task"
+    description: "New feature request, bug fix, or enhancement"
+    dependencies: ["REL1"]
+    activities:
+      - "Feature request"
+      - "Bug fix"
+      - "Enhancement"
+    outputs:
+      - type: "document"
+        format: "text"
+        path: "docs/product/BACKLOG-New-Work-Item.md"
+    done_criteria:
+      - "Work item documented"
+      - "Priority assigned"
+    automation:
+      agent: "product-owner-agent"
+      script: null
+
+# Flow connections (edges)
+edges:
+  - from: "START"
+    to: "PO1"
+    type: "sequential"
+  - from: "PO1"
+    to: "ST1"
+    type: "sequential"
+  - from: "ST1"
+    to: "BN1"
+    type: "sequential"
+  - from: "BN1"
+    to: "BH1"
+    type: "sequential"
+  - from: "BH1"
+    to: ["PM1", "PM2"]
+    type: "parallel"
+    join: "none"  # These don't join, they run in parallel
+  - from: "BH1"
+    to: ["DM1", "DE1", "AR1", "SC1"]
+    type: "parallel"
+    join: "none"
+  - from: "DM1"
+    to: "AR1"
+    type: "sequential"
+  - from: "AR1"
+    to: "SC1"
+    type: "sequential"
+  - from: "BH1"
+    to: "RD2"
+    type: "sequential"
+  - from: "DM1"
+    to: "RD2"
+    type: "sequential"
+  - from: "DE1"
+    to: "RD2"
+    type: "sequential"
+  - from: "AR1"
+    to: "RD2"
+    type: "sequential"
+  - from: "SC1"
+    to: "RD2"
+    type: "sequential"
+  - from: "RD2"
+    to: "RD1"
+    type: "sequential"
+  - from: "RD1"
+    to: "DEV1"
+    type: "sequential"
+  - from: "DEV1"
+    to: "REL1"
+    type: "sequential"
+  - from: "REL1"
+    to: "BL1"
+    type: "sequential"
+  - from: "BL1"
+    to: "BH1"
+    type: "loop"  # Iteration back to behavior model
