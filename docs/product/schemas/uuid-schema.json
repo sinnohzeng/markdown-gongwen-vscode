@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UUID Schema",
+  "description": "Schema for validating UUID formats",
+  "type": "object",
+  "properties": {
+    "workflow_node_uuid": {
+      "type": "string",
+      "description": "Workflow node UUID",
+      "pattern": "^[A-Z]{2}\\d+$|^START$",
+      "examples": ["PO1", "ST1", "BH1", "START"]
+    },
+    "sub_item_uuid": {
+      "type": "string",
+      "description": "Sub-item UUID within artifact",
+      "pattern": "^[A-Z0-9]+-[A-Z]+-\\d{3}$",
+      "examples": ["PO1-PROB-001", "BH1-UC-001", "ST1-SHK-001"]
+    }
+  },
+  "definitions": {
+    "uuid_reference": {
+      "type": "object",
+      "description": "UUID reference for cross-referencing",
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]+-[A-Z]+-\\d{3}$"
+        },
+        "artifact": {
+          "type": "string",
+          "description": "Artifact file name",
+          "pattern": "^[A-Z0-9]+-[A-Za-z-]+\\.yaml$"
+        },
+        "anchor": {
+          "type": "string",
+          "description": "Anchor within artifact",
+          "pattern": "^#[a-z0-9-]+$"
+        }
+      },
+      "required": ["uuid"]
+    }
+  }
+}

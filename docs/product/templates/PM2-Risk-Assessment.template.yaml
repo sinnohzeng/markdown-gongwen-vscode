@@ -1,0 +1,75 @@
+# Risk Assessment Template
+# AI_INSTRUCTION: Define risk register and mitigation strategies.
+
+metadata:
+  uuid: PM2
+  workflow_node: PM2
+  artifact_type: Risk Assessment
+  status: draft  # draft | active | complete
+  dependencies: [BH1]
+  next_node: RD2
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Risk Register
+# AI_INSTRUCTION: Identify and document all project risks. Generate UUID for each risk. Classify by probability and impact.
+risk_register: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 30
+  # SCHEMA: {uuid: string, risk: string, category: string, probability: enum[High|Medium|Low], impact: enum[High|Medium|Low], risk_score: string, description: string}
+  # Risk Score Calculation: Probability × Impact (High=3, Medium=2, Low=1)
+  # EXAMPLE:
+  #   - uuid: PM2-RISK-001
+  #     risk: "Risk name"
+  #     category: "Category name"
+  #     probability: "High"  # High | Medium | Low
+  #     impact: "High"  # High | Medium | Low
+  #     risk_score: "High"  # calculated or explicit
+  #     description: "Risk description"
+
+# Risk Response Planning
+# AI_INSTRUCTION: Define response strategies for each identified risk. Generate UUID for each response plan.
+risk_response_planning: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 30
+  # SCHEMA: {uuid: string, risk_uuid: string (references PM2-RISK-XXX), response_strategy: enum[Avoid|Mitigate|Transfer|Accept], response_plan: string, owner: string, status: enum[Open|In Progress|Closed]}
+  # Response Strategy Definitions:
+  #   - Avoid: Eliminate the risk by changing the approach
+  #   - Mitigate: Reduce probability or impact of the risk
+  #   - Transfer: Shift risk to another party (e.g., insurance, outsourcing)
+  #   - Accept: Acknowledge the risk and proceed (for low-impact risks)
+  # EXAMPLE:
+  #   - uuid: PM2-RESP-001
+  #     risk_uuid: "PM2-RISK-001"
+  #     response_strategy: "Mitigate"  # Avoid | Mitigate | Transfer | Accept
+  #     response_plan: "Response plan description"
+  #     owner: "Owner name"
+  #     status: "Open"  # Open | In Progress | Closed
+
+# Mitigation Strategies
+# AI_INSTRUCTION: Define detailed mitigation strategies for risks that are being mitigated. Generate UUID for each mitigation strategy.
+mitigation_strategies: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 20
+  # SCHEMA: {uuid: string, risk_uuid: string (references PM2-RISK-XXX), mitigation_action: string, timeline: string, resources: string, success_criteria: string}
+  # EXAMPLE:
+  #   - uuid: PM2-MIT-001
+  #     risk_uuid: "PM2-RISK-001"
+  #     mitigation_action: "Mitigation action description"
+  #     timeline: "Timeline description"
+  #     resources: "Resources required"
+  #     success_criteria: "Success criteria"
+
+# Validation Checklist
+validation_checklist:
+  - item: "Risk register complete"
+    checked: false
+  - item: "Mitigation strategies defined"
+    checked: false
+  - item: "Risk response plan approved"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on BH1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: RD2
+  description: "Requirements Model"

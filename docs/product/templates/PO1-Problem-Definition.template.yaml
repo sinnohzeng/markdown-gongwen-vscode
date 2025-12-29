@@ -1,0 +1,123 @@
+# Problem Definition Template
+# AI_INSTRUCTION: Root cause analysis and problem boundaries using RCA methodology (ask "why" 5 times).
+
+metadata:
+  uuid: PO1
+  workflow_node: PO1
+  artifact_type: Problem Definition
+  status: draft  # draft | active | complete
+  dependencies: [START]
+  next_node: ST1
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Root Cause Analysis (RCA)
+# AI_INSTRUCTION: Provide clear problem statement. Identify PRIMARY root cause (not symptoms). Use RCA methodology: ask "why" 5 times.
+root_cause_analysis:
+  problem_statement:
+    uuid: PO1-PROB-001  # TYPE: uuid, REQUIRED, FORMAT: {ARTIFACT_UUID}-PROB-{SEQUENCE}
+    what_is_the_problem: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 200
+    # EXAMPLE: Users experience significant cognitive burden when editing Markdown files
+    why_is_this_a_problem: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 300
+    # EXAMPLE: Users spend 20-30% of mental effort parsing syntax instead of focusing on content
+  root_cause:
+    primary_root_cause:
+      uuid: PO1-RCA-001  # TYPE: uuid, REQUIRED, FORMAT: {ARTIFACT_UUID}-RCA-{SEQUENCE}
+      description: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 200
+      # EXAMPLE: Cognitive load mismatch between user's mental model and Markdown's syntax-based design
+    contributing_factors: []  # TYPE: array[object], OPTIONAL, MIN_ITEMS: 0, MAX_ITEMS: 5
+      # SCHEMA: {uuid: string, description: string}
+      # EXAMPLE:
+      #   - uuid: PO1-CF-001
+      #     description: "Factor description"
+  evidence: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, description: string, source: string}
+    # EXAMPLE:
+    #   - uuid: PO1-EVD-001
+    #     description: "Evidence description"
+    #     source: "Source of evidence"
+  solution_direction:
+    uuid: PO1-SOL-001  # TYPE: uuid, REQUIRED, FORMAT: {ARTIFACT_UUID}-SOL-{SEQUENCE}
+    description: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 300
+    # EXAMPLE: Implement inline formatting visualization that hides syntax markers
+
+# Current State Analysis
+# AI_INSTRUCTION: Map existing process as-is. List pain points, establish baseline metrics, identify constraints.
+current_state_analysis:
+  process_flow:
+    mermaid_diagram: |
+      flowchart TD
+          A[Start] --> B[Step 1]
+          B --> C{Decision Point}
+          C -->|Path A| D[Step 2A]
+          C -->|Path B| E[Step 2B]
+          D --> F[End]
+          E --> F
+    # TYPE: mermaid_diagram, REQUIRED, VALIDATION: must be valid Mermaid syntax
+  pain_points: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 1, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, name: string, impact: string, frequency: enum[Often|Sometimes|Rarely]}
+    # EXAMPLE:
+    #   - uuid: PO1-PP-001
+    #     name: "Pain point name"
+    #     impact: "Impact description"
+    #     frequency: Often  # Often | Sometimes | Rarely
+  metrics_baseline: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, name: string, value: number|string, unit: string}
+    # EXAMPLE:
+    #   - uuid: PO1-MET-001
+    #     name: "Metric name"
+    #     value: 100
+    #     unit: "percentage"
+  constraints: []  # TYPE: array[object], OPTIONAL, MIN_ITEMS: 0, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, description: string, type: enum[Technical|Business|Regulatory]}
+    # EXAMPLE:
+    #   - uuid: PO1-CON-001
+    #     description: "Constraint description"
+    #     type: Technical  # Technical | Business | Regulatory
+
+# Problem Boundaries (Scope Definition)
+# AI_INSTRUCTION: Define what is included and excluded from the problem scope with rationales.
+problem_boundaries:
+  in_scope: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 15
+    # SCHEMA: {uuid: string, item: string, rationale: string}
+    # EXAMPLE:
+    #   - uuid: PO1-SCOPE-001
+    #     item: "Scope item description"
+    #     rationale: "Why this is in scope"
+  out_of_scope: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 1, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, item: string, rationale: string}
+    # EXAMPLE:
+    #   - uuid: PO1-OOS-001
+    #     item: "Out of scope item"
+    #     rationale: "Why this is out of scope"
+
+# Validation Checklist
+# AI_INSTRUCTION: Verify all items are complete before marking status as "complete"
+validation_checklist:
+  - item: "Problem statement is clear and specific"
+    checked: false
+  - item: "Root cause is identified (not just symptoms)"
+    checked: false
+  - item: "Evidence supports root cause"
+    checked: false
+  - item: "Solution direction addresses root cause"
+    checked: false
+  - item: "Current process flow diagram is complete and accurate"
+    checked: false
+  - item: "All pain points identified with impact/frequency"
+    checked: false
+  - item: "Baseline metrics are measurable and documented"
+    checked: false
+  - item: "Constraints are identified"
+    checked: false
+  - item: "Problem boundaries (scope) are defined"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: ST1
+  description: "Stakeholder Analysis"

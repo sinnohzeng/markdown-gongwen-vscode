@@ -1,0 +1,99 @@
+# Requirements Model Template
+# AI_INSTRUCTION: Consolidate functional and non-functional requirements from all previous artifacts.
+
+metadata:
+  uuid: RD2
+  workflow_node: RD2
+  artifact_type: Requirements Model
+  status: draft  # draft | active | complete
+  dependencies: [BH1, DM1, DE1, AR1, SC1]
+  next_node: RD1
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Functional Requirements
+# AI_INSTRUCTION: Define functional requirements validated from use cases. Each requirement should be traceable to use cases and stakeholders.
+functional_requirements: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 5, MAX_ITEMS: 50
+  # SCHEMA: {uuid: string, requirement: string, description: string, priority: enum[Must Have|Should Have|Could Have|Won't Have], use_case_uuid: string, stakeholder_uuid: string, acceptance_criteria: array[string]}
+  # EXAMPLE:
+  #   - uuid: RD2-FR-001
+  #     requirement: "Requirement statement"
+  #     description: "Detailed description"
+  #     priority: "Must Have"  # Must Have | Should Have | Could Have | Won't Have
+  #     use_case_uuid: "BH1-UC-001"  # references use case
+  #     stakeholder_uuid: "ST1-SHK-001"  # references stakeholder
+  #     acceptance_criteria:
+  #       - "Criterion 1"
+  #       - "Criterion 2"
+
+# Functional Requirements by Category (Optional)
+functional_requirements_categories: []  # TYPE: array[object], OPTIONAL, MIN_ITEMS: 0, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, category: string, requirements: array[string (UUID references)]}
+  # EXAMPLE:
+  #   - uuid: RD2-CAT-001
+  #     category: "Category name"
+  #     requirements: ["RD2-FR-001", "RD2-FR-002"]
+
+# Non-Functional Requirements (NFR)
+# AI_INSTRUCTION: Define non-functional requirements including quality attributes. Each NFR should be measurable.
+non_functional_requirements:
+  performance: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, requirement: string, metric: string, target_value: string, measurement_method: string, priority: enum[High|Medium|Low]}
+    # EXAMPLE:
+    #   - uuid: RD2-PERF-001
+    #     requirement: "Performance requirement"
+    #     metric: "Response time"
+    #     target_value: "100ms"
+    #     measurement_method: "Load testing"
+    #     priority: High  # High | Medium | Low
+  scalability: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 1, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, requirement: string, metric: string, target_value: string, measurement_method: string}
+  reliability: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 1, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, requirement: string, metric: string, target_value: string, measurement_method: string}
+  usability: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, requirement: string, metric: string, target_value: string, measurement_method: string}
+  maintainability: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 1, MAX_ITEMS: 10
+    # SCHEMA: {uuid: string, requirement: string, metric: string, target_value: string, measurement_method: string}
+
+# Acceptance Criteria (Gherkin BDD)
+# AI_INSTRUCTION: Define acceptance criteria using Gherkin BDD syntax. Each scenario should be traceable to functional requirements.
+acceptance_criteria: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 5, MAX_ITEMS: 50
+  # SCHEMA: {uuid: string, feature_uuid: string, scenario_uuid: string, feature_title: string, scenario_title: string, given: array[string], when: array[string], then: array[string], requirement_uuid: string}
+  # EXAMPLE:
+  #   - uuid: RD2-AC-001
+  #     feature_uuid: "RD2-FEAT-001"
+  #     scenario_uuid: "RD2-SCEN-001"
+  #     feature_title: "Feature title"
+  #     scenario_title: "Scenario title"
+  #     given:
+  #       - "Given condition 1"
+  #       - "And condition 2"
+  #     when:
+  #       - "When action 1"
+  #     then:
+  #       - "Then result 1"
+  #       - "And result 2"
+  #     requirement_uuid: "RD2-FR-001"  # references functional requirement
+
+# Validation Checklist
+# AI_INSTRUCTION: Verify all items are complete before marking status as "complete"
+validation_checklist:
+  - item: "All functional requirements validated"
+    checked: false
+  - item: "NFRs defined and measurable"
+    checked: false
+  - item: "Gherkin acceptance criteria complete"
+    checked: false
+  - item: "All requirements traceable to use cases and stakeholders"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on BH1, DM1, DE1, AR1, SC1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: RD1
+  description: "Release Planning"

@@ -1,0 +1,81 @@
+# Design Model Template
+# AI_INSTRUCTION: Define user task flows, UI/UX specs, and interaction design.
+
+metadata:
+  uuid: DE1
+  workflow_node: DE1
+  artifact_type: Design Model
+  status: draft  # draft | active | complete
+  dependencies: [BH1]
+  next_node: RD2
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# User Task Flows
+# AI_INSTRUCTION: Define user task flows (interaction sequences). Generate UUID for each task flow.
+user_task_flows: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 15
+  # SCHEMA: {uuid: string, name: string, description: string, steps: array[string], mermaid_diagram: string}
+  # EXAMPLE:
+  #   - uuid: DE1-TF-001
+  #     name: "Task flow name"
+  #     description: "Task flow description"
+  #     steps:
+  #       - "Step 1"
+  #       - "Step 2"
+  #     mermaid_diagram: |
+  #       flowchart TD
+  #           A[Start] --> B[Step 1] --> C[Step 2] --> D[End]
+
+# UI/UX Specifications
+# AI_INSTRUCTION: Define UI/UX specifications including wireframes/mockups references. Generate UUID for each specification.
+ui_ux_specifications: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 20
+  # SCHEMA: {uuid: string, component: string, description: string, wireframe_reference: string, design_system_reference: string}
+  # EXAMPLE:
+  #   - uuid: DE1-UI-001
+  #     component: "Component name"
+  #     description: "Component description"
+  #     wireframe_reference: "path/to/wireframe.png"
+  #     design_system_reference: "Design system element"
+
+# User Interaction Design (HCI Patterns)
+# AI_INSTRUCTION: Define user interaction design patterns. Generate UUID for each pattern.
+interaction_patterns: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 15
+  # SCHEMA: {uuid: string, pattern_name: string, description: string, use_case: string, implementation_notes: string}
+  # EXAMPLE:
+  #   - uuid: DE1-PAT-001
+  #     pattern_name: "Pattern name"
+  #     description: "Pattern description"
+  #     use_case: "When to use"
+  #     implementation_notes: "Implementation notes"
+
+# Edge Cases
+# AI_INSTRUCTION: Address edge cases in design. Generate UUID for each edge case.
+edge_cases: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, scenario: string, description: string, handling: string}
+  # EXAMPLE:
+  #   - uuid: DE1-EDGE-001
+  #     scenario: "Edge case scenario"
+  #     description: "Description"
+  #     handling: "How it's handled"
+
+# Validation Checklist
+validation_checklist:
+  - item: "User task flows documented"
+    checked: false
+  - item: "Design system defined"
+    checked: false
+  - item: "Wireframes complete"
+    checked: false
+  - item: "Edge cases addressed"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on BH1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: RD2
+  description: "Requirements Model"

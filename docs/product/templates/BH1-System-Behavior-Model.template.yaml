@@ -1,0 +1,132 @@
+# System Behavior Model Template
+# AI_INSTRUCTION: Define use cases, process flows, decision tables, business rules, and exception logic.
+
+metadata:
+  uuid: BH1
+  workflow_node: BH1
+  artifact_type: System Behavior Model
+  status: draft  # draft | active | complete
+  dependencies: [BN1]
+  next_node: PM1
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Use Case Specifications
+# AI_INSTRUCTION: Define use cases with actors, main flows, and alternative flows. Generate UUID for each use case.
+use_cases: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 20
+  # SCHEMA: {uuid: string, name: string, actor: string, description: string, main_flow: array[string], alternative_flows: array[object], use_case_diagram: string (mermaid)}
+  # EXAMPLE:
+  #   - uuid: BH1-UC-001
+  #     name: "Use case name"
+  #     actor: "Actor name"
+  #     description: "Use case description"
+  #     main_flow:
+  #       - "Step 1"
+  #       - "Step 2"
+  #       - "Step 3"
+  #     alternative_flows:
+  #       - uuid: "BH1-ALT-001"
+  #         description: "Alternative flow description"
+  #     use_case_diagram: |
+  #       graph LR
+  #           A[Actor] -->|interacts| UC[Use Case: Name]
+  #           UC --> B[System]
+
+# Process Flow Diagrams (BPMN)
+# AI_INSTRUCTION: Create BPMN-style process flow diagrams using Mermaid flowchart syntax. Generate UUID for each process flow.
+process_flows: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, name: string, description: string, mermaid_diagram: string}
+  # EXAMPLE:
+  #   - uuid: BH1-PF-001
+  #     name: "Process flow name"
+  #     description: "Process flow description"
+  #     mermaid_diagram: |
+  #       flowchart TD
+  #           Start([Start]) --> Step1[Step 1]
+  #           Step1 --> Decision{Decision Point}
+  #           Decision -->|Condition A| Step2A[Step 2A]
+  #           Decision -->|Condition B| Step2B[Step 2B]
+  #           Step2A --> End([End])
+  #           Step2B --> End
+
+# Decision Tables
+# AI_INSTRUCTION: Define decision rules using decision tables. Generate UUID for each decision table.
+decision_tables: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, name: string, description: string, conditions: array[string], actions: array[string], rules: array[object]}
+  # Rules SCHEMA: {condition_values: array[enum[Y|N|-]], action_values: array[enum[Y|N|X]]}
+  # Legend: Y = Yes, N = No, - = Not applicable, X = Action executed
+  # EXAMPLE:
+  #   - uuid: BH1-DT-001
+  #     name: "Decision table name"
+  #     description: "Decision table description"
+  #     conditions:
+  #       - "Condition 1"
+  #       - "Condition 2"
+  #     actions:
+  #       - "Action 1"
+  #       - "Action 2"
+  #     rules:
+  #       - condition_values: [Y, N]
+  #         action_values: [X, N]
+  #       - condition_values: [N, Y]
+  #         action_values: [N, X]
+
+# Business Rules
+# AI_INSTRUCTION: Define business rules that govern system behavior. Generate UUID for each business rule.
+business_rules: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 15
+  # SCHEMA: {uuid: string, rule: string, description: string, applies_to: string}
+  # EXAMPLE:
+  #   - uuid: BH1-BR-001
+  #     rule: "Business rule statement"
+  #     description: "Rule description"
+  #     applies_to: "What it applies to"
+
+# Exception Logic & Error Handling
+# AI_INSTRUCTION: Map exception scenarios and error handling logic using Mermaid flowcharts. Generate UUID for each exception scenario.
+exception_scenarios: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, name: string, description: string, trigger: string, handling: string, mermaid_diagram: string}
+  # EXAMPLE:
+  #   - uuid: BH1-EX-001
+  #     name: "Exception scenario name"
+  #     description: "Exception description"
+  #     trigger: "What triggers the exception"
+  #     handling: "How it's handled"
+  #     mermaid_diagram: |
+  #       flowchart TD
+  #           Normal[Normal Flow] --> Error{Error Occurs?}
+  #           Error -->|Yes| Exception[Exception: Name]
+  #           Exception --> Handle[Handle Exception]
+  #           Handle --> Recovery{Recoverable?}
+  #           Recovery -->|Yes| Retry[Retry]
+  #           Recovery -->|No| Fail[Fail Gracefully]
+  #           Retry --> Normal
+  #           Fail --> End([End])
+  #           Error -->|No| Continue[Continue Normal Flow]
+  #           Continue --> End
+
+# Validation Checklist
+# AI_INSTRUCTION: Verify all items are complete before marking status as "complete"
+validation_checklist:
+  - item: "All use cases documented with actors, main flows, and alternative flows"
+    checked: false
+  - item: "Use case diagrams created in Mermaid format"
+    checked: false
+  - item: "BPMN process flowcharts complete with decision points"
+    checked: false
+  - item: "Decision tables defined with conditions and actions"
+    checked: false
+  - item: "Business rules documented"
+    checked: false
+  - item: "Exception logic mapped with error handling flows"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on BN1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: PM1
+  description: "Resource Planning, Risk Assessment, Data Model, Design Model, Architecture Model"

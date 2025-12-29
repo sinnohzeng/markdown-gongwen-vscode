@@ -1,0 +1,74 @@
+# Security Model Template
+# AI_INSTRUCTION: Define security requirements, threat model, and security architecture.
+
+metadata:
+  uuid: SC1
+  workflow_node: SC1
+  artifact_type: Security Model
+  status: draft  # draft | active | complete
+  dependencies: [BH1, AR1]
+  next_node: RD2
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Security Requirements
+# AI_INSTRUCTION: Define security requirements (constraints). Generate UUID for each requirement.
+security_requirements: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 15
+  # SCHEMA: {uuid: string, requirement: string, description: string, priority: enum[Critical|High|Medium|Low], category: enum[Authentication|Authorization|Encryption|Data Protection|Audit]}
+  # EXAMPLE:
+  #   - uuid: SC1-REQ-001
+  #     requirement: "Requirement statement"
+  #     description: "Detailed description"
+  #     priority: "Critical"  # Critical | High | Medium | Low
+  #     category: "Authentication"  # Authentication | Authorization | Encryption | Data Protection | Audit
+
+# Threat Model
+# AI_INSTRUCTION: Define threat model (attack surface analysis). Generate UUID for each threat.
+threat_model:
+  threats: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 20
+    # SCHEMA: {uuid: string, threat: string, description: string, attack_vector: string, impact: enum[High|Medium|Low], likelihood: enum[High|Medium|Low]}
+    # EXAMPLE:
+    #   - uuid: SC1-THR-001
+    #     threat: "Threat name"
+    #     description: "Threat description"
+    #     attack_vector: "How it could be exploited"
+    #     impact: "High"  # High | Medium | Low
+    #     likelihood: "Medium"  # High | Medium | Low
+  attack_surface_diagram:
+    mermaid_diagram: |
+      flowchart TD
+          A[External] --> B[System Boundary]
+          B --> C[Internal Components]
+    # TYPE: mermaid_diagram, OPTIONAL, VALIDATION: must be valid Mermaid syntax
+
+# Security Architecture (Controls)
+# AI_INSTRUCTION: Define security architecture with controls. Generate UUID for each control.
+security_architecture:
+  controls: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 20
+    # SCHEMA: {uuid: string, control_name: string, description: string, control_type: enum[Preventive|Detective|Corrective], threat_uuid: string}
+    # EXAMPLE:
+    #   - uuid: SC1-CTRL-001
+    #     control_name: "Control name"
+    #     description: "Control description"
+    #     control_type: "Preventive"  # Preventive | Detective | Corrective
+    #     threat_uuid: "SC1-THR-001"  # references threat
+
+# Validation Checklist
+validation_checklist:
+  - item: "Security requirements defined"
+    checked: false
+  - item: "Threat model complete"
+    checked: false
+  - item: "Security architecture documented"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on BH1 and AR1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: RD2
+  description: "Requirements Model"

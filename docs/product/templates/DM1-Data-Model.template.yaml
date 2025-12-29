@@ -1,0 +1,82 @@
+# Data Model Template
+# AI_INSTRUCTION: Define data dictionary, ERD, and data constraints.
+
+metadata:
+  uuid: DM1
+  workflow_node: DM1
+  artifact_type: Data Model
+  status: draft  # draft | active | complete
+  dependencies: [BH1]
+  next_node: AR1
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Data Dictionary
+# AI_INSTRUCTION: Define data dictionary with schema definitions. Generate UUID for each entity and attribute.
+data_dictionary: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 50
+  # SCHEMA: {uuid: string, entity: string, attribute: string, data_type: string, constraints: string, description: string, example: string}
+  # EXAMPLE:
+  #   - uuid: DM1-ENT-001
+  #     entity: "Entity name"
+  #     attribute: "Attribute name"
+  #     data_type: "string"  # string | number | boolean | date | uuid
+  #     constraints: "NOT NULL, UNIQUE"  # optional
+  #     description: "Attribute description"
+  #     example: "Example value"  # optional
+
+# Entity-Relationship Diagram (ERD)
+# AI_INSTRUCTION: Create entity-relationship diagram using Mermaid ER syntax.
+entity_relationship_diagram:
+  mermaid_diagram: |
+    erDiagram
+        ENTITY1 {
+            string id PK
+            string name
+        }
+        ENTITY2 {
+            string id PK
+            string entity1_id FK
+        }
+        ENTITY1 ||--o{ ENTITY2 : "has"
+  # TYPE: mermaid_diagram, REQUIRED, VALIDATION: must be valid Mermaid ER syntax
+  relationships: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 30
+    # SCHEMA: {uuid: string, from_entity: string, to_entity: string, relationship_type: enum[One-to-One|One-to-Many|Many-to-Many], cardinality: string, description: string}
+    # EXAMPLE:
+    #   - uuid: DM1-REL-001
+    #     from_entity: "Entity1"
+    #     to_entity: "Entity2"
+    #     relationship_type: "One-to-Many"  # One-to-One | One-to-Many | Many-to-Many
+    #     cardinality: "1:N"
+    #     description: "Relationship description"
+
+# Data Constraints & Validation Rules
+# AI_INSTRUCTION: Define data constraints and validation rules. Generate UUID for each constraint.
+data_constraints: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 30
+  # SCHEMA: {uuid: string, entity: string, attribute: string, constraint_type: enum[Required|Unique|Range|Format|Reference|Custom], rule: string, error_message: string}
+  # EXAMPLE:
+  #   - uuid: DM1-CON-001
+  #     entity: "Entity name"
+  #     attribute: "Attribute name"
+  #     constraint_type: "Required"  # Required | Unique | Range | Format | Reference | Custom
+  #     rule: "Rule description"
+  #     error_message: "Error message"
+
+# Validation Checklist
+validation_checklist:
+  - item: "Data dictionary complete"
+    checked: false
+  - item: "ERD validated"
+    checked: false
+  - item: "NFR specs defined"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on BH1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: AR1
+  description: "Architecture Model"

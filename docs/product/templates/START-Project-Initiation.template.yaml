@@ -1,0 +1,100 @@
+# Project Initiation Template
+# AI_INSTRUCTION: Create a high-level project charter that establishes the foundation for the project.
+
+metadata:
+  uuid: START
+  workflow_node: START
+  artifact_type: Project Initiation
+  status: draft  # draft | active | complete
+  dependencies: []
+  next_node: PO1
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Project Charter
+# AI_INSTRUCTION: Include project vision, objectives, and key stakeholders. Generate UUID for the charter.
+project_charter:
+  uuid: START-CHR-001  # TYPE: uuid, REQUIRED, FORMAT: {ARTIFACT_UUID}-CHR-{SEQUENCE}
+  project_name: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 100
+  # EXAMPLE: Markdown Inline Editor VS Code Extension
+  project_vision: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 300
+  # EXAMPLE: Enable seamless, distraction-free Markdown editing in VS Code
+  objectives: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 5
+  # SCHEMA: {uuid: string, objective: string}
+  # EXAMPLE:
+  #   - uuid: START-OBJ-001
+  #     objective: "Objective description"
+  project_sponsor: ""  # TYPE: string, REQUIRED, MAX_LENGTH: 100
+  project_start_date: null  # TYPE: date, REQUIRED, FORMAT: YYYY-MM-DD
+  expected_duration: ""  # TYPE: string, OPTIONAL, MAX_LENGTH: 50
+  # EXAMPLE: 3 months, 6 sprints
+
+# Initial Stakeholder Identification
+# AI_INSTRUCTION: Identify key stakeholders at a high level. This will be expanded in ST1. Generate UUID for each stakeholder.
+initial_stakeholders: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, name: string, role: string, interest: enum[High|Medium|Low]}
+  # EXAMPLE:
+  #   - uuid: START-SHK-001
+  #     name: "Stakeholder name"
+  #     role: "Role description"
+  #     interest: High  # High | Medium | Low
+
+# High-Level Scope Boundaries
+# AI_INSTRUCTION: Define high-level scope boundaries. This will be refined in PO1. Generate UUID for scope boundaries.
+scope_boundaries:
+  in_scope: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 8
+    # SCHEMA: {uuid: string, item: string}
+    # EXAMPLE:
+    #   - uuid: START-SCOPE-001
+    #     item: "Scope item description"
+  out_of_scope: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 1, MAX_ITEMS: 5
+    # SCHEMA: {uuid: string, item: string}
+    # EXAMPLE:
+    #   - uuid: START-OOS-001
+    #     item: "Out of scope item"
+
+# High-Level Success Criteria
+# AI_INSTRUCTION: Define high-level success criteria. These will be refined into measurable KPIs in BN1. Generate UUID for each success criterion.
+success_criteria: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 2, MAX_ITEMS: 6
+  # SCHEMA: {uuid: string, criterion: string, priority: enum[Critical|High|Medium|Low]}
+  # EXAMPLE:
+  #   - uuid: START-SUC-001
+  #     criterion: "Success criterion description"
+  #     priority: Critical  # Critical | High | Medium | Low
+
+# Assumptions and Constraints
+# AI_INSTRUCTION: Document key assumptions and constraints. Generate UUID for each.
+assumptions: []  # TYPE: array[object], OPTIONAL, MIN_ITEMS: 0, MAX_ITEMS: 5
+  # SCHEMA: {uuid: string, assumption: string}
+  # EXAMPLE:
+  #   - uuid: START-ASM-001
+  #     assumption: "Assumption description"
+constraints: []  # TYPE: array[object], OPTIONAL, MIN_ITEMS: 0, MAX_ITEMS: 5
+  # SCHEMA: {uuid: string, constraint: string, type: enum[Technical|Business|Regulatory|Resource]}
+  # EXAMPLE:
+  #   - uuid: START-CON-001
+  #     constraint: "Constraint description"
+  #     type: Technical  # Technical | Business | Regulatory | Resource
+
+# Validation Checklist
+# AI_INSTRUCTION: Verify all items are complete before marking status as "complete"
+validation_checklist:
+  - item: "Project charter is documented with clear vision and objectives"
+    checked: false
+  - item: "Initial stakeholders are identified"
+    checked: false
+  - item: "High-level scope boundaries are defined"
+    checked: false
+  - item: "High-level success criteria are established"
+    checked: false
+  - item: "Assumptions and constraints are documented"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: PO1
+  description: "Problem Definition"

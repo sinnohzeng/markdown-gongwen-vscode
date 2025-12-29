@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Base Artifact Schema",
+  "description": "Base schema for all workflow artifacts. All artifacts must conform to this structure.",
+  "type": "object",
+  "required": ["metadata"],
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Artifact metadata section",
+      "required": ["uuid", "workflow_node", "artifact_type", "status"],
+      "properties": {
+        "uuid": {
+          "type": "string",
+          "description": "Workflow node UUID (e.g., PO1, ST1, BH1)",
+          "pattern": "^[A-Z]{2}\\d+$|^START$",
+          "examples": ["PO1", "ST1", "BH1", "START"]
+        },
+        "workflow_node": {
+          "type": "string",
+          "description": "Workflow node identifier",
+          "pattern": "^[A-Z]{2}\\d+$|^START$"
+        },
+        "artifact_type": {
+          "type": "string",
+          "description": "Type of artifact",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "description": "Artifact status",
+          "enum": ["draft", "active", "complete"],
+          "default": "draft"
+        },
+        "dependencies": {
+          "type": "array",
+          "description": "List of workflow node UUIDs this artifact depends on",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z]{2}\\d+$|^START$"
+          },
+          "default": []
+        },
+        "next_node": {
+          "type": ["string", "null"],
+          "description": "Next workflow node UUID in sequence",
+          "pattern": "^[A-Z]{2}\\d+$|^START$"
+        },
+        "created_date": {
+          "type": ["string", "null"],
+          "description": "Creation date in YYYY-MM-DD format",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "last_updated": {
+          "type": ["string", "null"],
+          "description": "Last update date in YYYY-MM-DD format",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        }
+      }
+    },
+    "validation_checklist": {
+      "type": "array",
+      "description": "Validation checklist items",
+      "items": {
+        "type": "object",
+        "required": ["item", "checked"],
+        "properties": {
+          "item": {
+            "type": "string",
+            "description": "Validation item description",
+            "minLength": 1
+          },
+          "checked": {
+            "type": "boolean",
+            "description": "Whether the validation item is checked"
+          }
+        }
+      }
+    },
+    "next_steps": {
+      "type": "object",
+      "description": "Reference to next workflow node",
+      "properties": {
+        "node": {
+          "type": "string",
+          "description": "Next node UUID",
+          "pattern": "^[A-Z]{2}\\d+$|^START$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of next node",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

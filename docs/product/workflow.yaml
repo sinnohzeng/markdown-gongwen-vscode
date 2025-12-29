@@ -20,15 +20,16 @@ nodes:
       - "Success criteria definition (high-level)"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/START-Project-Initiation.md"
-        template: "docs/product/templates/START-Project-Initiation.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/START-Project-Initiation.yaml"
+        template: "docs/product/templates/START-Project-Initiation.template.yaml"
     done_criteria:
-      - "START-Project-Initiation.md exists and validated"
+      - "START-Project-Initiation.yaml exists and validated"
       - "Project charter documented"
       - "Initial stakeholders identified"
       - "High-level scope boundaries defined"
       - "High-level success criteria established"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -48,14 +49,20 @@ nodes:
       - "Problem boundaries (scope definition)"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/PO1-Problem-Definition.md"
-        template: "docs/product/templates/PO1-Problem-Definition.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/PO1-Problem-Definition.yaml"
+        template: "docs/product/templates/PO1-Problem-Definition.template.yaml"
+      - type: "diagram"
+        format: "markdown"  # Markdown for diagrams only
+        path: "docs/product/PO1-Problem-Definition-diagram.md"
+        template: "docs/product/templates/diagram.template.md"
+        source_field: "current_state_analysis.process_flow.mermaid_diagram"  # Field in YAML to extract diagram from
     done_criteria:
-      - "PO1-Problem-Definition.md exists and validated"
+      - "PO1-Problem-Definition.yaml exists and validated"
       - "Root cause identified and documented"
       - "Current state analysis complete"
       - "Problem boundaries defined"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -77,15 +84,16 @@ nodes:
       - "RBAC role mapping"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/ST1-Stakeholder-Analysis.md"
-        template: "docs/product/templates/ST1-Stakeholder-Analysis.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/ST1-Stakeholder-Analysis.yaml"
+        template: "docs/product/templates/ST1-Stakeholder-Analysis.template.yaml"
     done_criteria:
-      - "ST1-Stakeholder-Analysis.md exists and validated"
+      - "ST1-Stakeholder-Analysis.yaml exists and validated"
       - "Power/interest matrix documented"
       - "User personas defined"
       - "RBAC roles mapped"
       - "All stakeholders mapped"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -105,14 +113,15 @@ nodes:
       - "Success metrics definition"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/BN1-Goals-Success-Criteria.md"
-        template: "docs/product/templates/BN1-Goals-Success-Criteria.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/BN1-Goals-Success-Criteria.yaml"
+        template: "docs/product/templates/BN1-Goals-Success-Criteria.template.yaml"
     done_criteria:
-      - "BN1-Goals-Success-Criteria.md exists and validated"
+      - "BN1-Goals-Success-Criteria.yaml exists and validated"
       - "SMART objectives defined and validated"
       - "KPI Framework defined"
       - "Success criteria documented"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -132,15 +141,16 @@ nodes:
       - "Decision rules & exception handling"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/BH1-System-Behavior-Model.md"
-        template: "docs/product/templates/BH1-System-Behavior-Model.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/BH1-System-Behavior-Model.yaml"
+        template: "docs/product/templates/BH1-System-Behavior-Model.template.yaml"
     done_criteria:
-      - "BH1-System-Behavior-Model.md exists and validated"
+      - "BH1-System-Behavior-Model.yaml exists and validated"
       - "All use cases documented"
       - "BPMN flowcharts complete"
       - "Decision tables defined"
       - "Exception logic mapped"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -160,14 +170,15 @@ nodes:
       - "Timeline (schedule/Gantt chart)"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/PM1-Resource-Planning.md"
-        template: "docs/product/templates/PM1-Resource-Planning.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/PM1-Resource-Planning.yaml"
+        template: "docs/product/templates/PM1-Resource-Planning.template.yaml"
     done_criteria:
-      - "PM1-Resource-Planning.md exists and validated"
+      - "PM1-Resource-Planning.yaml exists and validated"
       - "Resource allocation matrix complete"
       - "Budget approved"
       - "Timeline defined"
+    requires_human_input: true  # Budget approval requires human decision
     automation:
       agent: "project-manager-agent"
       script: null
@@ -187,14 +198,15 @@ nodes:
       - "Mitigation strategies"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/PM2-Risk-Assessment.md"
-        template: "docs/product/templates/PM2-Risk-Assessment.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/PM2-Risk-Assessment.yaml"
+        template: "docs/product/templates/PM2-Risk-Assessment.template.yaml"
     done_criteria:
-      - "PM2-Risk-Assessment.md exists and validated"
+      - "PM2-Risk-Assessment.yaml exists and validated"
       - "Risk register complete"
       - "Mitigation strategies defined"
       - "Risk response plan approved"
+    requires_human_input: true  # Risk response plan approval requires human decision
     automation:
       agent: "project-manager-agent"
       script: null
@@ -214,14 +226,15 @@ nodes:
       - "Data constraints & validation rules"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/DM1-Data-Model.md"
-        template: "docs/product/templates/DM1-Data-Model.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/DM1-Data-Model.yaml"
+        template: "docs/product/templates/DM1-Data-Model.template.yaml"
     done_criteria:
-      - "DM1-Data-Model.md exists and validated"
+      - "DM1-Data-Model.yaml exists and validated"
       - "Data dictionary complete"
       - "ERD validated"
       - "NFR specs defined"
+    requires_human_input: false
     automation:
       agent: "solution-architect-agent"
       script: null
@@ -241,15 +254,16 @@ nodes:
       - "User interaction design (HCI patterns)"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/DE1-Design-Model.md"
-        template: "docs/product/templates/DE1-Design-Model.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/DE1-Design-Model.yaml"
+        template: "docs/product/templates/DE1-Design-Model.template.yaml"
     done_criteria:
-      - "DE1-Design-Model.md exists and validated"
+      - "DE1-Design-Model.yaml exists and validated"
       - "User task flows documented"
       - "Design system defined"
       - "Wireframes complete"
       - "Edge cases addressed"
+    requires_human_input: false
     automation:
       agent: "solution-architect-agent"
       script: null
@@ -269,14 +283,15 @@ nodes:
       - "Technical design patterns"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/AR1-Architecture-Model.md"
-        template: "docs/product/templates/AR1-Architecture-Model.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/AR1-Architecture-Model.yaml"
+        template: "docs/product/templates/AR1-Architecture-Model.template.yaml"
     done_criteria:
-      - "AR1-Architecture-Model.md exists and validated"
+      - "AR1-Architecture-Model.yaml exists and validated"
       - "System architecture documented"
       - "Technology stack selected"
       - "API specification complete"
+    requires_human_input: false
     automation:
       agent: "solution-architect-agent"
       script: null
@@ -296,14 +311,15 @@ nodes:
       - "Security architecture (controls)"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/SC1-Security-Model.md"
-        template: "docs/product/templates/SC1-Security-Model.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/SC1-Security-Model.yaml"
+        template: "docs/product/templates/SC1-Security-Model.template.yaml"
     done_criteria:
-      - "SC1-Security-Model.md exists and validated"
+      - "SC1-Security-Model.yaml exists and validated"
       - "Security requirements defined"
       - "Threat model complete"
       - "Security architecture documented"
+    requires_human_input: false
     automation:
       agent: "solution-architect-agent"
       script: null
@@ -323,14 +339,15 @@ nodes:
       - "Acceptance criteria (Gherkin BDD specs)"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/RD2-Requirements-Model.md"
-        template: "docs/product/templates/RD2-Requirements-Model.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/RD2-Requirements-Model.yaml"
+        template: "docs/product/templates/RD2-Requirements-Model.template.yaml"
     done_criteria:
-      - "RD2-Requirements-Model.md exists and validated"
+      - "RD2-Requirements-Model.yaml exists and validated"
       - "All functional requirements validated"
       - "NFRs defined and measurable"
       - "Gherkin acceptance criteria complete"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -350,14 +367,15 @@ nodes:
       - "Release coordination"
     outputs:
       - type: "document"
-        format: "markdown"
-        path: "docs/product/RD1-Release-Planning.md"
-        template: "docs/product/templates/RD1-Release-Planning.template.md"
+        format: "yaml"  # YAML format for structured data
+        path: "docs/product/RD1-Release-Planning.yaml"
+        template: "docs/product/templates/RD1-Release-Planning.template.yaml"
     done_criteria:
-      - "RD1-Release-Planning.md exists and validated"
+      - "RD1-Release-Planning.yaml exists and validated"
       - "Release definition complete"
       - "Features prioritized"
       - "Sprint plan defined"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null
@@ -389,6 +407,7 @@ nodes:
       - "All features implemented"
       - "All tests passing (unit, integration, BDD)"
       - "Test coverage >= threshold"
+    requires_human_input: false
     automation:
       agent: "development-agent"
       script: "scripts/run-tests.sh"
@@ -408,7 +427,7 @@ nodes:
       - "Deployment"
     outputs:
       - type: "report"
-        format: "text"
+        format: "markdown"  # Markdown with YAML frontmatter for structured metadata + rich content
         path: "docs/product/RELEASE-UAT-Report.md"
       - type: "artifact"
         format: "package"
@@ -417,6 +436,7 @@ nodes:
       - "UAT passed"
       - "Release artifacts prepared"
       - "Deployment successful"
+    requires_human_input: true  # UAT requires human validation and approval
     automation:
       agent: "product-owner-agent"
       script: "scripts/deploy.sh"
@@ -436,11 +456,12 @@ nodes:
       - "Enhancement"
     outputs:
       - type: "document"
-        format: "text"
+        format: "markdown"  # Markdown with YAML frontmatter for structured metadata + rich content
         path: "docs/product/BACKLOG-New-Work-Item.md"
     done_criteria:
       - "Work item documented"
       - "Priority assigned"
+    requires_human_input: false
     automation:
       agent: "product-owner-agent"
       script: null

@@ -1,0 +1,75 @@
+# Goals & Success Criteria Template
+# AI_INSTRUCTION: Define measurable objectives using SMART criteria, KPIs, and success metrics.
+
+metadata:
+  uuid: BN1
+  workflow_node: BN1
+  artifact_type: Goals & Success Criteria
+  status: draft  # draft | active | complete
+  dependencies: [ST1]
+  next_node: BH1
+  created_date: null  # YYYY-MM-DD format
+  last_updated: null  # YYYY-MM-DD format
+
+# Measurable Objectives (SMART Criteria)
+# AI_INSTRUCTION: Define measurable objectives using SMART criteria (Specific, Measurable, Achievable, Relevant, Time-bound). Generate UUID for each objective.
+objectives: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, objective: string, specific: string, measurable: string, achievable: string, relevant: string, time_bound: string}
+  # EXAMPLE:
+  #   - uuid: BN1-GOAL-001
+  #     objective: "Objective description"
+  #     specific: "Specific aspect"
+  #     measurable: "How it's measured"
+  #     achievable: "Why it's achievable"
+  #     relevant: "Why it's relevant"
+  #     time_bound: "Time frame"
+
+# Key Performance Indicators (KPI Framework)
+# AI_INSTRUCTION: Define KPIs that measure progress toward objectives. Generate UUID for each KPI.
+kpis: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 15
+  # SCHEMA: {uuid: string, name: string, description: string, target_value: string, unit: string, measurement_frequency: string, related_objective: string (UUID reference)}
+  # EXAMPLE:
+  #   - uuid: BN1-KPI-001
+  #     name: "KPI name"
+  #     description: "KPI description"
+  #     target_value: "100"
+  #     unit: "percentage"  # optional
+  #     measurement_frequency: "Weekly"
+  #     related_objective: "BN1-GOAL-001"  # references objective UUID
+
+# Success Metrics Definition
+# AI_INSTRUCTION: Define success metrics that indicate when objectives are achieved. Generate UUID for each success metric.
+success_metrics: []  # TYPE: array[object], REQUIRED, MIN_ITEMS: 3, MAX_ITEMS: 10
+  # SCHEMA: {uuid: string, metric: string, success_criteria: string, baseline_value: string, target_value: string, related_objective: string (UUID reference)}
+  # EXAMPLE:
+  #   - uuid: BN1-MET-001
+  #     metric: "Metric name"
+  #     success_criteria: "Success criteria description"
+  #     baseline_value: "50"
+  #     target_value: "100"
+  #     related_objective: "BN1-GOAL-001"  # references objective UUID
+
+# Validation Checklist
+# AI_INSTRUCTION: Verify all items are complete before marking status as "complete"
+validation_checklist:
+  - item: "All objectives follow SMART criteria"
+    checked: false
+  - item: "KPIs are measurable and aligned with objectives"
+    checked: false
+  - item: "Success metrics are clearly defined with baseline and target values"
+    checked: false
+  - item: "All KPIs reference related objectives"
+    checked: false
+  - item: "All success metrics reference related objectives"
+    checked: false
+  - item: "All UUIDs generated and unique"
+    checked: false
+  - item: "Dependencies on ST1 are satisfied"
+    checked: false
+  - item: "Status updated to 'complete'"
+    checked: false
+
+# Next Steps
+next_steps:
+  node: BH1
+  description: "System Behavior Model"
