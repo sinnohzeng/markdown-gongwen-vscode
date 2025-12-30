@@ -1,0 +1,186 @@
+metadata:
+  uuid: ST1
+  workflow_node: ST1
+  artifact_type: Stakeholder Analysis
+  status: complete
+  dependencies: [PO1]
+  next_node: BN1
+  created_date: 2025-12-30
+  last_updated: 2025-12-30
+
+# Stakeholder Identification Matrix
+stakeholders:
+  - uuid: ST1-SHK-001
+    name: Markdown Content Creators
+    role: Primary end users who create documentation, notes, and content in Markdown format
+    organization: Various (individual users, teams, organizations)
+  - uuid: ST1-SHK-002
+    name: VS Code Users
+    role: Developers and writers who use VS Code as their primary code and text editor
+    organization: Various (individual users, development teams)
+  - uuid: ST1-SHK-003
+    name: Project Maintainer
+    role: Lead developer responsible for extension development, maintenance, and release management
+    organization: Open Source Project
+  - uuid: ST1-SHK-004
+    name: Open Source Contributors
+    role: Community developers who contribute features, bug fixes, documentation, and improvements
+    organization: Open Source Community
+  - uuid: ST1-SHK-005
+    name: VS Code Extension Marketplace Users
+    role: Users who discover, install, and rate extensions from the VS Code Marketplace
+    organization: VS Code Community
+  - uuid: ST1-SHK-006
+    name: Technical Writers
+    role: Professionals who create technical documentation, API docs, and user guides in Markdown
+    organization: Various (tech companies, open source projects)
+  - uuid: ST1-SHK-007
+    name: Documentation Teams
+    role: Teams responsible for maintaining project documentation, wikis, and knowledge bases
+    organization: Various (companies, open source projects)
+  - uuid: ST1-SHK-008
+    name: VS Code Extension API Team
+    role: Microsoft team maintaining VS Code Extension API that the extension depends on
+    organization: Microsoft
+  - uuid: ST1-SHK-009
+    name: Markdown Tool Maintainers
+    role: Maintainers of Markdown parsers, linters, and other tooling that must remain compatible
+    organization: Various (open source projects)
+
+# Power/Interest Classification
+power_interest_classification:
+  - stakeholder_uuid: ST1-SHK-001
+    power: Medium
+    interest: High
+    engagement: "Keep Informed"
+  - stakeholder_uuid: ST1-SHK-002
+    power: Medium
+    interest: High
+    engagement: "Keep Informed"
+  - stakeholder_uuid: ST1-SHK-003
+    power: High
+    interest: High
+    engagement: "Manage Closely"
+  - stakeholder_uuid: ST1-SHK-004
+    power: Medium
+    interest: High
+    engagement: "Keep Informed"
+  - stakeholder_uuid: ST1-SHK-005
+    power: Low
+    interest: Medium
+    engagement: "Monitor"
+  - stakeholder_uuid: ST1-SHK-006
+    power: Medium
+    interest: High
+    engagement: "Keep Informed"
+  - stakeholder_uuid: ST1-SHK-007
+    power: Medium
+    interest: Medium
+    engagement: "Keep Informed"
+  - stakeholder_uuid: ST1-SHK-008
+    power: High
+    interest: Low
+    engagement: "Keep Satisfied"
+  - stakeholder_uuid: ST1-SHK-009
+    power: Medium
+    interest: Medium
+    engagement: "Keep Informed"
+
+# User Personas
+user_personas:
+  - uuid: ST1-PER-001
+    name: "Alex the Developer"
+    role: Software developer who writes technical documentation and README files
+    goals:
+      - "Quickly document code changes and features"
+      - "Maintain clean, readable documentation"
+      - "Focus on content without syntax distractions"
+    pain_points:
+      - "Syntax markers clutter the view when trying to focus on content"
+      - "Must constantly verify syntax correctness"
+      - "Interrupted writing flow when fixing syntax errors"
+  - uuid: ST1-PER-002
+    name: "Sam the Technical Writer"
+    role: Professional technical writer creating comprehensive documentation
+    goals:
+      - "Create well-formatted documentation efficiently"
+      - "See formatted output while editing"
+      - "Maintain consistency across documentation"
+    pain_points:
+      - "Cannot visualize formatted output while editing"
+      - "High cognitive load from parsing syntax"
+      - "Time spent on syntax verification instead of content"
+  - uuid: ST1-PER-003
+    name: "Jordan the Note-Taker"
+    role: Knowledge worker who uses Markdown for notes and documentation
+    goals:
+      - "Capture ideas quickly without syntax friction"
+      - "Maintain readable notes"
+      - "Edit notes seamlessly"
+    pain_points:
+      - "Syntax markers distract from content"
+      - "Must remember Markdown syntax rules"
+      - "Visual clutter reduces note readability"
+  - uuid: ST1-PER-004
+    name: "Casey the Open Source Maintainer"
+    role: Open source project maintainer managing project documentation
+    goals:
+      - "Maintain project documentation efficiently"
+      - "Ensure documentation quality"
+      - "Collaborate with contributors on docs"
+    pain_points:
+      - "Time spent on syntax instead of content review"
+      - "Difficulty reviewing documentation changes"
+      - "Syntax errors in contributor submissions"
+
+# RBAC Role Map
+rbac_roles:
+  - uuid: ST1-RBAC-001
+    role: "Extension User"
+    permissions:
+      - "Install extension from VS Code Marketplace"
+      - "Enable/disable decorations in Markdown files"
+      - "Toggle decorations on/off via toolbar or command"
+      - "Edit Markdown files with inline formatting visualization"
+      - "Reveal raw Markdown syntax on selection/click"
+  - uuid: ST1-RBAC-002
+    role: "Extension Contributor"
+    permissions:
+      - "All Extension User permissions"
+      - "Submit pull requests with code changes"
+      - "Report bugs and suggest features via GitHub issues"
+      - "Review and test extension changes"
+      - "Contribute to documentation"
+  - uuid: ST1-RBAC-003
+    role: "Extension Maintainer"
+    permissions:
+      - "All Extension Contributor permissions"
+      - "Merge pull requests"
+      - "Release new versions to VS Code Marketplace"
+      - "Manage GitHub repository settings"
+      - "Coordinate with VS Code Extension API team"
+      - "Make architectural and design decisions"
+
+# Validation Checklist
+validation_checklist:
+  - item: "Stakeholder identification matrix includes all key stakeholders"
+    checked: true
+  - item: "Power/interest classification completed for all stakeholders"
+    checked: true
+  - item: "Engagement strategy mapped for each stakeholder"
+    checked: true
+  - item: "User personas are defined with goals and pain points"
+    checked: true
+  - item: "RBAC roles are mapped with permissions"
+    checked: true
+  - item: "All UUIDs generated and unique"
+    checked: true
+  - item: "Dependencies on PO1 are satisfied"
+    checked: true
+  - item: "Status updated to 'complete'"
+    checked: true
+
+# Next Steps
+next_steps:
+  node: BN1
+  description: "Goals & Success Criteria"

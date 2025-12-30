@@ -123,3 +123,6 @@ dist
 # built artifacts
 build/
 dist/
+
+# context information
+context-information/
