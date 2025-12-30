@@ -1,0 +1,35 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Workflow state files
+.workflow-state.yaml
+*.state.yaml
+
+# Generated artifacts (if they should not be committed)
+# Uncomment if generated artifacts should be ignored:
+# *.yaml
+# !workflow.yaml
+# !templates/**/*.yaml
+# !templates/**/*.md
+
+# Generated diagrams
+PROCESS_WORKFLOW.md
