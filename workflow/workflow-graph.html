@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Dependency Graph - Software Development Lifecycle</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        #workflow-graph {
+            width: 100%;
+            height: 800px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+        .legend-edge {
+            width: 30px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        .info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f4f8;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Software Development Lifecycle</h1>
+        <div class="subtitle">Complete workflow from problem definition to stable release with iteration loop</div>
+        
+        <div id="workflow-graph"></div>
+        
+        <div class="legend">
+            <div><strong>Node Roles:</strong></div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4A90E2;"></div>
+                <span>Product Owner</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #50C878;"></div>
+                <span>Project Manager</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FF6B6B;"></div>
+                <span>Solution Architecture Team</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #FFA500;"></div>
+                <span>Development Team</span>
+            </div>
+            
+            <div style="width: 100%; margin-top: 10px;"><strong>Edge Types:</strong></div>
+            <div class="legend-item">
+                <div class="legend-edge" style="background: #34495E;"></div>
+                <span>Sequential</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-edge" style="background: #9B59B6;"></div>
+                <span>Parallel</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-edge" style="background: #E74C3C; border-style: dashed;"></div>
+                <span>Loop</span>
+            </div>
+        </div>
+        
+        <div class="info">
+            <strong>ℹ️ Tips:</strong> Hover over nodes to see details. Drag nodes to rearrange. 
+            Nodes marked with ⚠ require human input. Use mouse wheel to zoom.
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Graph data
+        const nodes = new vis.DataSet([
+        {
+                "id": "START",
+                "label": "0. Project Initiation \u26a0",
+                "title": "Project Initiation\nUUID: 00-START\nRole: Product Owner\nType: start\n\u26a0 Requires Human Input",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "PO1",
+                "label": "1. Problem Definition",
+                "title": "Problem Definition\nUUID: 01-PO\nRole: Product Owner\nType: task",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "ST1",
+                "label": "2. Stakeholder Analysis \u26a0",
+                "title": "Stakeholder Analysis\nUUID: 02-ST\nRole: Product Owner\nType: task\n\u26a0 Requires Human Input",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "BN1",
+                "label": "3. Goals & Success Criteria \u26a0",
+                "title": "Goals & Success Criteria\nUUID: 03-BN\nRole: Product Owner\nType: task\n\u26a0 Requires Human Input",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "BH1",
+                "label": "4. System Behavior Model",
+                "title": "System Behavior Model\nUUID: 04-BH\nRole: Product Owner\nType: task",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "PM1",
+                "label": "5. Resource Planning \u26a0",
+                "title": "Resource Planning\nUUID: 05-PM\nRole: Project Manager\nType: task\n\u26a0 Requires Human Input",
+                "color": "#50C878",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "PM2",
+                "label": "6. Risk Assessment \u26a0",
+                "title": "Risk Assessment\nUUID: 06-PM\nRole: Project Manager\nType: task\n\u26a0 Requires Human Input",
+                "color": "#50C878",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "DM1",
+                "label": "7. Data Model",
+                "title": "Data Model\nUUID: 07-DM\nRole: Solution Architecture Team\nType: task",
+                "color": "#FF6B6B",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "DE1",
+                "label": "8. Design Model \u26a0",
+                "title": "Design Model\nUUID: 08-DE\nRole: Solution Architecture Team\nType: task\n\u26a0 Requires Human Input",
+                "color": "#FF6B6B",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "AR1",
+                "label": "9. Architecture Model \u26a0",
+                "title": "Architecture Model\nUUID: 09-AR\nRole: Solution Architecture Team\nType: task\n\u26a0 Requires Human Input",
+                "color": "#FF6B6B",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "SC1",
+                "label": "10. Security Model \u26a0",
+                "title": "Security Model\nUUID: 10-SC\nRole: Solution Architecture Team\nType: task\n\u26a0 Requires Human Input",
+                "color": "#FF6B6B",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "RD2",
+                "label": "11. Requirements Model \u26a0",
+                "title": "Requirements Model\nUUID: 11-RD\nRole: Product Owner + Project Manager\nType: task\n\u26a0 Requires Human Input",
+                "color": "#95A5A6",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "RD1",
+                "label": "12. Release Planning \u26a0",
+                "title": "Release Planning\nUUID: 12-RD\nRole: Product Owner + Project Manager\nType: task\n\u26a0 Requires Human Input",
+                "color": "#95A5A6",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "DEV1",
+                "label": "13. Code Generation & Testing",
+                "title": "Code Generation & Testing\nUUID: 13-DEV\nRole: Development Team\nType: task",
+                "color": "#FFA500",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "REL1",
+                "label": "14. Stable Release \u26a0",
+                "title": "Stable Release\nUUID: 14-REL\nRole: Product Owner\nType: task\n\u26a0 Requires Human Input",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        },
+        {
+                "id": "BL1",
+                "label": "15. New Work Item \u26a0",
+                "title": "New Work Item\nUUID: 15-BL\nRole: Product Owner\nType: task\n\u26a0 Requires Human Input",
+                "color": "#4A90E2",
+                "shape": "box",
+                "font": {
+                        "size": 12
+                },
+                "margin": 10,
+                "widthConstraint": {
+                        "maximum": 200
+                }
+        }
+]);
+        const edges = new vis.DataSet([
+        {
+                "from": "START",
+                "to": "PO1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "PO1",
+                "to": "ST1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "ST1",
+                "to": "BN1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BN1",
+                "to": "BH1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "PM1",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "PAR",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "PM2",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "PAR",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "DM1",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "PAR",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "DE1",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "PAR",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "AR1",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "PAR",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "SC1",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "PAR",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "DM1",
+                "to": "AR1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "AR1",
+                "to": "SC1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BH1",
+                "to": "RD2",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "ALL",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "DM1",
+                "to": "RD2",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "ALL",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "DE1",
+                "to": "RD2",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "ALL",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "AR1",
+                "to": "RD2",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "ALL",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "SC1",
+                "to": "RD2",
+                "color": {
+                        "color": "#9B59B6"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "ALL",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "RD2",
+                "to": "RD1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "RD1",
+                "to": "DEV1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "DEV1",
+                "to": "REL1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "REL1",
+                "to": "BL1",
+                "color": {
+                        "color": "#34495E"
+                },
+                "dashes": false,
+                "width": 2,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        },
+        {
+                "from": "BL1",
+                "to": "BH1",
+                "color": {
+                        "color": "#E74C3C"
+                },
+                "dashes": true,
+                "width": 3,
+                "label": "",
+                "font": {
+                        "size": 10,
+                        "align": "middle"
+                },
+                "arrows": "to"
+        }
+]);
+        
+        // Container
+        const container = document.getElementById('workflow-graph');
+        
+        // Graph options
+        const options = {
+            nodes: {
+                shape: 'box',
+                font: {
+                    size: 12,
+                    face: 'Arial'
+                },
+                borderWidth: 2,
+                shadow: true,
+                margin: 10
+            },
+            edges: {
+                arrows: {
+                    to: {
+                        enabled: true,
+                        scaleFactor: 1.2
+                    }
+                },
+                smooth: {
+                    type: 'cubicBezier',
+                    forceDirection: 'horizontal',
+                    roundness: 0.4
+                },
+                font: {
+                    size: 10,
+                    align: 'middle'
+                },
+                shadow: true
+            },
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: 'UD',
+                    sortMethod: 'directed',
+                    levelSeparation: 150,
+                    nodeSpacing: 200,
+                    treeSpacing: 200,
+                    blockShifting: true,
+                    edgeMinimization: true,
+                    parentCentralization: true
+                }
+            },
+            physics: {
+                enabled: false
+            },
+            interaction: {
+                dragNodes: true,
+                dragView: true,
+                zoomView: true,
+                hover: true,
+                tooltipDelay: 200
+            }
+        };
+        
+        // Create network
+        const data = { nodes: nodes, edges: edges };
+        const network = new vis.Network(container, data, options);
+        
+        // Add event listeners
+        network.on('click', function(params) {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = nodes.get(nodeId);
+                console.log('Selected node:', node);
+            }
+        });
+        
+        network.on('hoverNode', function(params) {
+            container.style.cursor = 'pointer';
+        });
+        
+        network.on('blurNode', function(params) {
+            container.style.cursor = 'default';
+        });
+    </script>
+</body>
+</html>

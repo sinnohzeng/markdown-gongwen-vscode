@@ -29,7 +29,7 @@ def validate_artifact(artifact_path, schema_path=None):
     
     # Default to base schema if not specified
     if schema_path is None:
-        schema_path = Path(__file__).parent.parent.parent / "docs" / "product" / "schemas" / "base-artifact-schema.json"
+        schema_path = Path(__file__).parent.parent.parent / "workflow" / "schemas" / "base-artifact-schema.json"
     
     schema = load_schema(schema_path)
     

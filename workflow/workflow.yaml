@@ -457,8 +457,8 @@ nodes:
 
   REL1:
     id: "REL1"
-    uuid: "15-REL"
-    display_number: 15
+    uuid: "14-REL"
+    display_number: 14
     name: "Stable Release"
     role: "Product Owner"
     type: "task"
@@ -486,13 +486,13 @@ nodes:
 
   BL1:
     id: "BL1"
-    uuid: "16-BL"
-    display_number: 16
+    uuid: "15-BL"
+    display_number: 15
     name: "New Work Item"
     role: "Product Owner"
     type: "task"
     description: "New feature request, bug fix, or enhancement"
-    dependencies: ["15-REL"]
+    dependencies: ["14-REL"]
     activities:
       - "Feature request"
       - "Bug fix"
@@ -537,21 +537,10 @@ edges:
   - from: "AR1"
     to: "SC1"
     type: "sequential"
-  - from: "BH1"
+  - from: ["BH1", "DM1", "DE1", "AR1", "SC1"]
     to: "RD2"
-    type: "sequential"
-  - from: "DM1"
-    to: "RD2"
-    type: "sequential"
-  - from: "DE1"
-    to: "RD2"
-    type: "sequential"
-  - from: "AR1"
-    to: "RD2"
-    type: "sequential"
-  - from: "SC1"
-    to: "RD2"
-    type: "sequential"
+    type: "parallel"
+    join: "all"  # RD2 requires all dependencies to complete
   - from: "RD2"
     to: "RD1"
     type: "sequential"

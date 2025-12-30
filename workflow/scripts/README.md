@@ -79,13 +79,55 @@ python3 workflow/scripts/verify-workflow.py --workflow path/to/workflow.yaml --t
 
 ---
 
+## generate-workflow-graph.py
+
+Generates an interactive HTML visualization of the workflow dependency graph using vis-network.
+
+### Usage
+
+```bash
+# Generate workflow graph HTML
+# Run from project root:
+python3 workflow/scripts/generate-workflow-graph.py
+
+# Custom paths
+python3 workflow/scripts/generate-workflow-graph.py --workflow path/to/workflow.yaml --output path/to/output.html
+```
+
+### Requirements
+
+- Python 3.6+
+- PyYAML (`pip install pyyaml`)
+
+### Features
+
+- **Interactive graph**: Drag nodes, zoom, pan
+- **Color-coded nodes**: By role (Product Owner, Project Manager, etc.)
+- **Edge types**: Sequential (gray), Parallel (purple), Loop (red dashed)
+- **Human input indicators**: Nodes requiring human input are marked with ⚠
+- **Hierarchical layout**: Automatic top-to-bottom layout
+- **Tooltips**: Hover over nodes to see details (UUID, role, type)
+
+### Output
+
+Generates `workflow/workflow-graph.html` - a standalone HTML file that can be opened in any browser. The file includes:
+- All workflow nodes with their display numbers
+- All dependency edges
+- Legend explaining colors and edge types
+- Interactive controls for navigation
+
+---
+
 ## Workflow Structure
 
 - **Source of Truth**: `workflow/workflow.yaml`
-- **Generated Output**: `workflow/PROCESS_WORKFLOW.md` (Mermaid diagram)
-- **Templates**: `workflow/templates/*.template.md`
+- **Generated Output**: 
+  - `workflow/PROCESS_WORKFLOW.md` (Mermaid diagram)
+  - `workflow/workflow-graph.html` (Interactive HTML graph)
+- **Templates**: `workflow/templates/*.template.yaml`
 - **Scripts**: 
-  - `workflow/scripts/generate-mermaid.py` - Generate workflow diagram
+  - `workflow/scripts/generate-mermaid.py` - Generate Mermaid workflow diagram
+  - `workflow/scripts/generate-workflow-graph.py` - Generate interactive HTML graph
   - `workflow/scripts/verify-workflow.py` - Verify workflow integrity
 
-The YAML file contains all workflow metadata (dependencies, outputs, done criteria, automation) while the Mermaid diagram provides visual representation.
+The YAML file contains all workflow metadata (dependencies, outputs, done criteria, automation) while the diagrams provide visual representation.
