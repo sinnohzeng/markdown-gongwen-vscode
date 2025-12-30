@@ -1,5 +1,7 @@
 # Project Initiation Template
 # AI_INSTRUCTION: Create a high-level project charter that establishes the foundation for the project.
+# REQUIRED INPUT: The workflow must receive an initial problem statement or project context before executing this node.
+# Use the provided problem statement/context to inform project_name, project_vision, objectives, and scope_boundaries.
 
 metadata:
   uuid: START

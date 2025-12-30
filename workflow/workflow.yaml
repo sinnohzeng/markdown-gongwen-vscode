@@ -2,11 +2,43 @@ workflow:
   name: "Software Development Lifecycle"
   version: "1.0.0"
   description: "Complete workflow from problem definition to stable release with iteration loop"
+  
+  # Execution Rules
+  execution:
+    # How to handle nodes that require human input
+    human_input_handling:
+      # When a node has requires_human_input: true, the execution engine MUST:
+      pause_before: true  # Pause execution BEFORE starting the node
+      wait_for_approval: true  # Wait for explicit user approval/input
+      store_input: true  # Store user input/approval in workflow state
+      resume_after: true  # Resume execution only after input is received
+      
+      # Input format and validation
+      input_format:
+        approval: "boolean"  # Simple approval (true/false)
+        feedback: "text"  # Optional feedback/notes
+        timestamp: "datetime"  # When input was provided
+        
+      # What happens if input is not provided
+      timeout: null  # null = wait indefinitely, or specify duration (e.g., "24h")
+      on_timeout: "pause"  # pause | skip | fail
+      
+      # Where to store input/state
+      state_file: ".workflow-state.yaml"  # Workflow execution state
+      
+    # Node execution order
+    execution_order:
+      check_dependencies: true  # Verify all dependencies are complete
+      check_human_input: true  # Check if human input is required
+      pause_if_needed: true  # Pause if requires_human_input: true
+      execute_node: true  # Execute the node (generate artifacts)
+      validate_outputs: true  # Run all validators
+      mark_complete: true  # Update node status to complete
 
 nodes:
   START:
     id: "START"
-    uuid: "START"
+    uuid: "00-START"
     display_number: 0
     name: "Project Initiation"
     role: "Product Owner"
@@ -18,31 +50,39 @@ nodes:
       - "Initial stakeholder identification"
       - "Project scope boundaries (high-level)"
       - "Success criteria definition (high-level)"
+    input:
+      required: true
+      description: "Initial problem statement or project context"
+      format: "text"
+      example: |
+        Problem: Users experience significant cognitive burden when editing Markdown files in VS Code.
+        Context: Current Markdown editing requires users to mentally parse syntax symbols, which distracts from content creation.
+        Goal: Create an inline editing experience that hides syntax and focuses on content.
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/START-Project-Initiation.yaml"
-        template: "docs/product/templates/START-Project-Initiation.template.yaml"
+        path: "workflow/00-START-Project-Initiation.yaml"
+        template: "workflow/templates/00-START-Project-Initiation.template.yaml"
     done_criteria:
-      - "START-Project-Initiation.yaml exists and validated"
+      - "00-START-Project-Initiation.yaml exists and validated"
       - "Project charter documented"
       - "Initial stakeholders identified"
       - "High-level scope boundaries defined"
       - "High-level success criteria established"
-    requires_human_input: false
+    requires_human_input: true  # Project charter requires stakeholder sign-off and approval
     automation:
       agent: "product-owner-agent"
       script: null
 
   PO1:
     id: "PO1"
-    uuid: "PO1"
+    uuid: "01-PO"
     display_number: 1
     name: "Problem Definition"
     role: "Product Owner"
     type: "task"
     description: "Root cause analysis and problem boundaries"
-    dependencies: ["START"]
+    dependencies: ["00-START"]
     activities:
       - "Root cause analysis (RCA methodology)"
       - "Current state analysis (as-is process mapping)"
@@ -50,15 +90,15 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/PO1-Problem-Definition.yaml"
-        template: "docs/product/templates/PO1-Problem-Definition.template.yaml"
+        path: "workflow/01-PO-Problem-Definition.yaml"
+        template: "workflow/templates/01-PO-Problem-Definition.template.yaml"
       - type: "diagram"
         format: "markdown"  # Markdown for diagrams only
-        path: "docs/product/PO1-Problem-Definition-diagram.md"
-        template: "docs/product/templates/diagram.template.md"
+        path: "workflow/01-PO-Problem-Definition-diagram.md"
+        template: "workflow/templates/diagram.template.md"
         source_field: "current_state_analysis.process_flow.mermaid_diagram"  # Field in YAML to extract diagram from
     done_criteria:
-      - "PO1-Problem-Definition.yaml exists and validated"
+      - "01-PO-Problem-Definition.yaml exists and validated"
       - "Root cause identified and documented"
       - "Current state analysis complete"
       - "Problem boundaries defined"
@@ -69,13 +109,13 @@ nodes:
 
   ST1:
     id: "ST1"
-    uuid: "ST1"
+    uuid: "02-ST"
     display_number: 2
     name: "Stakeholder Analysis"
     role: "Product Owner"
     type: "task"
     description: "Stakeholder identification and engagement strategy"
-    dependencies: ["PO1"]
+    dependencies: ["01-PO"]
     activities:
       - "Stakeholder identification matrix"
       - "Power/interest classification"
@@ -85,28 +125,28 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/ST1-Stakeholder-Analysis.yaml"
-        template: "docs/product/templates/ST1-Stakeholder-Analysis.template.yaml"
+        path: "workflow/02-ST-Stakeholder-Analysis.yaml"
+        template: "workflow/templates/02-ST-Stakeholder-Analysis.template.yaml"
     done_criteria:
-      - "ST1-Stakeholder-Analysis.yaml exists and validated"
+      - "02-ST-Stakeholder-Analysis.yaml exists and validated"
       - "Power/interest matrix documented"
       - "User personas defined"
       - "RBAC roles mapped"
       - "All stakeholders mapped"
-    requires_human_input: false
+    requires_human_input: true  # Stakeholder identification requires organizational knowledge and validation
     automation:
       agent: "product-owner-agent"
       script: null
 
   BN1:
     id: "BN1"
-    uuid: "BN1"
+    uuid: "03-BN"
     display_number: 3
     name: "Goals & Success Criteria"
     role: "Product Owner"
     type: "task"
     description: "Define measurable objectives and KPIs"
-    dependencies: ["ST1"]
+    dependencies: ["02-ST"]
     activities:
       - "Measurable objectives (SMART criteria)"
       - "Key performance indicators (KPIs)"
@@ -114,27 +154,27 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/BN1-Goals-Success-Criteria.yaml"
-        template: "docs/product/templates/BN1-Goals-Success-Criteria.template.yaml"
+        path: "workflow/03-BN-Goals-Success-Criteria.yaml"
+        template: "workflow/templates/03-BN-Goals-Success-Criteria.template.yaml"
     done_criteria:
-      - "BN1-Goals-Success-Criteria.yaml exists and validated"
+      - "03-BN-Goals-Success-Criteria.yaml exists and validated"
       - "SMART objectives defined and validated"
       - "KPI Framework defined"
       - "Success criteria documented"
-    requires_human_input: false
+    requires_human_input: true  # Goals and KPIs require stakeholder alignment and approval
     automation:
       agent: "product-owner-agent"
       script: null
 
   BH1:
     id: "BH1"
-    uuid: "BH1"
+    uuid: "04-BH"
     display_number: 4
     name: "System Behavior Model"
     role: "Product Owner"
     type: "task"
     description: "Use cases, process flows, and business rules"
-    dependencies: ["BN1"]
+    dependencies: ["03-BN"]
     activities:
       - "Use case specifications (actors, main/alternative flows)"
       - "Process flow diagrams (BPMN notation)"
@@ -142,10 +182,10 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/BH1-System-Behavior-Model.yaml"
-        template: "docs/product/templates/BH1-System-Behavior-Model.template.yaml"
+        path: "workflow/04-BH-System-Behavior-Model.yaml"
+        template: "workflow/templates/04-BH-System-Behavior-Model.template.yaml"
     done_criteria:
-      - "BH1-System-Behavior-Model.yaml exists and validated"
+      - "04-BH-System-Behavior-Model.yaml exists and validated"
       - "All use cases documented"
       - "BPMN flowcharts complete"
       - "Decision tables defined"
@@ -157,13 +197,13 @@ nodes:
 
   PM1:
     id: "PM1"
-    uuid: "PM1"
+    uuid: "05-PM"
     display_number: 5
     name: "Resource Planning"
     role: "Project Manager"
     type: "task"
     description: "Team composition, budget, and timeline"
-    dependencies: ["BH1"]
+    dependencies: ["04-BH"]
     activities:
       - "Team composition (role allocation)"
       - "Budget allocation (cost estimation)"
@@ -171,10 +211,10 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/PM1-Resource-Planning.yaml"
-        template: "docs/product/templates/PM1-Resource-Planning.template.yaml"
+        path: "workflow/05-PM-Resource-Planning.yaml"
+        template: "workflow/templates/05-PM-Resource-Planning.template.yaml"
     done_criteria:
-      - "PM1-Resource-Planning.yaml exists and validated"
+      - "05-PM-Resource-Planning.yaml exists and validated"
       - "Resource allocation matrix complete"
       - "Budget approved"
       - "Timeline defined"
@@ -185,13 +225,13 @@ nodes:
 
   PM2:
     id: "PM2"
-    uuid: "PM2"
+    uuid: "06-PM"
     display_number: 6
     name: "Risk Assessment"
     role: "Project Manager"
     type: "task"
     description: "Risk register and mitigation strategies"
-    dependencies: ["BH1"]
+    dependencies: ["04-BH"]
     activities:
       - "Risk register (identification matrix)"
       - "Risk response planning"
@@ -199,10 +239,10 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/PM2-Risk-Assessment.yaml"
-        template: "docs/product/templates/PM2-Risk-Assessment.template.yaml"
+        path: "workflow/06-PM-Risk-Assessment.yaml"
+        template: "workflow/templates/06-PM-Risk-Assessment.template.yaml"
     done_criteria:
-      - "PM2-Risk-Assessment.yaml exists and validated"
+      - "06-PM-Risk-Assessment.yaml exists and validated"
       - "Risk register complete"
       - "Mitigation strategies defined"
       - "Risk response plan approved"
@@ -213,13 +253,13 @@ nodes:
 
   DM1:
     id: "DM1"
-    uuid: "DM1"
+    uuid: "07-DM"
     display_number: 7
     name: "Data Model"
     role: "Solution Architecture Team"
     type: "task"
     description: "Data dictionary, ERD, and data constraints"
-    dependencies: ["BH1"]
+    dependencies: ["04-BH"]
     activities:
       - "Data dictionary (schema definitions)"
       - "Entity-relationship diagrams (ERD)"
@@ -227,10 +267,10 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/DM1-Data-Model.yaml"
-        template: "docs/product/templates/DM1-Data-Model.template.yaml"
+        path: "workflow/07-DM-Data-Model.yaml"
+        template: "workflow/templates/07-DM-Data-Model.template.yaml"
     done_criteria:
-      - "DM1-Data-Model.yaml exists and validated"
+      - "07-DM-Data-Model.yaml exists and validated"
       - "Data dictionary complete"
       - "ERD validated"
       - "NFR specs defined"
@@ -241,13 +281,13 @@ nodes:
 
   DE1:
     id: "DE1"
-    uuid: "DE1"
+    uuid: "08-DE"
     display_number: 8
     name: "Design Model"
     role: "Solution Architecture Team"
     type: "task"
     description: "User task flows, UI/UX specs, and interaction design"
-    dependencies: ["BH1"]
+    dependencies: ["04-BH"]
     activities:
       - "User task flows (interaction sequences)"
       - "UI/UX specifications (wireframes/mockups)"
@@ -255,28 +295,28 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/DE1-Design-Model.yaml"
-        template: "docs/product/templates/DE1-Design-Model.template.yaml"
+        path: "workflow/08-DE-Design-Model.yaml"
+        template: "workflow/templates/08-DE-Design-Model.template.yaml"
     done_criteria:
-      - "DE1-Design-Model.yaml exists and validated"
+      - "08-DE-Design-Model.yaml exists and validated"
       - "User task flows documented"
       - "Design system defined"
       - "Wireframes complete"
       - "Edge cases addressed"
-    requires_human_input: false
+    requires_human_input: true  # UI/UX specifications require stakeholder approval and user validation
     automation:
       agent: "solution-architect-agent"
       script: null
 
   AR1:
     id: "AR1"
-    uuid: "AR1"
+    uuid: "09-AR"
     display_number: 9
     name: "Architecture Model"
     role: "Solution Architecture Team"
     type: "task"
     description: "System architecture, technology stack, and technical design"
-    dependencies: ["BH1", "DM1"]
+    dependencies: ["04-BH", "07-DM"]
     activities:
       - "System architecture (component diagrams)"
       - "Technology stack selection"
@@ -284,27 +324,27 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/AR1-Architecture-Model.yaml"
-        template: "docs/product/templates/AR1-Architecture-Model.template.yaml"
+        path: "workflow/09-AR-Architecture-Model.yaml"
+        template: "workflow/templates/09-AR-Architecture-Model.template.yaml"
     done_criteria:
-      - "AR1-Architecture-Model.yaml exists and validated"
+      - "09-AR-Architecture-Model.yaml exists and validated"
       - "System architecture documented"
       - "Technology stack selected"
       - "API specification complete"
-    requires_human_input: false
+    requires_human_input: true  # Architecture and technology stack decisions require senior architect/CTO approval
     automation:
       agent: "solution-architect-agent"
       script: null
 
   SC1:
     id: "SC1"
-    uuid: "SC1"
+    uuid: "10-SC"
     display_number: 10
     name: "Security Model"
     role: "Solution Architecture Team"
     type: "task"
     description: "Security requirements, threat model, and security architecture"
-    dependencies: ["BH1", "AR1"]
+    dependencies: ["04-BH", "09-AR"]
     activities:
       - "Security requirements (constraints)"
       - "Threat model (attack surface analysis)"
@@ -312,27 +352,27 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/SC1-Security-Model.yaml"
-        template: "docs/product/templates/SC1-Security-Model.template.yaml"
+        path: "workflow/10-SC-Security-Model.yaml"
+        template: "workflow/templates/10-SC-Security-Model.template.yaml"
     done_criteria:
-      - "SC1-Security-Model.yaml exists and validated"
+      - "10-SC-Security-Model.yaml exists and validated"
       - "Security requirements defined"
       - "Threat model complete"
       - "Security architecture documented"
-    requires_human_input: false
+    requires_human_input: true  # Security architecture and threat models require security team/CISO approval
     automation:
       agent: "solution-architect-agent"
       script: null
 
   RD2:
     id: "RD2"
-    uuid: "RD2"
+    uuid: "11-RD"
     display_number: 11
     name: "Requirements Model"
     role: "Product Owner + Project Manager"
     type: "task"
     description: "Complete requirements consolidation"
-    dependencies: ["BH1", "DM1", "DE1", "AR1", "SC1"]
+    dependencies: ["04-BH", "07-DM", "08-DE", "09-AR", "10-SC"]
     activities:
       - "Functional requirements (validated use cases)"
       - "Non-functional requirements (quality attributes)"
@@ -340,27 +380,27 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/RD2-Requirements-Model.yaml"
-        template: "docs/product/templates/RD2-Requirements-Model.template.yaml"
+        path: "workflow/11-RD-Requirements-Model.yaml"
+        template: "workflow/templates/11-RD-Requirements-Model.template.yaml"
     done_criteria:
-      - "RD2-Requirements-Model.yaml exists and validated"
+      - "11-RD-Requirements-Model.yaml exists and validated"
       - "All functional requirements validated"
       - "NFRs defined and measurable"
       - "Gherkin acceptance criteria complete"
-    requires_human_input: false
+    requires_human_input: true  # Requirements consolidation requires stakeholder sign-off and validation
     automation:
       agent: "product-owner-agent"
       script: null
 
   RD1:
     id: "RD1"
-    uuid: "RD1"
+    uuid: "12-RD"
     display_number: 12
     name: "Release Planning"
     role: "Product Owner + Project Manager"
     type: "task"
     description: "Feature prioritization and release scope"
-    dependencies: ["RD2"]
+    dependencies: ["11-RD"]
     activities:
       - "Feature prioritization (backlog/MoSCoW)"
       - "Release scope (sprint planning)"
@@ -368,27 +408,27 @@ nodes:
     outputs:
       - type: "document"
         format: "yaml"  # YAML format for structured data
-        path: "docs/product/RD1-Release-Planning.yaml"
-        template: "docs/product/templates/RD1-Release-Planning.template.yaml"
+        path: "workflow/12-RD-Release-Planning.yaml"
+        template: "workflow/templates/12-RD-Release-Planning.template.yaml"
     done_criteria:
-      - "RD1-Release-Planning.yaml exists and validated"
+      - "12-RD-Release-Planning.yaml exists and validated"
       - "Release definition complete"
       - "Features prioritized"
       - "Sprint plan defined"
-    requires_human_input: false
+    requires_human_input: true  # Feature prioritization and release scope require Product Owner/stakeholder approval
     automation:
       agent: "product-owner-agent"
       script: null
 
   DEV1:
     id: "DEV1"
-    uuid: "DEV1"
+    uuid: "13-DEV"
     display_number: 13
     name: "Code Generation & Testing"
     role: "Development Team"
     type: "task"
     description: "Feature implementation and comprehensive testing"
-    dependencies: ["RD1"]
+    dependencies: ["12-RD"]
     activities:
       - "Feature implementation"
       - "Testing (unit, integration, Gherkin BDD)"
@@ -414,13 +454,13 @@ nodes:
 
   REL1:
     id: "REL1"
-    uuid: "REL1"
+    uuid: "15-REL"
     display_number: 15
     name: "Stable Release"
     role: "Product Owner"
     type: "task"
     description: "UAT, release preparation, and deployment"
-    dependencies: ["DEV1"]
+    dependencies: ["13-DEV"]
     activities:
       - "User acceptance testing (UAT)"
       - "Release preparation"
@@ -428,7 +468,7 @@ nodes:
     outputs:
       - type: "report"
         format: "markdown"  # Markdown with YAML frontmatter for structured metadata + rich content
-        path: "docs/product/RELEASE-UAT-Report.md"
+        path: "workflow/RELEASE-UAT-Report.md"
       - type: "artifact"
         format: "package"
         path: "dist/*.vsix"
@@ -443,13 +483,13 @@ nodes:
 
   BL1:
     id: "BL1"
-    uuid: "BL1"
+    uuid: "16-BL"
     display_number: 16
     name: "New Work Item"
     role: "Product Owner"
     type: "task"
     description: "New feature request, bug fix, or enhancement"
-    dependencies: ["REL1"]
+    dependencies: ["15-REL"]
     activities:
       - "Feature request"
       - "Bug fix"
@@ -457,11 +497,11 @@ nodes:
     outputs:
       - type: "document"
         format: "markdown"  # Markdown with YAML frontmatter for structured metadata + rich content
-        path: "docs/product/BACKLOG-New-Work-Item.md"
+        path: "workflow/BACKLOG-New-Work-Item.md"
     done_criteria:
       - "Work item documented"
       - "Priority assigned"
-    requires_human_input: false
+    requires_human_input: true  # Work item prioritization requires human decision-making
     automation:
       agent: "product-owner-agent"
       script: null

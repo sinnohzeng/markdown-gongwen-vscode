@@ -8,10 +8,11 @@ Generates a Mermaid flowchart diagram from `workflow.yaml`.
 
 ```bash
 # Generate Mermaid diagram and save to PROCESS_WORKFLOW.md
-python3 scripts/generate-mermaid.py > docs/product/PROCESS_WORKFLOW.md
+# Run from project root:
+python3 workflow/scripts/generate-mermaid.py > workflow/PROCESS_WORKFLOW.md
 
 # Or view output directly
-python3 scripts/generate-mermaid.py
+python3 workflow/scripts/generate-mermaid.py
 ```
 
 ### Requirements
@@ -21,7 +22,7 @@ python3 scripts/generate-mermaid.py
 
 ### How it works
 
-1. Reads `docs/product/workflow.yaml` (source of truth)
+1. Reads `workflow/workflow.yaml` (source of truth)
 2. Parses nodes, containers, and edges
 3. Generates Mermaid syntax with:
    - Numbered nodes (1-16)
@@ -46,13 +47,14 @@ Verifies the integrity of `workflow.yaml` and all template files. Checks for:
 
 ```bash
 # Quick verification (summary only)
-python3 scripts/verify-workflow.py
+# Run from project root:
+python3 workflow/scripts/verify-workflow.py
 
 # Verbose output (detailed checks)
-python3 scripts/verify-workflow.py --verbose
+python3 workflow/scripts/verify-workflow.py --verbose
 
 # Custom paths
-python3 scripts/verify-workflow.py --workflow path/to/workflow.yaml --templates path/to/templates
+python3 workflow/scripts/verify-workflow.py --workflow path/to/workflow.yaml --templates path/to/templates
 ```
 
 ### Requirements
@@ -79,11 +81,11 @@ python3 scripts/verify-workflow.py --workflow path/to/workflow.yaml --templates 
 
 ## Workflow Structure
 
-- **Source of Truth**: `docs/product/workflow.yaml`
-- **Generated Output**: `docs/product/PROCESS_WORKFLOW.md` (Mermaid diagram)
-- **Templates**: `docs/product/templates/*.template.md`
+- **Source of Truth**: `workflow/workflow.yaml`
+- **Generated Output**: `workflow/PROCESS_WORKFLOW.md` (Mermaid diagram)
+- **Templates**: `workflow/templates/*.template.md`
 - **Scripts**: 
-  - `scripts/generate-mermaid.py` - Generate workflow diagram
-  - `scripts/verify-workflow.py` - Verify workflow integrity
+  - `workflow/scripts/generate-mermaid.py` - Generate workflow diagram
+  - `workflow/scripts/verify-workflow.py` - Verify workflow integrity
 
 The YAML file contains all workflow metadata (dependencies, outputs, done criteria, automation) while the Mermaid diagram provides visual representation.

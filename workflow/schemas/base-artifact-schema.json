@@ -12,14 +12,14 @@
       "properties": {
         "uuid": {
           "type": "string",
-          "description": "Workflow node UUID (e.g., PO1, ST1, BH1)",
-          "pattern": "^[A-Z]{2}\\d+$|^START$",
-          "examples": ["PO1", "ST1", "BH1", "START"]
+          "description": "Workflow node UUID (e.g., 00-START, 01-PO, 02-ST)",
+          "pattern": "^\\d{2}-[A-Z]{2,}$",
+          "examples": ["00-START", "01-PO", "02-ST", "04-BH"]
         },
         "workflow_node": {
           "type": "string",
           "description": "Workflow node identifier",
-          "pattern": "^[A-Z]{2}\\d+$|^START$"
+          "pattern": "^\\d{2}-[A-Z]{2,}$"
         },
         "artifact_type": {
           "type": "string",
@@ -37,14 +37,14 @@
           "description": "List of workflow node UUIDs this artifact depends on",
           "items": {
             "type": "string",
-            "pattern": "^[A-Z]{2}\\d+$|^START$"
+            "pattern": "^\\d{2}-[A-Z]{2,}$"
           },
           "default": []
         },
         "next_node": {
           "type": ["string", "null"],
           "description": "Next workflow node UUID in sequence",
-          "pattern": "^[A-Z]{2}\\d+$|^START$"
+          "pattern": "^\\d{2}-[A-Z]{2,}$"
         },
         "created_date": {
           "type": ["string", "null"],
@@ -84,7 +84,7 @@
         "node": {
           "type": "string",
           "description": "Next node UUID",
-          "pattern": "^[A-Z]{2}\\d+$|^START$"
+          "pattern": "^\\d{2}-[A-Z]{2,}$"
         },
         "description": {
           "type": "string",

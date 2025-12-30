@@ -41,9 +41,14 @@ Templates are referenced in `workflow.yaml` under each node's `outputs[].templat
 ## Template Naming Convention
 
 **YAML Templates:**
-`[UUID]-[Artifact-Name].template.yaml`
+`{INDEX}-{SHORTNAME}-{Description}.template.yaml`
 
-Example: `PO1-Problem-Definition.template.yaml`
+Example: `01-PO-Problem-Definition.template.yaml`
+
+**Format:**
+- `{INDEX}`: Two-digit zero-padded index (00-16)
+- `{SHORTNAME}`: Short identifier (START, PO, ST, BN, BH, PM, DM, DE, AR, SC, RD, DEV, REL, BL)
+- `{Description}`: Human-readable description (kebab-case)
 
 **Diagram Templates:**
 `diagram.template.md` (shared template for all diagrams)
@@ -109,31 +114,31 @@ When a YAML template contains a `mermaid_diagram` field:
 
 1. Extract the diagram code from the YAML field
 2. Use `diagram.template.md` to create the visual representation
-3. Save as separate Markdown file (e.g., `PO1-Problem-Definition-diagram.md`)
+3. Save as separate Markdown file (e.g., `01-PO-Problem-Definition-diagram.md`)
 4. Keep diagram file minimal - just title and diagram code
 
 ## Available Templates
 
 ### Priority 1 (Critical)
-- `START-Project-Initiation.template.yaml`
-- `PO1-Problem-Definition.template.yaml`
-- `ST1-Stakeholder-Analysis.template.yaml`
-- `BN1-Goals-Success-Criteria.template.yaml`
+- `00-START-Project-Initiation.template.yaml`
+- `01-PO-Problem-Definition.template.yaml`
+- `02-ST-Stakeholder-Analysis.template.yaml`
+- `03-BN-Goals-Success-Criteria.template.yaml`
 
 ### Priority 2 (Important)
-- `BH1-System-Behavior-Model.template.yaml`
-- `RD2-Requirements-Model.template.yaml`
-- `RD1-Release-Planning.template.yaml`
+- `04-BH-System-Behavior-Model.template.yaml`
+- `11-RD-Requirements-Model.template.yaml`
+- `12-RD-Release-Planning.template.yaml`
 
 ### Priority 3 (Architecture)
-- `DM1-Data-Model.template.yaml`
-- `DE1-Design-Model.template.yaml`
-- `AR1-Architecture-Model.template.yaml`
-- `SC1-Security-Model.template.yaml`
+- `07-DM-Data-Model.template.yaml`
+- `08-DE-Design-Model.template.yaml`
+- `09-AR-Architecture-Model.template.yaml`
+- `10-SC-Security-Model.template.yaml`
 
 ### Priority 4 (Management)
-- `PM1-Resource-Planning.template.yaml`
-- `PM2-Risk-Assessment.template.yaml`
+- `05-PM-Resource-Planning.template.yaml`
+- `06-PM-Risk-Assessment.template.yaml`
 
 ### Shared Templates
 - `diagram.template.md` - Diagram generation template

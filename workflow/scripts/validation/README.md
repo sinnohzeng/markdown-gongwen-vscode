@@ -14,8 +14,8 @@ python validate-artifact.py <artifact.yaml> [--schema <schema.json>]
 
 **Example:**
 ```bash
-python validate-artifact.py docs/product/PO1-Problem-Definition.yaml
-python validate-artifact.py docs/product/ST1-Stakeholder-Analysis.yaml --schema docs/product/schemas/base-artifact-schema.json
+python validate-artifact.py workflow/PO1-Problem-Definition.yaml
+python validate-artifact.py workflow/ST1-Stakeholder-Analysis.yaml --schema workflow/schemas/base-artifact-schema.json
 ```
 
 ### 2. validate-mermaid.py
@@ -28,8 +28,8 @@ python validate-mermaid.py <artifact.yaml> [--field <field.path>]
 
 **Example:**
 ```bash
-python validate-mermaid.py docs/product/PO1-Problem-Definition.yaml
-python validate-mermaid.py docs/product/BH1-System-Behavior-Model.yaml --field process_flows[0].mermaid_diagram
+python validate-mermaid.py workflow/PO1-Problem-Definition.yaml
+python validate-mermaid.py workflow/BH1-System-Behavior-Model.yaml --field process_flows[0].mermaid_diagram
 ```
 
 ### 3. validate-uuids.py
@@ -42,7 +42,7 @@ python validate-uuids.py <artifact.yaml>
 
 **Example:**
 ```bash
-python validate-uuids.py docs/product/PO1-Problem-Definition.yaml
+python validate-uuids.py workflow/PO1-Problem-Definition.yaml
 ```
 
 ### 4. validate-references.py
@@ -55,8 +55,8 @@ python validate-references.py <artifact.yaml> [--check-exists]
 
 **Example:**
 ```bash
-python validate-references.py docs/product/RD2-Requirements-Model.yaml
-python validate-references.py docs/product/RD2-Requirements-Model.yaml --check-exists
+python validate-references.py workflow/RD2-Requirements-Model.yaml
+python validate-references.py workflow/RD2-Requirements-Model.yaml --check-exists
 ```
 
 ### 5. validate-minimalism.py
@@ -69,8 +69,8 @@ python validate-minimalism.py <artifact.yaml> [--threshold <percentage>]
 
 **Example:**
 ```bash
-python validate-minimalism.py docs/product/PO1-Problem-Definition.yaml
-python validate-minimalism.py docs/product/PO1-Problem-Definition.yaml --threshold 5
+python validate-minimalism.py workflow/PO1-Problem-Definition.yaml
+python validate-minimalism.py workflow/PO1-Problem-Definition.yaml --threshold 5
 ```
 
 ## Requirements
@@ -84,8 +84,8 @@ python validate-minimalism.py docs/product/PO1-Problem-Definition.yaml --thresho
 ### Validate All Artifacts
 
 ```bash
-# Validate all artifacts in docs/product/
-for file in docs/product/*.yaml; do
+# Validate all artifacts in workflow/
+for file in workflow/*.yaml; do
     python validate-artifact.py "$file"
     python validate-uuids.py "$file"
     python validate-references.py "$file" --check-exists
@@ -96,7 +96,7 @@ done
 ### Validate Single Artifact
 
 ```bash
-artifact="docs/product/PO1-Problem-Definition.yaml"
+artifact="workflow/PO1-Problem-Definition.yaml"
 
 python validate-artifact.py "$artifact"
 python validate-mermaid.py "$artifact"
