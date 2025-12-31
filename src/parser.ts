@@ -729,7 +729,8 @@ export class MarkdownParser {
   /**
    * Processes a list item node.
    *
-   * Replaces list markers (-, *, +, 1., 2., etc.) with a bullet point (•).
+   * Replaces unordered list markers (-, *, +) with a bullet point (•).
+   * Keeps ordered list markers (1., 2., etc.) as-is (no decoration).
    * Detects and decorates checkboxes ([ ] or [x]) after the marker.
    * Supports both unordered lists (-, *, +) and ordered lists (1., 2., etc.).
    */
@@ -764,7 +765,7 @@ export class MarkdownParser {
       }
       
       // Try to detect and add checkbox, otherwise add regular list item decoration
-      if (this.tryAddCheckboxDecorations(text, markerStart, markerEnd, end, decorations)) {
+      if (this.tryAddCheckboxDecorations(text, markerStart, markerEnd, end, decorations, false)) {
         return;
       }
       
@@ -792,16 +793,13 @@ export class MarkdownParser {
           markerEnd++;
         }
         
-        // Try to detect and add checkbox, otherwise add regular list item decoration
-        if (this.tryAddCheckboxDecorations(text, markerStart, markerEnd, end, decorations)) {
+        // For ordered lists: only add checkbox decoration if present, otherwise keep marker as-is
+        // Ordered lists should NOT be decorated with listItem (bullet point)
+        if (this.tryAddCheckboxDecorations(text, markerStart, markerEnd, end, decorations, true)) {
           return;
         }
         
-        decorations.push({
-          startPos: markerStart,
-          endPos: markerEnd,
-          type: 'listItem',
-        });
+        // No decoration for ordered lists without checkboxes - keep the numbers visible
         return;
       }
     }
@@ -815,6 +813,7 @@ export class MarkdownParser {
    * @param markerEnd - End position after the marker (and optional space)
    * @param end - End position of the list item
    * @param decorations - Array to add decorations to
+   * @param isOrderedList - Whether this is an ordered list (true) or unordered list (false)
    * @returns true if checkbox was found and decorations were added, false otherwise
    */
   private tryAddCheckboxDecorations(
@@ -822,7 +821,8 @@ export class MarkdownParser {
     markerStart: number,
     markerEnd: number,
     end: number,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    isOrderedList: boolean
   ): boolean {
     // Check for checkbox pattern: [ ] or [x] or [X]
     // GFM requires a space after the closing bracket for task lists
@@ -846,11 +846,15 @@ export class MarkdownParser {
     const checkboxEnd = checkboxStart + 3; // [ ], [x], or [X] (space after is not part of checkbox)
     const isChecked = checkChar === 'x' || checkChar === 'X';
     
-    decorations.push({
-      startPos: markerStart,
-      endPos: checkboxStart,
-      type: 'listItem',
-    });
+    // Only apply listItem decoration (bullet point) for unordered lists
+    // Ordered lists should keep their numbers visible
+    if (!isOrderedList) {
+      decorations.push({
+        startPos: markerStart,
+        endPos: checkboxStart,
+        type: 'listItem',
+      });
+    }
     
     decorations.push({
       startPos: checkboxStart,

@@ -176,11 +176,12 @@ export function BlockquoteDecorationType() {
 }
 
 /**
- * Creates a decoration type for list item styling.
+ * Creates a decoration type for unordered list item styling.
  * 
- * Replaces list markers (-, *, +) with a bullet point (•).
+ * Replaces unordered list markers (-, *, +) with a bullet point (•).
+ * Note: This decoration is NOT applied to ordered lists (1., 2., etc.) which keep their numbers visible.
  * 
- * @returns {vscode.TextEditorDecorationType} A decoration type for list items
+ * @returns {vscode.TextEditorDecorationType} A decoration type for unordered list items
  */
 export function ListItemDecorationType() {
   // Hide the list marker and replace it with a bullet point

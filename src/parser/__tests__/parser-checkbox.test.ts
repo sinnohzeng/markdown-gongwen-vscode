@@ -115,6 +115,26 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(false);
       expect(result.some(d => d.type === 'checkboxChecked')).toBe(false);
     });
+
+    it('should not create any decoration for ordered list without checkbox', () => {
+      const markdown = '1. Regular ordered item';
+      const result = parser.extractDecorations(markdown);
+
+      // Ordered lists should NOT have listItem decoration (they keep their numbers visible)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
+      expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(false);
+      expect(result.some(d => d.type === 'checkboxChecked')).toBe(false);
+    });
+
+    it('should not create any decoration for ordered list with parentheses marker', () => {
+      const markdown = '1) Regular ordered item';
+      const result = parser.extractDecorations(markdown);
+
+      // Ordered lists should NOT have listItem decoration (they keep their numbers visible)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
+      expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(false);
+      expect(result.some(d => d.type === 'checkboxChecked')).toBe(false);
+    });
   });
 
   describe('checkbox without trailing space', () => {
@@ -137,7 +157,8 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '1. [ ] Task item';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
+      // Ordered lists should NOT have listItem decoration (they keep their numbers)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
       expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(true);
     });
 
@@ -145,7 +166,8 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '1. [x] Completed task';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
+      // Ordered lists should NOT have listItem decoration (they keep their numbers)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
       expect(result.some(d => d.type === 'checkboxChecked')).toBe(true);
     });
 
@@ -153,7 +175,8 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '1) [ ] Task item';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
+      // Ordered lists should NOT have listItem decoration (they keep their numbers)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
       expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(true);
     });
 
@@ -161,7 +184,8 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '123. [ ] Task item';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
+      // Ordered lists should NOT have listItem decoration (they keep their numbers)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
       expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(true);
     });
 
@@ -169,6 +193,9 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '1. [ ] Task 1\n2. [x] Task 2\n3. [ ] Task 3';
       const result = parser.extractDecorations(markdown);
 
+      // Ordered lists should NOT have listItem decoration (they keep their numbers)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
+      
       const uncheckedDecorations = result.filter(d => d.type === 'checkboxUnchecked');
       const checkedDecorations = result.filter(d => d.type === 'checkboxChecked');
 
@@ -201,8 +228,8 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       // Should NOT detect as checkbox (GFM requires space after ])
       expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(false);
       expect(result.some(d => d.type === 'checkboxChecked')).toBe(false);
-      // Should still be a regular list item
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
+      // Ordered lists should NOT have listItem decoration (they keep their numbers)
+      expect(result.some(d => d.type === 'listItem')).toBe(false);
     });
 
     it('should NOT detect checked checkbox without space after bracket (GFM spec)', () => {
