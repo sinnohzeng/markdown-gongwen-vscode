@@ -322,6 +322,7 @@ MIT License – See [LICENSE.txt](LICENSE.txt)
 Special thanks to these projects, which inspired or enabled this extension:
 
 - [markdown-inline-preview-vscode](https://github.com/domdomegg/markdown-inline-preview-vscode) by [domdomegg](https://github.com/domdomegg) – Original concept and codebase for using VS Code decorations to hide markdown syntax (MIT License, Copyright (c) Adam Jones (domdomegg))
+- [Markdown Inline Preview](https://marketplace.visualstudio.com/items?itemName=markdown-inline-preview.markdown-inline-preview) by [markdown-inline-preview](https://marketplace.visualstudio.com/publishers/markdown-inline-preview) – Horizontal rule implementation using border-bottom approach that prevents editor width expansion
 - [Markdown WYSIWYG](https://marketplace.visualstudio.com/items?itemName=remcohaszing.markdown-decorations) by [remcohaszing](https://github.com/remcohaszing) – Decoration-based markdown editor with similar approach
 - [markless](https://github.com/tejasvi/markless) by [tejasvi](https://github.com/tejasvi) – Advanced decoration-based markdown editor with Mermaid and LaTeX support
 - [Typora](https://typora.io/) – Original inspiration for the inline markdown editing concept
