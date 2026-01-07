@@ -319,11 +319,19 @@ MIT License – See [LICENSE.txt](LICENSE.txt)
 
 ## Acknowledgments
 
+Special thanks to these projects, which inspired or enabled this extension:
+
+- [markdown-inline-preview-vscode](https://github.com/domdomegg/markdown-inline-preview-vscode) by [domdomegg](https://github.com/domdomegg) – Original concept and codebase for using VS Code decorations to hide markdown syntax (MIT License, Copyright (c) Adam Jones (domdomegg))
+- [Markdown WYSIWYG](https://marketplace.visualstudio.com/items?itemName=remcohaszing.markdown-decorations) by [remcohaszing](https://github.com/remcohaszing) – Decoration-based markdown editor with similar approach
+- [markless](https://github.com/tejasvi/markless) by [tejasvi](https://github.com/tejasvi) – Advanced decoration-based markdown editor with Mermaid and LaTeX support
+- [Typora](https://typora.io/) – Original inspiration for the inline markdown editing concept
+- [Obsidian](https://obsidian.md/) – Markdown-based knowledge management application that inspired the editing experience
+
 Built with:
-- [remark](https://github.com/remarkjs/remark) – Markdown parser
+- [remark](https://github.com/remarkjs/remark) – Markdown parser for precise AST-based parsing
 - [unified](https://github.com/unifiedjs/unified) – AST processing framework
 - [remark-gfm](https://github.com/remarkjs/remark-gfm) – GitHub Flavored Markdown support
-- [VS Code Extension API](https://code.visualstudio.com/api) – Editor integration
+- [VS Code Extension API](https://code.visualstudio.com/api) – Editor integration and decoration system
 
 ---
 
