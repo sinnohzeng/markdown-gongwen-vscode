@@ -32,6 +32,7 @@ export default tseslint.config(
       'coverage',
       'test-report',
       '*.js',
+      'examples/**',
     ],
   },
   // Allow require() in parser-remark.ts for CommonJS compatibility

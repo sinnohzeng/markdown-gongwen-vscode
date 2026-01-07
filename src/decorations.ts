@@ -198,17 +198,19 @@ export function ListItemDecorationType() {
  * Creates a decoration type for horizontal rules (thematic breaks).
  * 
  * Replaces ---, ***, or ___ with a visual horizontal line that spans the full editor width.
+ * Uses border-bottom approach to prevent editor width expansion.
+ * Hides the original text and shows only the border line.
+ * Based on working implementation from examples/horizontal-line-working.
  * 
  * @returns {vscode.TextEditorDecorationType} A decoration type for horizontal rules
  */
 export function HorizontalRuleDecorationType() {
   return window.createTextEditorDecorationType({
-    textDecoration: 'none; display: none;', // Hide the original text
-    after: {
-      contentText: '─'.repeat(200), // Very long horizontal line
-      color: new ThemeColor('editorWidget.border'),
-    },
+    textDecoration: 'none; display: none;', // Hide the original text (---, ***, ___)
     isWholeLine: true,
+    borderWidth: '0 0 1px 0', // Only bottom border, 1px thick
+    borderStyle: 'solid',
+    borderColor: new ThemeColor('editorWidget.border'),
   });
 }
 
