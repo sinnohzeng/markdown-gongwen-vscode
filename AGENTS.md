@@ -102,6 +102,7 @@
   - Add a new section `## [X.Y.Z] - YYYY-MM-DD` at the top
   - Document all changes using categories: `Added`, `Changed`, `Fixed`, `Removed`, `Deprecated`, `Security`
   - Update the comparison links at the bottom of the file
+- **Verify feature list in `README.md`** to ensure all current features are accurately documented before each release.
 - **Build the extension** to verify compilation:
   ```bash
   npm run build

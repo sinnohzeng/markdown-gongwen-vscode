@@ -77,28 +77,31 @@ The extension currently supports **13 markdown features** with syntax hiding. Fo
 ### Code
 - [x] **Code Blocks** (`` ```lang ``) • [Details](docs/features/code-blocks.md)
 
+## Configuration
+- [x] **Show Raw Markdown in Diffs** • [Details](docs/features/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
+
 ## Upcoming Features
 
 ### Work in progress
-- [ ] **Show Raw Markdown in Diffs** • [Details](docs/features/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
+
 
 ### High Priority (Core GFM)
-- [ ] **Tables** • [Details](docs/features/tables.md)
-- [ ] **Autolinks** • [Details](docs/features/autolinks.md)
-- [ ] **Mentions/References** • [Details](docs/features/mentions-references.md)
-- [ ] **Mermaid Diagrams** • [Details](docs/features/mermaid-diagrams.md)
+- [ ] **Tables** • [Details](docs/features/tables.md) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
+- [ ] **Autolinks** • [Details](docs/features/autolinks.md) • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
+- [ ] **Mentions/References** • [Details](docs/features/mentions-references.md) • [Issue #25](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/25)
+- [ ] **Mermaid Diagrams** • [Details](docs/features/mermaid-diagrams.md) • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
 - [ ] **LaTeX/Math** • [Details](docs/features/latex-math.md) • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 
 ### Medium Priority (Extended Features)
-- [ ] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md)
-- [ ] **Per-File Toggle State** • [Details](docs/features/per-file-toggle-state.md)
-- [ ] **HTML Tags** • [Details](docs/features/html-tags.md)
+- [ ] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md) • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
+- [ ] **Per-File Toggle State** • [Details](docs/features/per-file-toggle-state.md) • [Issue #28](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/28)
+- [ ] **HTML Tags** • [Details](docs/features/html-tags.md) • [Issue #29](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/29)
 - [ ] **Column alignment in tables with markup** • [Details](docs/features/table-column-alignment.md) • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
 
 ### Low Priority (Nice-to-Have)
-- [ ] **Emoji Support** • [Details](docs/features/emoji-support.md)
-- [ ] **Ordered List Auto-Numbering** • [Details](docs/features/ordered-list-auto-numbering.md)
-- [ ] **Footnotes** • [Details](docs/features/footnotes.md)
+- [ ] **Emoji Support** • [Details](docs/features/emoji-support.md) • [Issue #30](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/30)
+- [ ] **Ordered List Auto-Numbering** • [Details](docs/features/ordered-list-auto-numbering.md) • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
+- [ ] **Footnotes** • [Details](docs/features/footnotes.md) • [Issue #32](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/32)
 
 ## Getting Started (Developers)
 
