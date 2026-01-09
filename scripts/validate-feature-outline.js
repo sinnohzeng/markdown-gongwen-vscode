@@ -153,7 +153,7 @@ function validateFile(filePath) {
 
 function main() {
   const files = fs.readdirSync(FEATURES_DIR)
-    .filter(file => file.endsWith('.md'))
+    .filter(file => file.endsWith('.md') && file !== 'AGENTS.md')
     .map(file => path.join(FEATURES_DIR, file));
   
   const results = files.map(validateFile);
