@@ -87,6 +87,21 @@ export function CodeBlockDecorationType() {
 }
 
 /**
+ * Creates a decoration type for YAML frontmatter styling.
+ * 
+ * Highlights the entire frontmatter block (including --- delimiters) with a background color,
+ * similar to code blocks. The delimiters remain visible.
+ * 
+ * @returns {vscode.TextEditorDecorationType} A decoration type for frontmatter blocks
+ */
+export function FrontmatterDecorationType() {
+  return window.createTextEditorDecorationType({
+    backgroundColor: new ThemeColor('textCodeBlock.background'),
+    isWholeLine: true, // Extend background to full line width
+  });
+}
+
+/**
  * Creates a decoration type for heading styling.
  * 
  * @returns {vscode.TextEditorDecorationType} A decoration type for headings

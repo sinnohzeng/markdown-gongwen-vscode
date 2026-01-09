@@ -41,7 +41,8 @@ export type DecorationType =
   | 'listItem'
   | 'checkboxUnchecked'
   | 'checkboxChecked'
-  | 'horizontalRule';
+  | 'horizontalRule'
+  | 'frontmatter';
 
 /**
  * Parser for extracting decoration ranges from markdown text.
@@ -106,6 +107,9 @@ export class MarkdownParser {
       : text;
     
     const decorations: DecorationRange[] = [];
+    
+    // Process frontmatter before remark parsing to avoid conflicts with thematic break detection
+    this.processFrontmatter(normalizedText, decorations);
     
     try {
       // Parse markdown into AST
@@ -869,6 +873,7 @@ export class MarkdownParser {
    * Processes a thematic break (horizontal rule) node.
    * 
    * Replaces the text (---, ***, ___) with a visual horizontal line.
+   * Skips thematic breaks that are part of a frontmatter block.
    */
   private processThematicBreak(
     node: ThematicBreak,
@@ -879,6 +884,18 @@ export class MarkdownParser {
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
+
+    // Skip if this thematic break is within a frontmatter block
+    // Frontmatter delimiters should not be processed as horizontal rules
+    const isInFrontmatter = decorations.some(d => 
+      d.type === 'frontmatter' && 
+      d.startPos <= start && 
+      d.endPos >= end
+    );
+    
+    if (isInFrontmatter) {
+      return; // Skip processing this thematic break - it's part of frontmatter
+    }
 
     // Replace the entire horizontal rule text with a decoration
     decorations.push({
@@ -964,6 +981,125 @@ export class MarkdownParser {
       }
     }
     return null;
+  }
+
+  /** Minimum length required for frontmatter delimiter */
+  private static readonly MIN_FRONTMATTER_LENGTH = 3; // '---'
+
+  /** 
+   * Maximum number of lines to search for closing frontmatter delimiter.
+   * 
+   * Frontmatter is typically very short (< 50 lines). This limit prevents
+   * performance issues when searching for closing delimiter in large files
+   * where frontmatter might be incomplete or missing.
+   */
+  private static readonly MAX_FRONTMATTER_SEARCH_LINES = 100;
+
+  /**
+   * Processes YAML frontmatter at the start of the document.
+   * 
+   * Detects `---` delimiters at document start (after optional spaces/tabs only),
+   * finds the closing delimiter, and applies a decoration to the entire block.
+   * Frontmatter must be at the document start to distinguish it from horizontal rules.
+   * 
+   * @private
+   * @param {string} text - The normalized markdown text (CRLF normalized to LF)
+   * @param {DecorationRange[]} decorations - Array to accumulate decorations
+   */
+  private processFrontmatter(text: string, decorations: DecorationRange[]): void {
+    if (!text || text.length < MarkdownParser.MIN_FRONTMATTER_LENGTH) {
+      return;
+    }
+
+    // Find the start of the document (skip leading spaces/tabs only, not newlines)
+    // This ensures frontmatter is truly at document start, not after content
+    let startPos = 0;
+    while (startPos < text.length && (text[startPos] === ' ' || text[startPos] === '\t')) {
+      startPos++;
+    }
+
+    // Check if document starts with ---
+    if (startPos + MarkdownParser.MIN_FRONTMATTER_LENGTH > text.length || 
+        text.substring(startPos, startPos + MarkdownParser.MIN_FRONTMATTER_LENGTH) !== '---') {
+      return;
+    }
+
+    // Find the end of the opening delimiter line
+    const openingDelimiterStart = startPos;
+    const openingLineEnd = text.indexOf('\n', openingDelimiterStart);
+    if (openingLineEnd === -1) {
+      // No newline found - document ends after opening delimiter
+      // This is not valid frontmatter (needs closing delimiter)
+      return;
+    }
+    const openingLineEndPos = openingLineEnd + 1; // Include the newline
+
+    // Search for closing delimiter starting after the opening line
+    // Look for a line that contains only --- (with optional whitespace)
+    // Limit search to prevent performance issues with large files
+    let searchPos = openingLineEndPos;
+    let linesSearched = 0;
+    while (searchPos < text.length && linesSearched < MarkdownParser.MAX_FRONTMATTER_SEARCH_LINES) {
+      // Find next line start
+      const lineStart = searchPos;
+      let lineStartPos = lineStart;
+      
+      // Skip whitespace at line start
+      while (lineStartPos < text.length && /\s/.test(text[lineStartPos])) {
+        lineStartPos++;
+      }
+
+      // Check if this line starts with ---
+      if (lineStartPos + MarkdownParser.MIN_FRONTMATTER_LENGTH <= text.length && 
+          text.substring(lineStartPos, lineStartPos + MarkdownParser.MIN_FRONTMATTER_LENGTH) === '---') {
+        // Found potential closing delimiter - validate the entire line
+        const closingDelimiterStart = lineStartPos;
+        const closingLineEnd = text.indexOf('\n', closingDelimiterStart);
+        const lineEnd = closingLineEnd === -1 ? text.length : closingLineEnd;
+        const lineContent = text.substring(lineStartPos, lineEnd);
+        
+        // Validate: closing delimiter line must contain only --- with optional whitespace
+        // This prevents false matches like "--- some text" or "---comment"
+        if (!/^---\s*$/.test(lineContent)) {
+          // Not a valid closing delimiter, continue searching
+          const nextLine = closingLineEnd === -1 ? text.length : closingLineEnd + 1;
+          searchPos = nextLine;
+          linesSearched++;
+          continue;
+        }
+
+        // Validate: closing delimiter must be on its own line (only whitespace before it)
+        const lineBeforeDelimiter = text.substring(lineStart, lineStartPos);
+        const isOnlyWhitespaceBefore = /^\s*$/.test(lineBeforeDelimiter);
+        
+        if (isOnlyWhitespaceBefore) {
+          // Found valid frontmatter block
+          // End decoration at the end of the closing delimiter line, NOT including the newline after it
+          // This ensures the decoration stops exactly at the closing --- line
+          const closingLineEndPos = closingLineEnd === -1 
+            ? closingDelimiterStart + MarkdownParser.MIN_FRONTMATTER_LENGTH  // End at end of --- (no newline, end of document)
+            : closingLineEnd;             // End at newline position (exclusive, so newline is not included)
+          
+          // Apply decoration to entire block from opening delimiter start to end of closing delimiter line
+          decorations.push({
+            startPos: openingDelimiterStart,
+            endPos: closingLineEndPos,
+            type: 'frontmatter',
+          });
+        }
+        return;
+      }
+
+      // Move to next line
+      const nextLine = text.indexOf('\n', searchPos);
+      if (nextLine === -1) {
+        break;
+      }
+      searchPos = nextLine + 1;
+      linesSearched++;
+    }
+
+    // No closing delimiter found - not valid frontmatter, don't apply decoration
   }
 
 }
