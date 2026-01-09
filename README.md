@@ -76,19 +76,18 @@ The extension currently supports **13 markdown features** with syntax hiding. Fo
 
 ### Code
 - [x] **Code Blocks** (`` ```lang ``) • [Details](docs/features/code-blocks.md)
+- [x] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md) • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
 
 ### Configuration
 - [x] **Show Raw Markdown in Diffs** • [Details](docs/features/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
 - [x] **Show Raw Markdown in Editor** • [Details](docs/features/show-raw-markdown-in-editor.md)
 
-
 ## Upcoming Features
 
 ### Work in progress
-- [ ] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md) • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
+- [ ] **Set Default Feature Activation** – Allow users to configure which Markdown features are decorated/enabled by default (e.g., selectively apply decorators for headings, bold, italic, etc.) • [Details](docs/features/default-feature-activation.md) • [Issue #33](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/33)
 
 ### High Priority
-- [ ] **Set Default Feature Activation** – Allow users to configure which Markdown features are decorated/enabled by default (e.g., selectively apply decorators for headings, bold, italic, etc.) • [Details](docs/features/default-feature-activation.md) • [Issue #33](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/33)
 - [ ] **Tables** • [Details](docs/features/tables.md) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
 - [ ] **Autolinks** • [Details](docs/features/autolinks.md) • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
 - [ ] **Mermaid Diagrams** • [Details](docs/features/mermaid-diagrams.md) • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
