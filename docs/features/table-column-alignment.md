@@ -1,5 +1,5 @@
 ---
-status: 📋 Planned
+status: TODO
 githubIssue: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21
 updateDate: 2026-01-09
 priority: Medium

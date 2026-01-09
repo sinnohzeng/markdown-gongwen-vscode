@@ -1,5 +1,5 @@
 ---
-status: ⚠️ Reconsider / Delay
+status: TODO
 updateDate: 2024-12-19
 priority: High (reconsidering)
 ---

@@ -1,5 +1,5 @@
 ---
-status: 🚧 In Progress
+status: TODO
 githubIssue: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20
 updateDate: 2026-01-09
 priority: High

@@ -1,5 +1,5 @@
 ---
-status: ✅ Implemented
+status: DONE
 updateDate: 2024-12-19
 priority: Core Feature
 ---
