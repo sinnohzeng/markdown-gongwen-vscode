@@ -80,7 +80,7 @@ The extension currently supports **13 markdown features** with syntax hiding. Fo
 ## Upcoming Features
 
 ### Work in progress
-- [ ] **Option to disable for diffs** • [Details](docs/features/disable-for-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
+- [ ] **Show Raw Markdown in Diffs** • [Details](docs/features/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
 
 ### High Priority (Core GFM)
 - [ ] **Tables** • [Details](docs/features/tables.md)

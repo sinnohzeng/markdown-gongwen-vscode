@@ -5,15 +5,15 @@ updateDate: 2026-01-09
 priority: High
 ---
 
-# Disable for Diffs
+# Show Raw Markdown in Diffs
 
 ## Overview
 
-Add a configuration setting to disable markdown rendering when viewing diffs, allowing users to see raw markdown changes more clearly in both source control view and Copilot inline diffs.
+Add a configuration setting to show raw markdown syntax when viewing diffs, allowing users to see markdown changes more clearly in both source control view and Copilot inline diffs.
 
 ## Implementation
 
-Add VS Code configuration option `markdownInlineEditor.disableForDiffs` (boolean, default: `false`) that detects when editor is in diff mode and disables decorations accordingly.
+Add VS Code configuration option `markdownInlineEditor.showRawInDiffs` (boolean, default: `true`) that detects when editor is in diff mode and shows raw markdown syntax instead of rendered decorations.
 
 **Diff Detection:**
 - Check if active editor is a diff editor using `vscode.window.activeTextEditor` and `DiffEditor` type
@@ -26,24 +26,40 @@ Add VS Code configuration option `markdownInlineEditor.disableForDiffs` (boolean
 - Any VS Code diff editor context
 
 **Behavior:**
-- When setting is enabled and diff is detected, skip decoration application
+- When setting is enabled and diff is detected, show raw markdown syntax (skip decoration application)
 - When setting is disabled or in normal editor, apply decorations as usual
 - Setting change should immediately update active editors
+
+### Affected Components
+
+**Code Modules:**
+- `src/extension.ts` - Configuration reading and change listeners
+- `src/decorator.ts` - Diff detection and decoration skipping logic
+- `src/link-provider.ts` - May need diff-aware behavior (optional)
+- `package.json` - Configuration contribution
+
+**Systems & Features:**
+- VS Code configuration system (`workspace.getConfiguration`, `onDidChangeConfiguration`)
+- VS Code editor API (`activeTextEditor`, `TextDocument.uri.scheme`)
+- Git/Source Control diff views (`git:` URI scheme)
+- VS Code Merge Editor (`vscode-merge:` URI scheme)
+- GitHub Copilot inline diffs
+- All markdown decoration features (when showing raw in diff mode)
 
 ## Acceptance Criteria
 
 ### Configuration Setting
 ```gherkin
-Feature: Disable for diffs configuration
+Feature: Show raw markdown in diffs configuration
 
   Scenario: Enable setting
-    When I enable "disable for diffs" setting
+    When I enable "show raw markdown in diffs" setting
     And I open a diff view
     Then markdown decorations are disabled
     And raw markdown syntax is visible
 
   Scenario: Disable setting
-    When I disable "disable for diffs" setting
+    When I disable "show raw markdown in diffs" setting
     And I open a diff view
     Then markdown decorations are enabled
     And markdown is rendered as usual
@@ -51,16 +67,16 @@ Feature: Disable for diffs configuration
 
 ### Source Control Diff View
 ```gherkin
-Feature: Disable in source control diff
+Feature: Show raw markdown in source control diff
 
   Scenario: Diff view with setting enabled
-    Given "disable for diffs" setting is enabled
+    Given "show raw markdown in diffs" setting is enabled
     When I open source control diff view
     Then decorations are disabled
     And raw markdown changes are visible
 
   Scenario: Diff view with setting disabled
-    Given "disable for diffs" setting is disabled
+    Given "show raw markdown in diffs" setting is disabled
     When I open source control diff view
     Then decorations are enabled
     And markdown is rendered
@@ -68,16 +84,16 @@ Feature: Disable in source control diff
 
 ### Copilot Inline Diffs
 ```gherkin
-Feature: Disable in Copilot inline diffs
+Feature: Show raw markdown in Copilot inline diffs
 
   Scenario: Copilot diff with setting enabled
-    Given "disable for diffs" setting is enabled
+    Given "show raw markdown in diffs" setting is enabled
     When Copilot shows inline diff
     Then decorations are disabled
     And raw markdown changes are visible
 
   Scenario: Copilot diff with setting disabled
-    Given "disable for diffs" setting is disabled
+    Given "show raw markdown in diffs" setting is disabled
     When Copilot shows inline diff
     Then decorations are enabled
     And markdown is rendered
@@ -85,15 +101,15 @@ Feature: Disable in Copilot inline diffs
 
 ### Edge Cases
 ```gherkin
-Feature: Disable for diffs edge cases
+Feature: Show raw markdown in diffs edge cases
 
   Scenario: Setting change during diff view
     Given I have a diff view open
-    When I change "disable for diffs" setting
+    When I change "show raw markdown in diffs" setting
     Then decorations update immediately
 
   Scenario: Normal editor view unaffected
-    Given "disable for diffs" setting is enabled
+    Given "show raw markdown in diffs" setting is enabled
     When I open a normal markdown file
     Then decorations are enabled
 ```
@@ -102,7 +118,7 @@ Feature: Disable for diffs edge cases
 
 - High user demand - makes reviewing markdown changes much easier
 - Problem: Rendered markdown can obscure actual changes (e.g., heading level changes like `##` to `###` look like removals)
-- Solution: Configuration option to disable rendering in diff contexts
+- Solution: Configuration option to show raw markdown syntax in diff contexts
 - Affects both source control view and Copilot inline diffs
 - Users can currently work around by clicking the line, but it's inconvenient
 - Feasibility: High
@@ -110,7 +126,7 @@ Feature: Disable for diffs edge cases
 - Risk: Low (optional setting, doesn't break existing behavior)
 - Effort: 1-2 weeks
 - VS Code API: Use `vscode.window.activeTextEditor` and check for diff editor type or URI scheme
-- Should respect user preference (opt-in, default: false)
+- Default behavior: Show raw markdown in diff views by default (default: `true`), users can opt-out if desired
 
 ## Examples
 
@@ -130,7 +146,7 @@ Raw markdown visible: `##` → `###` change is clear
 **Configuration:**
 ```json
 {
-  "markdownInlineEditor.disableForDiffs": true
+  "markdownInlineEditor.showRawInDiffs": true
 }
 ```
 

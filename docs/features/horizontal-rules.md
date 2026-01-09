@@ -13,9 +13,9 @@ Horizontal rules with visual separator and hidden syntax markers.
 ## Implementation
 
 - Syntax: `---`, `***`, or `___` (minimum 3 characters)
-- Markers are replaced with visual separator (────────)
-- Supports all three marker types
-- Theme-aware styling
+- The code syntax is visually replaced by drawing a border below the line.
+- All three marker types are supported.
+- The border adapts to the active theme for consistent styling.
 
 ## Acceptance Criteria
 
