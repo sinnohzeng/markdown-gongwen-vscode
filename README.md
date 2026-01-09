@@ -77,7 +77,7 @@ The extension currently supports **13 markdown features** with syntax hiding. Fo
 ### Code
 - [x] **Code Blocks** (`` ```lang ``) • [Details](docs/features/code-blocks.md)
 
-## Configuration
+### Configuration
 - [x] **Show Raw Markdown in Diffs** • [Details](docs/features/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
 
 ## Upcoming Features
