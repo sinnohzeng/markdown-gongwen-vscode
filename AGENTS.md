@@ -98,11 +98,15 @@
   - `fix`: **patch** version
   - `BREAKING CHANGE`: **major** version
 - **Update `package.json`** version field (e.g., `1.3.6` → `1.4.0` for feature, `2.0.0` for breaking change).
+- **Update `CHANGELOG.md`** with the new version entry:
+  - Add a new section `## [X.Y.Z] - YYYY-MM-DD` at the top
+  - Document all changes using categories: `Added`, `Changed`, `Fixed`, `Removed`, `Deprecated`, `Security`
+  - Update the comparison links at the bottom of the file
 - **Build the extension** to verify compilation:
   ```bash
   npm run build
   ```
-- **Commit version bump** with a conventional commit message:
+- **Commit version bump and changelog** with a conventional commit message:
   ```bash
   git commit -am "chore(release): vX.Y.Z"
   ```
@@ -117,31 +121,3 @@
   ```
 - **CI/CD publishes** to VS Code Marketplace and OpenVSX automatically for tags beginning with `v`.
 - The release workflow is managed by `.github/workflows/ci.yaml`, which triggers on tags matching `refs/tags/v*`.
-- **Don't forget to update CHANGELOG.md** before releasing a version.
-
----
-
-## Recent Implementations
-
-### v1.6.0 - Show Raw Markdown in Diffs (2026-01-09)
-
-**Feature:** Default behaviors settings for diff view and regular editor
-
-**Implementation Details:**
-- Added hierarchical settings structure: `defaultBehaviors.diffView.applyDecorations` and `defaultBehaviors.editor.applyDecorations`
-- Implemented diff editor detection for `git:`, `vscode-merge:`, and `vscode-diff:` URI schemes
-- Added support for side-by-side diff views by checking all visible editors
-- Decorations are automatically skipped in diff views when `applyDecorations` is `false` (default)
-- Link provider respects diff view settings
-
-**Files Modified:**
-- `src/decorator.ts` - Added `isEditorInDiffContext()`, `isDiffEditor()`, and `skipDecorationsInDiffView` state
-- `src/extension.ts` - Added configuration reading and change listeners
-- `src/link-provider.ts` - Added diff view detection for link provider
-- `package.json` - Added configuration contributions
-- `src/decorator/__tests__/decorator-diff-mode.test.ts` - Added unit tests
-
-**Key Implementation Notes:**
-- Diff detection checks all visible editors to support side-by-side diff views
-- Internal state uses `skipDecorationsInDiffView` (inverse of `applyDecorations` setting)
-- `DIFF_SCHEMES` constant extracted to reduce duplication
