@@ -117,3 +117,31 @@
   ```
 - **CI/CD publishes** to VS Code Marketplace and OpenVSX automatically for tags beginning with `v`.
 - The release workflow is managed by `.github/workflows/ci.yaml`, which triggers on tags matching `refs/tags/v*`.
+- **Don't forget to update CHANGELOG.md** before releasing a version.
+
+---
+
+## Recent Implementations
+
+### v1.6.0 - Show Raw Markdown in Diffs (2026-01-09)
+
+**Feature:** Default behaviors settings for diff view and regular editor
+
+**Implementation Details:**
+- Added hierarchical settings structure: `defaultBehaviors.diffView.applyDecorations` and `defaultBehaviors.editor.applyDecorations`
+- Implemented diff editor detection for `git:`, `vscode-merge:`, and `vscode-diff:` URI schemes
+- Added support for side-by-side diff views by checking all visible editors
+- Decorations are automatically skipped in diff views when `applyDecorations` is `false` (default)
+- Link provider respects diff view settings
+
+**Files Modified:**
+- `src/decorator.ts` - Added `isEditorInDiffContext()`, `isDiffEditor()`, and `skipDecorationsInDiffView` state
+- `src/extension.ts` - Added configuration reading and change listeners
+- `src/link-provider.ts` - Added diff view detection for link provider
+- `package.json` - Added configuration contributions
+- `src/decorator/__tests__/decorator-diff-mode.test.ts` - Added unit tests
+
+**Key Implementation Notes:**
+- Diff detection checks all visible editors to support side-by-side diff views
+- Internal state uses `skipDecorationsInDiffView` (inverse of `applyDecorations` setting)
+- `DIFF_SCHEMES` constant extracted to reduce duplication
