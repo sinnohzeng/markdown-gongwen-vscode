@@ -56,8 +56,6 @@
   - Maintain code examples and usage guides
   - Ensure documentation accuracy and consistency
   - Create and update troubleshooting guides and FAQs
-  - Manage feature request workflow: GitHub issues → feature docs → README
-  - Keep feature documentation in sync with GitHub issues and README status
 
 ---
 

@@ -219,25 +219,6 @@ This extension prioritizes performance, especially for:
    - Update AGENTS.md if it affects architecture
    - If editing feature files in `docs/features/`, ensure they pass validation (`npm run lint:docs`)
 
-### Feature Request Workflow
-
-When a feature request is accepted (GitHub issue labeled `planned`):
-
-1. **Create feature specification** (`docs/features/feature-name.md`):
-   - Include YAML frontmatter with `status`, `githubIssue`, `updateDate`, and `priority`
-   - Document Overview, Implementation, Acceptance Criteria (Gherkin), Notes, and Examples
-   - See [Feature Documentation Guidelines](docs/features/AGENTS.md) for details
-
-2. **Update README.md**:
-   - Add to appropriate section (High/Medium/Low Priority, or "Work in progress")
-   - Format: `- [ ] **Feature Name** • [Details](docs/features/feature.md) • [Issue #X](link)`
-   - Use `[x]` for implemented, `[ ]` for planned features
-
-3. **Keep in sync**:
-   - Feature file status ↔ README section ↔ GitHub issue labels
-   - When implemented, update status and move to "Supported Features" in README
-   - Link feature file to GitHub issue in frontmatter
-
 ### Debugging
 
 **Enable debug logging:**

@@ -93,7 +93,7 @@ The extension currently supports **13 markdown features** with syntax hiding. Fo
 - [ ] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md)
 - [ ] **Per-File Toggle State** • [Details](docs/features/per-file-toggle-state.md)
 - [ ] **HTML Tags** • [Details](docs/features/html-tags.md)
-- [ ] **Column alignment in tables with markup** • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
+- [ ] **Column alignment in tables with markup** • [Details](docs/features/table-column-alignment.md) • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
 
 ### Low Priority (Nice-to-Have)
 - [ ] **Emoji Support** • [Details](docs/features/emoji-support.md)
