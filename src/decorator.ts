@@ -21,6 +21,7 @@ import {
   HorizontalRuleDecorationType,
   CheckboxUncheckedDecorationType,
   CheckboxCheckedDecorationType,
+  FrontmatterDecorationType,
 } from './decorations';
 import { MarkdownParser, DecorationRange, DecorationType } from './parser';
 
@@ -96,6 +97,7 @@ export class Decorator {
   private horizontalRuleDecorationType = HorizontalRuleDecorationType();
   private checkboxUncheckedDecorationType = CheckboxUncheckedDecorationType();
   private checkboxCheckedDecorationType = CheckboxCheckedDecorationType();
+  private frontmatterDecorationType = FrontmatterDecorationType();
 
   /**
    * Sets the active text editor and immediately updates decorations.
@@ -627,6 +629,7 @@ export class Decorator {
     ['horizontalRule', this.horizontalRuleDecorationType],
     ['checkboxUnchecked', this.checkboxUncheckedDecorationType],
     ['checkboxChecked', this.checkboxCheckedDecorationType],
+    ['frontmatter', this.frontmatterDecorationType],
   ]);
 
   /**
