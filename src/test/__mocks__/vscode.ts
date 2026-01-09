@@ -52,8 +52,18 @@ export const Position = class {
 };
 
 export const Uri = {
-  parse: (value: string) => ({ toString: () => value }),
-  file: (path: string) => ({ toString: () => `file://${path}` }),
+  parse: (value: string) => {
+    const schemeMatch = value.match(/^([^:]+):/);
+    const scheme = schemeMatch ? schemeMatch[1] : 'file';
+    return {
+      toString: () => value,
+      scheme: scheme,
+    };
+  },
+  file: (path: string) => ({
+    toString: () => `file://${path}`,
+    scheme: 'file',
+  }),
 };
 
 class MockTextDocument {

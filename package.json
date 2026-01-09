@@ -53,6 +53,23 @@
           "group": "navigation"
         }
       ]
+    },
+    "configuration": {
+      "title": "Markdown Inline Editor",
+      "properties": {
+        "markdownInlineEditor.defaultBehaviors.editor.applyDecorations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Apply decorators in editor",
+          "markdownDescription": "When enabled, markdown syntax is hidden and replaced with rendered decorations (bold, italic, headings, etc.) in regular markdown editors. When disabled, raw markdown syntax is always shown."
+        },
+        "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": {
+          "type": "boolean",
+          "default": false,
+          "description": "Apply decorators in diff view",
+          "markdownDescription": "When enabled, markdown decorations (bold, italic, headings, etc.) are applied in diff views (Git diffs, merge editors, Copilot inline diffs). When disabled, raw markdown syntax is shown to make changes easier to review."
+        }
+      }
     }
   },
   "scripts": {

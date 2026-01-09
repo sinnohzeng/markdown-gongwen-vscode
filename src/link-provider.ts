@@ -26,6 +26,17 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
       return [];
     }
 
+    const config = vscode.workspace.getConfiguration('markdownInlineEditor');
+    const diffViewApplyDecorations = config.get<boolean>('defaultBehaviors.diffView.applyDecorations', false);
+    
+    // Skip links in diff views when decorations are disabled (raw markdown mode)
+    if (!diffViewApplyDecorations) {
+      const diffSchemes: readonly string[] = ['git', 'vscode-merge', 'vscode-diff'];
+      if (diffSchemes.includes(document.uri.scheme)) {
+        return [];
+      }
+    }
+
     const text = document.getText();
     const decorations = this.parser.extractDecorations(text);
     const links: vscode.DocumentLink[] = [];

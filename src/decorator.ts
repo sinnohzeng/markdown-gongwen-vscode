@@ -1,4 +1,4 @@
-import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, Position, WorkspaceEdit, Selection, TextEditorSelectionChangeKind } from 'vscode';
+import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, window, Position, WorkspaceEdit, Selection, TextEditorSelectionChangeKind } from 'vscode';
 import {
   HideDecorationType,
   BoldDecorationType,
@@ -71,6 +71,9 @@ export class Decorator {
 
   /** Whether decorations are enabled or disabled */
   private decorationsEnabled = true;
+
+  /** Whether to skip decorations in diff views (inverse of applyDecorations setting) */
+  private skipDecorationsInDiffView = true;
 
   private hideDecorationType = HideDecorationType();
   private boldDecorationType = BoldDecorationType();
@@ -314,6 +317,15 @@ export class Decorator {
   }
 
   /**
+   * Updates the diff view decoration setting.
+   * 
+   * @param {boolean} skipDecorations - True to skip decorations in diff views (show raw markdown)
+   */
+  updateDiffViewDecorationSetting(skipDecorations: boolean): void {
+    this.skipDecorationsInDiffView = skipDecorations;
+  }
+
+  /**
    * Clear all decorations from the active editor.
    * 
    * @private
@@ -345,6 +357,12 @@ export class Decorator {
 
     // Early exit for non-markdown files
     if (!this.isMarkdownDocument()) {
+      return;
+    }
+
+    // Check if we should skip decorations in diff mode
+    if (this.skipDecorationsInDiffView && this.isDiffEditor()) {
+      this.clearAllDecorations();
       return;
     }
 
@@ -381,6 +399,86 @@ export class Decorator {
       return false;
     }
     return ['markdown', 'md', 'mdx'].includes(this.activeEditor.document.languageId);
+  }
+
+  /** URI schemes that indicate a diff view context */
+  private static readonly DIFF_SCHEMES: readonly string[] = ['git', 'vscode-merge', 'vscode-diff'];
+
+  /**
+   * Checks if a specific editor is in a diff context based on its URI.
+   * 
+   * @private
+   * @param {TextEditor} editor - The editor to check
+   * @returns {boolean} True if the editor is in a diff context
+   */
+  private isEditorInDiffContext(editor: TextEditor): boolean {
+    const uri = editor.document.uri;
+    const scheme = uri.scheme;
+    const uriString = uri.toString();
+    
+    // Check for known diff-related schemes
+    if (Decorator.DIFF_SCHEMES.includes(scheme)) {
+      return true;
+    }
+
+    // Check URI string for diff-related patterns
+    const uriLower = uriString.toLowerCase();
+    if (uriLower.includes('diff') || uriLower.includes('merge') || 
+        uriLower.includes('compare')) {
+      return true;
+    }
+
+    // Check URI query parameters
+    if (uri.query) {
+      const query = uri.query.toLowerCase();
+      if (query.includes('diff') || query.includes('merge') || 
+          query.includes('compare') || query.includes('path=')) {
+        return true;
+      }
+    }
+
+    // Check URI fragment
+    if (uri.fragment) {
+      const fragment = uri.fragment.toLowerCase();
+      if (fragment.includes('diff') || fragment.includes('merge')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Detects if the current editor is viewing a diff.
+   * 
+   * For side-by-side diff views, checks ALL visible editors to see if any
+   * are in a diff context. This ensures both sides of the diff have
+   * decorations disabled, regardless of which side is currently active.
+   * 
+   * @private
+   * @returns {boolean} True if editor is in diff mode
+   */
+  private isDiffEditor(): boolean {
+    if (!this.activeEditor) {
+      return false;
+    }
+
+    // Check the active editor first
+    if (this.isEditorInDiffContext(this.activeEditor)) {
+      return true;
+    }
+
+    // For side-by-side diff views, check all visible editors
+    // If ANY visible editor is in a diff context, we're in a diff view
+    // This ensures both sides of the diff have decorations disabled
+    const visibleEditors = window.visibleTextEditors;
+    for (const editor of visibleEditors) {
+      if (this.isEditorInDiffContext(editor)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

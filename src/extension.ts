@@ -3,6 +3,26 @@ import { Decorator } from './decorator';
 import { MarkdownLinkProvider } from './link-provider';
 
 /**
+ * Reads the defaultBehaviors.diffView.applyDecorations configuration setting.
+ * 
+ * @returns {boolean} True if decorations should be applied in diff views
+ */
+function getDiffViewApplyDecorationsSetting(): boolean {
+  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
+  return config.get<boolean>('defaultBehaviors.diffView.applyDecorations', false);
+}
+
+/**
+ * Reads the defaultBehaviors.editor.applyDecorations configuration setting.
+ * 
+ * @returns {boolean} True if decorations should be applied in regular editors
+ */
+function getEditorApplyDecorationsSetting(): boolean {
+  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
+  return config.get<boolean>('defaultBehaviors.editor.applyDecorations', true);
+}
+
+/**
  * Activates the markdown inline preview extension.
  * 
  * This function is called by VS Code when the extension is activated (typically
@@ -22,6 +42,14 @@ import { MarkdownLinkProvider } from './link-provider';
  */
 export function activate(context: vscode.ExtensionContext) {
   const decorator = new Decorator();
+  const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
+  decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
+  
+  const editorApplyDecorations = getEditorApplyDecorationsSetting();
+  if (!editorApplyDecorations && decorator.isEnabled()) {
+    decorator.toggleDecorations();
+  }
+  
   decorator.setActiveEditor(vscode.window.activeTextEditor);
 
   // Register link provider for clickable markdown links
@@ -94,9 +122,27 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
+  const changeConfiguration = vscode.workspace.onDidChangeConfiguration((event) => {
+    if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.diffView.applyDecorations')) {
+      const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
+      decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
+      decorator.updateDecorationsForSelection();
+    }
+    
+    if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.editor.applyDecorations')) {
+      const editorApplyDecorations = getEditorApplyDecorationsSetting();
+      const currentlyEnabled = decorator.isEnabled();
+      if (editorApplyDecorations !== currentlyEnabled) {
+        decorator.toggleDecorations();
+        decorator.updateDecorationsForSelection();
+      }
+    }
+  });
+
   context.subscriptions.push(changeActiveTextEditor);
   context.subscriptions.push(changeTextEditorSelection);
   context.subscriptions.push(changeDocument);
+  context.subscriptions.push(changeConfiguration);
   context.subscriptions.push(linkProviderDisposable);
   context.subscriptions.push(toggleDecorationsCommand);
   context.subscriptions.push(navigateToAnchorCommand);
