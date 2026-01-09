@@ -34,7 +34,10 @@
 
 ## Get Started: Install the Extension
 
-1. **Install** the extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CodeSmith.markdown-inline-editor-vscode)
+1. **Install** the extension from:
+   - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CodeSmith.markdown-inline-editor-vscode)
+   - [OpenVSX Registry](https://open-vsx.org/extension/CodeSmith/markdown-inline-editor-vscode)
+   - [Github Releases](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/releases)
 2. **Open** any `.md` file
 3. **Start typing** – formatting appears automatically with syntax hidden
 4. **Click/select text** to reveal raw Markdown for editing
