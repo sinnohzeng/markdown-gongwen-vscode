@@ -57,46 +57,48 @@ Enhance your Markdown workflow with these complementary extensions:
 The extension currently supports **13 markdown features** with syntax hiding. Formatting appears inline while syntax markers stay hidden—click any text to reveal and edit raw Markdown.
 
 ### Text Formatting
-- **Bold** (`**text**`) – [Details](docs/features/bold.md)
-- **Italic** (`*text*`) – [Details](docs/features/italic.md)
-- **Bold + Italic** (`***text***`) – [Details](docs/features/bold-italic.md)
-- **Strikethrough** (`~~text~~`) – [Details](docs/features/strikethrough.md)
-- **Inline Code** (`` `code` ``) – [Details](docs/features/inline-code.md)
+- [x] **Bold** (`**text**`) • [Details](docs/features/bold.md)
+- [x] **Italic** (`*text*`) • [Details](docs/features/italic.md)
+- [x] **Bold + Italic** (`***text***`) • [Details](docs/features/bold-italic.md)
+- [x] **Strikethrough** (`~~text~~`) • [Details](docs/features/strikethrough.md)
+- [x] **Inline Code** (`` `code` ``) • [Details](docs/features/inline-code.md)
 
 ### Structure
-- **Headings** (`# H1` through `###### H6`) – [Details](docs/features/headings.md)
-- **Links** (`[text](url)`) – [Details](docs/features/links.md)
-- **Images** (`![alt](img.png)`) – [Details](docs/features/images.md)
-- **Blockquotes** (`> quote`) – [Details](docs/features/blockquotes.md)
-- **Horizontal Rules** (`---`, `***`, `___`) – [Details](docs/features/horizontal-rules.md)
+- [x] **Headings** (`# H1` through `###### H6`) • [Details](docs/features/headings.md)
+- [x] **Links** (`[text](url)`) • [Details](docs/features/links.md)
+- [x] **Images** (`![alt](img.png)`) • [Details](docs/features/images.md)
+- [x] **Blockquotes** (`> quote`) • [Details](docs/features/blockquotes.md)
+- [x] **Horizontal Rules** (`---`, `***`, `___`) • [Details](docs/features/horizontal-rules.md)
 
 ### Lists
-- **Unordered Lists** (`-`, `*`, `+`) – [Details](docs/features/unordered-lists.md)
-- **Task Lists** (`- [ ]` / `- [x]`) – [Details](docs/features/task-lists.md)
+- [x] **Unordered Lists** (`-`, `*`, `+`) • [Details](docs/features/unordered-lists.md)
+- [x] **Task Lists** (`- [ ]` / `- [x]`) • [Details](docs/features/task-lists.md)
 
 ### Code
-- **Code Blocks** (`` ```lang ``) – [Details](docs/features/code-blocks.md)
+- [x] **Code Blocks** (`` ```lang ``) • [Details](docs/features/code-blocks.md)
 
 ## Upcoming Features
 
+### Work in progress
+- [ ] **Option to disable for diffs** • [Details](docs/features/disable-for-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
+
 ### High Priority (Core GFM)
-- **Tables** – [Details](docs/features/tables.md)
-- **Autolinks** – [Details](docs/features/autolinks.md)
-- **Mentions/References** – [Details](docs/features/mentions-references.md)
-- **Mermaid Diagrams** – [Details](docs/features/mermaid-diagrams.md)
-- **LaTeX/Math** – [Details](docs/features/latex-math.md)
+- [ ] **Tables** • [Details](docs/features/tables.md)
+- [ ] **Autolinks** • [Details](docs/features/autolinks.md)
+- [ ] **Mentions/References** • [Details](docs/features/mentions-references.md)
+- [ ] **Mermaid Diagrams** • [Details](docs/features/mermaid-diagrams.md)
+- [ ] **LaTeX/Math** • [Details](docs/features/latex-math.md) • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 
 ### Medium Priority (Extended Features)
-- **YAML Frontmatter** – [Details](docs/features/yaml-frontmatter.md)
-- **Per-File Toggle State** – [Details](docs/features/per-file-toggle-state.md)
-- **HTML Tags** – [Details](docs/features/html-tags.md)
+- [ ] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md)
+- [ ] **Per-File Toggle State** • [Details](docs/features/per-file-toggle-state.md)
+- [ ] **HTML Tags** • [Details](docs/features/html-tags.md)
+- [ ] **Column alignment in tables with markup** • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
 
 ### Low Priority (Nice-to-Have)
-- **Emoji Support** – [Details](docs/features/emoji-support.md)
-
-### Under Consideration
-- **Ordered List Auto-Numbering** – [Details](docs/features/ordered-list-auto-numbering.md)
-- **Footnotes** – [Details](docs/features/footnotes.md)
+- [ ] **Emoji Support** • [Details](docs/features/emoji-support.md)
+- [ ] **Ordered List Auto-Numbering** • [Details](docs/features/ordered-list-auto-numbering.md)
+- [ ] **Footnotes** • [Details](docs/features/footnotes.md)
 
 ## Getting Started (Developers)
 
@@ -217,6 +219,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for full contribution guidelines and [`
 - **Tables** – Table syntax hiding is in progress
 - **Mermaid diagrams** – Diagram rendering is in progress
 - **Math formulas** – KaTeX/MathJax support is planned
+- **H1 heading clipping** – Text goes out of window when H1 is on first line – [#4](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/4)
 
 ### Reporting Bugs
 
