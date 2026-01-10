@@ -204,8 +204,30 @@ export function ListItemDecorationType() {
     textDecoration: 'none; display: none;', // Properly hide the original marker
     before: {
       contentText: '• ',
-      // No color specified - uses regular text color
+      fontWeight: 'bold',
+      color: new ThemeColor('editor.foreground'),
     },
+  });
+}
+
+/**
+ * Creates a decoration type for ordered list item marker styling.
+ * 
+ * Ensures ordered list markers (1., 2., etc.) use the same color as regular text.
+ * This overrides any theme-specific styling that might apply different colors to list markers.
+ * 
+ * Note: We intentionally do NOT apply bold styling to ordered list numbers.
+ * If we use bold on ordered numbers, the fonts look out of line with the rest of the text,
+ * causing visual alignment issues. Unordered list bullets and checkboxes can be bold
+ * because they are replaced symbols (•, ☐, ☑) rather than the original text.
+ * 
+ * @returns {vscode.TextEditorDecorationType} A decoration type for ordered list item markers
+ */
+export function OrderedListItemDecorationType() {
+  // Apply color directly to the marker text without hiding/replacing it
+  // Note: No fontWeight: 'bold' - see function JSDoc for explanation
+  return window.createTextEditorDecorationType({
+    color: new ThemeColor('editor.foreground')
   });
 }
 
@@ -243,6 +265,7 @@ export function CheckboxUncheckedDecorationType() {
     before: {
       contentText: '☐',
       fontWeight: 'bold',
+      color: new ThemeColor('editor.foreground'),
     },
   });
 }
@@ -261,6 +284,7 @@ export function CheckboxCheckedDecorationType() {
     before: {
       contentText: '☑',
       fontWeight: 'bold',
+      color: new ThemeColor('editor.foreground'),
     },
   });
 }

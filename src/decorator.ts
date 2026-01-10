@@ -18,6 +18,7 @@ import {
   ImageDecorationType,
   BlockquoteDecorationType,
   ListItemDecorationType,
+  OrderedListItemDecorationType,
   HorizontalRuleDecorationType,
   CheckboxUncheckedDecorationType,
   CheckboxCheckedDecorationType,
@@ -95,6 +96,7 @@ export class Decorator {
   private imageDecorationType = ImageDecorationType();
   private blockquoteDecorationType = BlockquoteDecorationType();
   private listItemDecorationType = ListItemDecorationType();
+  private orderedListItemDecorationType = OrderedListItemDecorationType();
   private horizontalRuleDecorationType = HorizontalRuleDecorationType();
   private checkboxUncheckedDecorationType = CheckboxUncheckedDecorationType();
   private checkboxCheckedDecorationType = CheckboxCheckedDecorationType();
@@ -627,6 +629,7 @@ export class Decorator {
     ['image', this.imageDecorationType],
     ['blockquote', this.blockquoteDecorationType],
     ['listItem', this.listItemDecorationType],
+    ['orderedListItem', this.orderedListItemDecorationType],
     ['horizontalRule', this.horizontalRuleDecorationType],
     ['checkboxUnchecked', this.checkboxUncheckedDecorationType],
     ['checkboxChecked', this.checkboxCheckedDecorationType],

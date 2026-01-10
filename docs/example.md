@@ -44,6 +44,57 @@ __GFM Bold__ _GFM Italic_
 - [ ]    (task with spaces)
 - [*] Not valid GFM (should not check)
 
+
+Here are examples of inline code in Markdown:
+
+- ``This is a simple `inline code` example.``
+- You can use backticks for code, like `` `print('Hello')` ``.
+- Inline code with surrounding text: I love using the `` `map()` `` function in JavaScript.
+- Escaping backticks: `` ``Use \`backticks\` literally`` ``
+- Multiple backticks for nested backtick content: ````Here is some ``inline `code` inside backticks````
+
+
+
+## LaTeX Fenced Block Example
+
+You can include LaTeX in a fenced code block with `math` or `latex`:
+
+```latex
+\begin{align}
+E &= mc^2 \\
+a^2 + b^2 &= c^2 \\
+\int_0^\infty e^{-x^2} dx &= \frac{\sqrt{\pi}}{2}
+\end{align}
+```
+
+You can also nest block math with double dollars:
+
+$$
+f(x) = \int_{-\infty}^{\infty} e^{-x^2} dx
+$$
+
+Or with a block:
+
+```math
+\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}
+```
+
+## Inline Math Example
+
+Inline math uses single `$` delimiters, e.g.:
+
+- `Euler's identity: $e^{i\pi} + 1 = 0$` → Euler's identity: $e^{i\pi} + 1 = 0$
+- Physics: `Force $F = ma$`, Greek: `$A = \pi r^2$`
+
+**Note:** Use `\$` for a regular dollar sign.
+
+_Code:_
+
+```
+Total cost is \$5, calculated as $2 + 3 = 5$.
+```
+
+
 ## Edge Cases for GFM
 
 ### Task List Edge Cases

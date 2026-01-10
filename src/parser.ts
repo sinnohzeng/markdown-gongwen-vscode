@@ -39,6 +39,7 @@ export type DecorationType =
   | 'image'
   | 'blockquote'
   | 'listItem'
+  | 'orderedListItem'
   | 'checkboxUnchecked'
   | 'checkboxChecked'
   | 'horizontalRule'
@@ -797,13 +798,18 @@ export class MarkdownParser {
           markerEnd++;
         }
         
-        // For ordered lists: only add checkbox decoration if present, otherwise keep marker as-is
+        // For ordered lists: only add checkbox decoration if present, otherwise apply color styling
         // Ordered lists should NOT be decorated with listItem (bullet point)
         if (this.tryAddCheckboxDecorations(text, markerStart, markerEnd, end, decorations, true)) {
           return;
         }
         
-        // No decoration for ordered lists without checkboxes - keep the numbers visible
+        // Apply color decoration to ordered list markers to ensure they match regular text color
+        decorations.push({
+          startPos: markerStart,
+          endPos: markerEnd,
+          type: 'orderedListItem',
+        });
         return;
       }
     }
@@ -857,6 +863,13 @@ export class MarkdownParser {
         startPos: markerStart,
         endPos: checkboxStart,
         type: 'listItem',
+      });
+    } else {
+      // For ordered lists with checkboxes, apply color decoration to the numbers
+      decorations.push({
+        startPos: markerStart,
+        endPos: markerEnd,
+        type: 'orderedListItem',
       });
     }
     
