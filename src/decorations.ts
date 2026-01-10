@@ -17,6 +17,24 @@ export function HideDecorationType() {
 }
 
 /**
+ * Creates a decoration type for making text transparent.
+ * 
+ * Unlike HideDecorationType which uses display: none (removes from layout),
+ * this keeps the text in the layout but makes it invisible. This is important
+ * for inline code borders - the backticks need to exist in layout for borders
+ * to render correctly.
+ * 
+ * Matches Markless approach: uses color: transparent instead of display: none.
+ * 
+ * @returns {vscode.TextEditorDecorationType} A decoration type that makes text transparent
+ */
+export function TransparentDecorationType() {
+  return window.createTextEditorDecorationType({
+    color: 'transparent',
+  });
+}
+
+/**
  * Creates a decoration type for bold text styling.
  * 
  * @returns {vscode.TextEditorDecorationType} A decoration type for bold text
@@ -67,10 +85,9 @@ export function StrikethroughDecorationType() {
  * @returns {vscode.TextEditorDecorationType} A decoration type for inline code
  */
 export function CodeDecorationType() {
-  // Note: backgroundColor doesn't work for inline decorations (only for isWholeLine: true)
-  // So we just use the theme's default styling
   return window.createTextEditorDecorationType({
-    // No custom styling - will use editor's default inline code appearance
+    backgroundColor: new ThemeColor('textCodeBlock.background'),
+    borderColor: new ThemeColor('editorWidget.border'),
   });
 }
 

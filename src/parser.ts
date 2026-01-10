@@ -22,6 +22,7 @@ export interface DecorationRange {
  */
 export type DecorationType =
   | 'hide'
+  | 'transparent'
   | 'bold'
   | 'italic'
   | 'boldItalic'
@@ -448,6 +449,10 @@ export class MarkdownParser {
 
   /**
    * Processes an inline code node.
+   * 
+   * Matches Markless approach: applies code decoration (with border) to the entire range
+   * including backticks, then hides the backticks separately. This ensures the border
+   * spans the full code block and works correctly even on single lines.
    */
   private processInlineCode(
     node: InlineCode,
@@ -469,7 +474,15 @@ export class MarkdownParser {
 
     if (markerLength === 0) return;
 
-    this.addMarkerDecorations(decorations, start, end, markerLength, 'code');
+    // Apply code decoration to ENTIRE range (including backticks)
+    // This ensures the border spans the full code block
+    decorations.push({ startPos: start, endPos: end, type: 'code' });
+
+    // Make backticks transparent (not hidden) - matches Markless approach
+    // Using 'transparent' instead of 'hide' keeps backticks in layout,
+    // which is required for borders to render correctly on single lines
+    decorations.push({ startPos: start, endPos: start + markerLength, type: 'transparent' });
+    decorations.push({ startPos: end - markerLength, endPos: end, type: 'transparent' });
   }
 
   /**

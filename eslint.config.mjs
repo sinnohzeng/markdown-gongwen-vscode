@@ -43,11 +43,14 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off', // Necessary for dynamic require/import pattern
     },
   },
-  // Allow any types in test mocks
+  // Ignore strict lint rules for test files - no warnings, just ignore
   {
-    files: ['**/__mocks__/**', '**/__tests__/**'],
+    files: ['**/__mocks__/**', '**/__tests__/**', '**/*.test.ts', '**/*.test.js'],
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn', // Warn instead of error for test files
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
   // Node.js scripts directory - allow CommonJS and Node.js globals

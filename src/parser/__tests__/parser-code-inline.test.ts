@@ -12,20 +12,23 @@ describe('MarkdownParser - Inline Code', () => {
       const markdown = '`code`';
       const result = parser.extractDecorations(markdown);
       
+      // Code decoration spans full range (including backticks) - matches Markless approach
+      expect(result).toContainEqual({
+        startPos: 0,
+        endPos: 6,
+        type: 'code'
+      });
+      // Backticks are made transparent (not hidden) - matches Markless approach
+      // Using transparent keeps backticks in layout so borders render correctly
       expect(result).toContainEqual({
         startPos: 0,
         endPos: 1,
-        type: 'hide'
-      });
-      expect(result).toContainEqual({
-        startPos: 1,
-        endPos: 5,
-        type: 'code'
+        type: 'transparent'
       });
       expect(result).toContainEqual({
         startPos: 5,
         endPos: 6,
-        type: 'hide'
+        type: 'transparent'
       });
     });
   });
@@ -35,8 +38,9 @@ describe('MarkdownParser - Inline Code', () => {
       const markdown = '`code` text';
       const result = parser.extractDecorations(markdown);
       
-      expect(result.some((d: DecorationRange) => d.type === 'code' && d.startPos === 1)).toBe(true);
-      expect(result.some((d: DecorationRange) => d.type === 'hide' && d.startPos === 0)).toBe(true);
+      // Code decoration spans full range including backticks (0-6)
+      expect(result.some((d: DecorationRange) => d.type === 'code' && d.startPos === 0 && d.endPos === 6)).toBe(true);
+      expect(result.some((d: DecorationRange) => d.type === 'transparent' && d.startPos === 0)).toBe(true);
     });
   });
 
@@ -47,7 +51,8 @@ describe('MarkdownParser - Inline Code', () => {
       
       const codeDecorations = result.filter((d: DecorationRange) => d.type === 'code');
       expect(codeDecorations.length).toBeGreaterThan(0);
-      expect(codeDecorations[0]?.startPos).toBeGreaterThan(5);
+      // Code decoration includes backticks, so startPos is at the opening backtick (position 5)
+      expect(codeDecorations[0]?.startPos).toBeGreaterThanOrEqual(5);
     });
   });
 
@@ -58,8 +63,9 @@ describe('MarkdownParser - Inline Code', () => {
       
       expect(result.some((d: DecorationRange) => d.type === 'code')).toBe(true);
       const codeDec = result.find((d: DecorationRange) => d.type === 'code');
-      expect(codeDec?.startPos).toBeGreaterThan(6);
-      expect(codeDec?.endPos).toBeLessThan(13);
+      // Code decoration includes backticks, so startPos is at opening backtick (position 6)
+      expect(codeDec?.startPos).toBeGreaterThanOrEqual(6);
+      expect(codeDec?.endPos).toBeLessThanOrEqual(13);
     });
   });
 
@@ -70,8 +76,9 @@ describe('MarkdownParser - Inline Code', () => {
       
       expect(result.some((d: DecorationRange) => d.type === 'code')).toBe(true);
       const codeDec = result.find((d: DecorationRange) => d.type === 'code');
-      expect(codeDec?.startPos).toBe(1);
-      expect(codeDec?.endPos).toBe(17);
+      // Code decoration spans full range including backticks (0-18)
+      expect(codeDec?.startPos).toBe(0);
+      expect(codeDec?.endPos).toBe(18);
     });
   });
 
@@ -80,9 +87,10 @@ describe('MarkdownParser - Inline Code', () => {
       const markdown = '`code123`';
       const result = parser.extractDecorations(markdown);
       
+      // Code decoration spans full range including backticks (0-9)
       expect(result).toContainEqual({
-        startPos: 1,
-        endPos: 8,
+        startPos: 0,
+        endPos: 9,
         type: 'code'
       });
     });
@@ -95,8 +103,9 @@ describe('MarkdownParser - Inline Code', () => {
       
       expect(result.some((d: DecorationRange) => d.type === 'code')).toBe(true);
       const codeDec = result.find((d: DecorationRange) => d.type === 'code');
-      expect(codeDec?.startPos).toBe(1);
-      expect(codeDec?.endPos).toBe(8);
+      // Code decoration spans full range including backticks (0-9)
+      expect(codeDec?.startPos).toBe(0);
+      expect(codeDec?.endPos).toBe(9);
     });
   });
 
@@ -108,13 +117,13 @@ describe('MarkdownParser - Inline Code', () => {
       const codeDecorations = result.filter(d => d.type === 'code');
       expect(codeDecorations.length).toBe(2);
       
-      // First code: "one"
-      expect(codeDecorations[0]?.startPos).toBe(1);
-      expect(codeDecorations[0]?.endPos).toBe(4);
+      // First code: "one" - spans full range including backticks (0-5)
+      expect(codeDecorations[0]?.startPos).toBe(0);
+      expect(codeDecorations[0]?.endPos).toBe(5);
       
-      // Second code: "two"
-      expect(codeDecorations[1]?.startPos).toBe(11);
-      expect(codeDecorations[1]?.endPos).toBe(14);
+      // Second code: "two" - spans full range including backticks (10-15)
+      expect(codeDecorations[1]?.startPos).toBe(10);
+      expect(codeDecorations[1]?.endPos).toBe(15);
     });
   });
 
@@ -123,9 +132,9 @@ describe('MarkdownParser - Inline Code', () => {
       const markdown = '``';
       const result = parser.extractDecorations(markdown);
       
-      // Should have hide decorations for backticks
-      const hideDecs = result.filter((d: DecorationRange) => d.type === 'hide');
-      expect(hideDecs.length).toBeGreaterThanOrEqual(0);
+      // Should have transparent decorations for backticks (or hide if empty)
+      const transparentDecs = result.filter((d: DecorationRange) => d.type === 'transparent' || d.type === 'hide');
+      expect(transparentDecs.length).toBeGreaterThanOrEqual(0);
       // May or may not have code decoration for empty content
     });
   });

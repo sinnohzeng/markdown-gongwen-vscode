@@ -1,6 +1,7 @@
 import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, window, Position, WorkspaceEdit, Selection, TextEditorSelectionChangeKind, TextEditorDecorationType } from 'vscode';
 import {
   HideDecorationType,
+  TransparentDecorationType,
   BoldDecorationType,
   ItalicDecorationType,
   BoldItalicDecorationType,
@@ -91,6 +92,7 @@ export class Decorator {
   private skipDecorationsInDiffView = true;
 
   private hideDecorationType = HideDecorationType();
+  private transparentDecorationType = TransparentDecorationType();
   private boldDecorationType = BoldDecorationType();
   private italicDecorationType = ItalicDecorationType();
   private boldItalicDecorationType = BoldItalicDecorationType();
@@ -624,6 +626,7 @@ export class Decorator {
   /** Mapping of decoration types to their VS Code decoration instances */
   private decorationTypeMap = new Map<DecorationType, TextEditorDecorationType>([
     ['hide', this.hideDecorationType],
+    ['transparent', this.transparentDecorationType],
     ['bold', this.boldDecorationType],
     ['italic', this.italicDecorationType],
     ['boldItalic', this.boldItalicDecorationType],
