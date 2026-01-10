@@ -235,7 +235,7 @@ This extension prioritizes performance, especially for:
 When contributing, please update relevant documentation:
 
 - **README.md** - User-facing features, installation, usage
-- **AGENTS.md** - Architecture, agent roles, development guidelines
+- **AGENTS.md** - Architecture and development guidelines
 - **CONTRIBUTING.md** - This file (if workflow changes)
 - **FAQ.md** - Common issues and solutions (if user-facing changes)
 - **Code comments** - JSDoc for public APIs

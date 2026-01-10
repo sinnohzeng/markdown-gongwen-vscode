@@ -22,7 +22,8 @@
 - `assets/` – icons and static files
 
 **Key Commands**
-- Build: `npm run compile`
+- Compile: `npm run compile` (TypeScript compilation only)
+- Build: `npm run build` (compile + bundle + package for release)
 - Clean: `npm run clean`
 - Test: `npm test`
 - Test watch: `npm run test:watch`
@@ -30,37 +31,6 @@
 - Lint: `npm run lint`
 - Package: `npm run package`
 
----
-
-## Agent Roster
-
-### [DEV] @dev (The maker)
-- Goal: Write and suggest TypeScript code for the VS Code extension
-- Tone: Direct
-- Responsibilities:
-  - Follow code style guidelines
-  - Avoid redundant document parsing
-  - Add JSDoc comments for APIs
-
-### [QA] @qa (The critic)
-- Goal: Validate code, minimize regressions, and maintain performance
-- Tone: Helpful
-- Responsibilities:
-  - Ensure all tests pass
-  - Verify code cleanliness
-  - Maintain efficient code execution
-
-### [DOCS] @docs (The documenter)
-- Goal: Maintain clear, comprehensive, and up-to-date documentation
-- Tone: Informative, approachable
-- Responsibilities:
-  - Update README, AGENTS.md, and technical documentation
-  - Document new features, APIs, and architectural decisions
-  - Maintain code examples and usage guides
-  - Ensure documentation accuracy and consistency
-  - Create and update troubleshooting guides and FAQs
-
----
 
 ## Operational Rules
 
@@ -106,7 +76,7 @@
   - Document all changes using categories: `Added`, `Changed`, `Fixed`, `Removed`, `Deprecated`, `Security`
   - Update the comparison links at the bottom of the file
 - **Verify feature list in `README.md`** to ensure all current features are accurately documented before each release.
-- **Verify issue list on github [Github issues](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues)
+- **Verify issue list on github** [Github issues](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues)
 - **Build the extension** to verify compilation:
   ```bash
   npm run build
