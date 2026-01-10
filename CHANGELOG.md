@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-01-10
+
+### Added
+- Theme-aware background colors for inline code blocks
+  - Dark themes: Automatically lighten inline code background (~30% brighter)
+  - Light themes: Automatically darken inline code background (~30% darker)
+- Automatic theme change detection - inline code colors update immediately when switching themes
+- Theme change listener that recreates decorations without requiring restart
+
+### Changed
+- Improve inline code visibility in dark themes with better contrast
+- Remove borders from inline code decorations for cleaner appearance
+- Extract theme detection logic into reusable `isDarkTheme()` helper function
+- Extract brightness overlay opacity into `BRIGHTNESS_OVERLAY_OPACITY` constant for maintainability
+
 ## [1.7.4] - 2026-01-10
 
 ### Changed
@@ -246,6 +261,7 @@ _No changes documented_
   - Task lists (checkboxes)
   - Strikethrough
 
+[1.8.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.4...v1.8.0
 [1.7.4]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.1...v1.7.2
