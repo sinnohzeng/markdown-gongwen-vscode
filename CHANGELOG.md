@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.3] - 2026-01-09
+
+### Fixed
+- Fix table of contents links broken with CRLF line endings (Issue #33)
+- Links in table of contents now work correctly regardless of line ending format (LF or CRLF)
+
+### Changed
+- Extract position mapping utility to shared module (`position-mapping.ts`)
+- Improve code maintainability by eliminating duplication between Decorator and MarkdownLinkProvider
+
+### Documentation
+- Update architecture documentation to include `position-mapping.ts` utility
+- Update project structure in AGENTS.md to reflect new file organization
+- Fix incorrect Issue #33 reference in README.md
+
 ## [1.7.2] - 2026-01-09
 
 ### Changed
@@ -226,6 +241,14 @@ _No changes documented_
   - Task lists (checkboxes)
   - Strikethrough
 
+[1.7.3]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.2...v1.7.3
+[1.7.2]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.1...v1.7.2
+[1.7.1]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.6.1...v1.7.0
+[1.6.1]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.6.0...v1.6.1
+[1.6.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.5.1...v1.6.0
+[1.5.1]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.5.0...v1.5.1
+[1.7.3]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.2...v1.7.3
 [1.7.2]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.6.1...v1.7.0
