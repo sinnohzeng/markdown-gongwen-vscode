@@ -242,6 +242,7 @@ export function CheckboxUncheckedDecorationType() {
     textDecoration: 'none; display: none;', // Hide the original [ ]
     before: {
       contentText: '☐',
+      fontWeight: 'bold',
     },
   });
 }
@@ -259,6 +260,7 @@ export function CheckboxCheckedDecorationType() {
     textDecoration: 'none; display: none;', // Hide the original [x]
     before: {
       contentText: '☑',
+      fontWeight: 'bold',
     },
   });
 }
