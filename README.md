@@ -88,7 +88,7 @@ The extension currently supports **13 markdown features** with syntax hiding. Fo
 ## Upcoming Features
 
 ### Work in progress
-* [ ] **Set Default Feature Activation** – Allow users to configure which Markdown features are decorated/enabled by default (e.g., selectively apply decorators for headings, bold, italic, etc.) • [Details](docs/features/default-feature-activation.md) • [Issue #33](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/33)
+* [ ] **Set Default Feature Activation** – Allow users to configure which Markdown features are decorated/enabled by default (e.g., selectively apply decorators for headings, bold, italic, etc.) • [Details](docs/features/default-feature-activation.md)
 
 ### High Priority
 * [ ] **Tables** • [Details](docs/features/tables.md) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
@@ -151,6 +151,7 @@ src/
 ├── decorator.ts          # Decoration management and caching
 ├── decorations.ts        # VS Code decoration type definitions
 ├── link-provider.ts      # Clickable link provider
+├── position-mapping.ts   # Position mapping utilities (CRLF handling)
 └── parser/__tests__/     # Comprehensive test suite
 ```
 

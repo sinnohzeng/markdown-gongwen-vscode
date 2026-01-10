@@ -13,7 +13,10 @@
     - `parser.ts` – parses markdown to decoration ranges
     - `parser-remark.ts` – remark dependency helper
     - `decorations.ts` – decoration types/factories
+    - `link-provider.ts` – clickable link provider for markdown documents
+    - `position-mapping.ts` – position mapping utilities (CRLF/LF normalization)
     - `parser/__tests__/` – parser tests
+    - `link-provider/__tests__/` – link provider tests
 - `dist/` – compiled output (do not edit)
 - `docs/` – documentation, optimization notes
 - `assets/` – icons and static files
