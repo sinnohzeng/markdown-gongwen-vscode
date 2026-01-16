@@ -19,12 +19,14 @@ jobs:
       CI: true
     steps:
       - name: Checkout ${{ github.sha }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
+
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
+
       - name: Install dependencies
         run: npm ci
       - name: Lint
@@ -35,6 +37,7 @@ jobs:
         run: npm run build --if-present
       - name: Test
         run: npm run test --if-present
+
   crlf-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -45,16 +48,19 @@ jobs:
       CI: true
     steps:
       - name: Checkout ${{ github.sha }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
       - name: Test CRLF
         run: npm run test:crlf --if-present
+
   security:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -62,16 +68,19 @@ jobs:
       CI: true
     steps:
       - name: Checkout ${{ github.sha }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Use Node.js LTS
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
       - name: Run security audit
         run: npm audit --audit-level=high
+
   # The "cd-vsce" job runs only when a tag starting with "v" is pushed (i.e., a version tag), because of the conditional below:
   cd-vsce:
     # Only runs when the push references a tag that starts with "v" (for example: refs/tags/v1.2.3)
@@ -85,12 +94,14 @@ jobs:
       contents: read
     steps:
       - name: Checkout ${{ github.sha }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Use Node.js with the npmjs.org registry
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
       - name: Clean
@@ -106,6 +117,7 @@ jobs:
           echo "Build artifact verified: $(ls -lh dist/extension.vsix)"
       - name: Publish to Azure DevOps ${{ github.ref }}
         run: npx vsce publish --packagePath dist/extension.vsix --pat ${{ secrets.AZURE_DEVOPS_TOKEN }}
+
   # The "cd-ovsx" job runs only when a tag starting with "v" is pushed (i.e., a version tag), because of the conditional below:
   cd-ovsx:
     # Only runs when the push references a tag that starts with "v" (for example: refs/tags/v1.2.3)
@@ -119,12 +131,14 @@ jobs:
       contents: read
     steps:
       - name: Checkout ${{ github.sha }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
       - name: Use Node.js with the npmjs.org registry
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'
+
       - name: Install dependencies
         run: npm ci
       - name: Clean
@@ -140,6 +154,7 @@ jobs:
           echo "Build artifact verified: $(ls -lh dist/extension.vsix)"
       - name: Publish to OpenVSX ${{ github.ref }}
         run: npx ovsx publish dist/extension.vsix --pat ${{ secrets.OPENVSX_TOKEN }}
+
   # The "cd-release" job creates a GitHub Release and uploads the extension as an asset
   cd-release:
     # Only runs when the push references a tag that starts with "v" (for example: refs/tags/v1.2.3)
@@ -153,14 +168,16 @@ jobs:
       contents: write
     steps:
       - name: Checkout ${{ github.sha }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
       - name: Use Node.js with the npmjs.org registry
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: lts/*
           cache: 'npm'
+          
       - name: Install dependencies
         run: npm ci
       - name: Clean
