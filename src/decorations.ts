@@ -51,6 +51,20 @@ export function TransparentDecorationType() {
 }
 
 /**
+ * Creates a decoration type for ghost (faint) markdown syntax markers.
+ * 
+ * Used in Ghost state to show subtle edit cues without fully restoring raw layout.
+ * Makes markers faintly visible so users can locate formatting boundaries.
+ * 
+ * @returns {vscode.TextEditorDecorationType} A decoration type that makes text faint
+ */
+export function GhostFaintDecorationType() {
+  return window.createTextEditorDecorationType({
+    opacity: '0.3',
+  });
+}
+
+/**
  * Creates a decoration type for bold text styling.
  * 
  * @returns {vscode.TextEditorDecorationType} A decoration type for bold text
