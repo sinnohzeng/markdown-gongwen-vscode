@@ -24,6 +24,16 @@ function getEditorApplyDecorationsSetting(): boolean {
 }
 
 /**
+ * Reads the decorations.ghostFaintOpacity configuration setting.
+ * 
+ * @returns {number} Opacity value between 0.0 and 1.0 for ghost faint decorations
+ */
+function getGhostFaintOpacitySetting(): number {
+  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
+  return config.get<number>('decorations.ghostFaintOpacity', 0.3);
+}
+
+/**
  * Activates the markdown inline preview extension.
  * 
  * This function is called by VS Code when the extension is activated (typically
@@ -133,6 +143,10 @@ export function activate(context: vscode.ExtensionContext) {
         decorator.toggleDecorations();
         decorator.updateDecorationsForSelection();
       }
+    }
+    
+    if (event.affectsConfiguration('markdownInlineEditor.decorations.ghostFaintOpacity')) {
+      decorator.recreateGhostFaintDecorationType();
     }
   });
 

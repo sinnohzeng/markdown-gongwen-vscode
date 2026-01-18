@@ -158,6 +158,13 @@ export const window = {
 
 export const workspace = {
   onDidChangeTextDocument: () => ({ dispose: () => {} }),
+  onDidChangeConfiguration: () => ({ dispose: () => {} }),
+  getConfiguration: (section?: string) => ({
+    get: <T>(key: string, defaultValue: T): T => {
+      // Return default value for all configuration keys in tests
+      return defaultValue;
+    },
+  }),
 };
 
 export const ExtensionContext = class {

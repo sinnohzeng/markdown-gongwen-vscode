@@ -29,6 +29,7 @@ export type DecorationType =
   | 'strikethrough'
   | 'code'
   | 'codeBlock'
+  | 'codeBlockLanguage'
   | 'heading'
   | 'heading1'
   | 'heading2'
@@ -432,6 +433,9 @@ export class MarkdownParser {
 
   /**
    * Processes a strikethrough (delete) node.
+   * 
+   * Validates that the node actually uses ~~ (double tilde) markers,
+   * not single ~, to prevent incorrect parsing of single tildes as strikethrough.
    */
   private processStrikethrough(
     node: Delete,
@@ -442,6 +446,17 @@ export class MarkdownParser {
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
+
+    // Validate that this is actually strikethrough (~~text~~) and not single tilde (~text~)
+    // Check for double tilde at the start
+    if (start + 1 >= text.length || text[start] !== '~' || text[start + 1] !== '~') {
+      return; // Not a valid strikethrough marker
+    }
+
+    // Check for double tilde at the end
+    if (end < 2 || text[end - 2] !== '~' || text[end - 1] !== '~') {
+      return; // Not a valid strikethrough marker
+    }
 
     // Strikethrough uses ~~ markers (length 2)
     this.addMarkerDecorations(decorations, start, end, 2, 'strikethrough');
@@ -487,6 +502,9 @@ export class MarkdownParser {
 
   /**
    * Processes a code block node.
+   * 
+   * Supports both backtick (```) and tilde (~~~) fences, with variable length (3+ characters).
+   * Detects the fence type and length from the text to properly handle all GFM code block variants.
    */
   private processCodeBlock(
     node: Code,
@@ -495,27 +513,124 @@ export class MarkdownParser {
   ): void {
     if (!this.hasValidPosition(node)) return;
 
-    const start = node.position!.start.offset!;
-    const end = node.position!.end.offset!
+    const codeStart = node.position!.start.offset!;
+    const codeEnd = node.position!.end.offset!;
 
-    // Find opening fence (```)
-    const fenceStart = text.indexOf('```', start);
-    if (fenceStart === -1) return;
+    // Detect opening fence: scan from codeStart backwards to find fence start
+    // The fence should be at the start of a line (or after only whitespace)
+    let fenceStart = codeStart;
+    let fenceChar: string | null = null;
+    let fenceLength = 0;
+    
+    // Find the line start before the code block
+    const lineStart = text.lastIndexOf('\n', codeStart - 1) + 1;
+    
+    // Scan from line start to find the fence
+    for (let pos = lineStart; pos < codeStart && pos < text.length; pos++) {
+      const char = text[pos];
+      if (char === '`' || char === '~') {
+        // Count consecutive fence characters
+        let count = 1;
+        let checkPos = pos + 1;
+        while (checkPos < text.length && text[checkPos] === char && count < 20) {
+          count++;
+          checkPos++;
+        }
+        
+        // Valid fence must be 3+ characters
+        if (count >= 3) {
+          fenceStart = pos;
+          fenceChar = char;
+          fenceLength = count;
+          break;
+        }
+      }
+    }
 
-    // Find closing fence
-    const closingFence = text.lastIndexOf('```', end);
+    // Fallback: if no fence found, try searching forward from codeStart
+    if (!fenceChar) {
+      for (let pos = codeStart; pos < Math.min(codeStart + 20, text.length); pos++) {
+        const char = text[pos];
+        if (char === '`' || char === '~') {
+          let count = 1;
+          let checkPos = pos + 1;
+          while (checkPos < text.length && text[checkPos] === char && count < 20) {
+            count++;
+            checkPos++;
+          }
+          if (count >= 3) {
+            fenceStart = pos;
+            fenceChar = char;
+            fenceLength = count;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!fenceChar || fenceLength < 3) {
+      // Final fallback: assume standard ``` backticks
+      const fallbackFence = text.indexOf('```', codeStart - 10);
+      if (fallbackFence === -1 || fallbackFence > codeStart) return;
+      fenceStart = fallbackFence;
+      fenceChar = '`';
+      fenceLength = 3;
+    }
+
+    // Find closing fence: scan backwards from codeEnd
+    let closingFence = -1;
+    const closingLineStart = text.lastIndexOf('\n', codeEnd - 1) + 1;
+    
+    // Search backwards from codeEnd to find closing fence
+    for (let pos = codeEnd - 1; pos >= closingLineStart && pos >= fenceStart + fenceLength; pos--) {
+      if (text[pos] === fenceChar) {
+        // Count consecutive fence characters backwards
+        let count = 1;
+        let checkPos = pos - 1;
+        while (checkPos >= 0 && text[checkPos] === fenceChar && count < 20) {
+          count++;
+          checkPos--;
+        }
+        
+        // Closing fence must be at least as long as opening fence
+        if (count >= fenceLength) {
+          closingFence = pos - count + 1;
+          break;
+        }
+      }
+    }
+
+    if (closingFence === -1) {
+      // Fallback: search forward from codeEnd
+      for (let pos = codeEnd; pos < Math.min(codeEnd + 20, text.length); pos++) {
+        if (text[pos] === fenceChar) {
+          let count = 1;
+          let checkPos = pos + 1;
+          while (checkPos < text.length && text[checkPos] === fenceChar && count < 20) {
+            count++;
+            checkPos++;
+          }
+          if (count >= fenceLength) {
+            closingFence = pos;
+            break;
+          }
+        }
+      }
+    }
+
     if (closingFence === -1 || closingFence <= fenceStart) return;
 
     // Find the end of the opening fence line (including language identifier and newline)
     const openingLineEnd = text.indexOf('\n', fenceStart);
-    const openingEnd = openingLineEnd !== -1 && openingLineEnd < closingFence ? openingLineEnd + 1 : fenceStart + 3;
+    const openingFenceEnd = fenceStart + fenceLength;
+    const openingEnd = openingLineEnd !== -1 && openingLineEnd < closingFence ? openingLineEnd + 1 : openingFenceEnd;
 
-    // Find the end of the closing fence (just after ```)
-    const closingFenceEnd = closingFence + 3;
+    // Find the end of the closing fence
+    const closingFenceEnd = closingFence + fenceLength;
     
     // Find if there's a newline after the closing fence
     const closingLineEnd = text.indexOf('\n', closingFence);
-    const closingEnd = closingLineEnd !== -1 ? closingLineEnd + 1 : end;
+    const closingEnd = closingLineEnd !== -1 ? closingLineEnd + 1 : codeEnd;
 
     // Apply code block background to the entire block including fence lines
     // but NOT including the newline after the closing fence
@@ -525,14 +640,41 @@ export class MarkdownParser {
       type: 'codeBlock',
     });
 
-    // Hide the opening fence line (```, language identifier, and newline)
+    // Hide the opening fence markers
     decorations.push({
       startPos: fenceStart,
-      endPos: openingEnd,
+      endPos: openingFenceEnd,
       type: 'hide',
     });
 
-    // Hide the closing fence line (```, and newline if present)
+    // Find language identifier (between fence and newline)
+    const languageStart = openingFenceEnd;
+    const languageEnd = openingLineEnd !== -1 && openingLineEnd < closingFence 
+      ? openingLineEnd 
+      : openingFenceEnd;
+
+    // Apply language identifier decoration if there's a language (not just whitespace)
+    if (languageEnd > languageStart) {
+      const languageText = text.substring(languageStart, languageEnd).trim();
+      if (languageText.length > 0) {
+        decorations.push({
+          startPos: languageStart,
+          endPos: languageEnd,
+          type: 'codeBlockLanguage',
+        });
+      }
+    }
+
+    // Hide the newline after the language identifier (if present)
+    if (openingLineEnd !== -1 && openingLineEnd < closingFence) {
+      decorations.push({
+        startPos: openingLineEnd,
+        endPos: openingLineEnd + 1,
+        type: 'hide',
+      });
+    }
+
+    // Hide the closing fence line (fence and newline if present)
     decorations.push({
       startPos: closingFence,
       endPos: closingEnd,

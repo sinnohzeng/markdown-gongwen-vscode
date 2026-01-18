@@ -68,6 +68,14 @@
           "default": false,
           "description": "Apply decorators in diff view",
           "markdownDescription": "When enabled, markdown decorations (bold, italic, headings, etc.) are applied in diff views (Git diffs, merge editors, Copilot inline diffs). When disabled, raw markdown syntax is shown to make changes easier to review."
+        },
+        "markdownInlineEditor.decorations.ghostFaintOpacity": {
+          "type": "number",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity for ghost faint decorations",
+          "markdownDescription": "Controls the opacity of ghost faint decorations (markdown syntax markers that appear faintly when the cursor is on a line with a selection). Lower values make the markers more subtle. Range: 0.0 (invisible) to 1.0 (fully opaque)."
         }
       }
     }

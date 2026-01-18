@@ -9,6 +9,7 @@ import {
   StrikethroughDecorationType,
   CodeDecorationType,
   CodeBlockDecorationType,
+  CodeBlockLanguageDecorationType,
   HeadingDecorationType,
   Heading1DecorationType,
   Heading2DecorationType,
@@ -105,13 +106,14 @@ export class Decorator {
 
   private hideDecorationType = HideDecorationType();
   private transparentDecorationType = TransparentDecorationType();
-  private ghostFaintDecorationType = GhostFaintDecorationType();
+  private ghostFaintDecorationType = GhostFaintDecorationType(this.getGhostFaintOpacity());
   private boldDecorationType = BoldDecorationType();
   private italicDecorationType = ItalicDecorationType();
   private boldItalicDecorationType = BoldItalicDecorationType();
   private strikethroughDecorationType = StrikethroughDecorationType();
   private codeDecorationType = CodeDecorationType();
   private codeBlockDecorationType = CodeBlockDecorationType();
+  private codeBlockLanguageDecorationType = CodeBlockLanguageDecorationType();
   private headingDecorationType = HeadingDecorationType();
   private heading1DecorationType = Heading1DecorationType();
   private heading2DecorationType = Heading2DecorationType();
@@ -630,6 +632,179 @@ export class Decorator {
         continue;
       }
 
+      // Special handling for images: they have ![alt](url) structure
+      // Structure: ![hide] image_content [hide] (hide url hide) hide
+      // Similar to links, but starts with ![
+      if (contentDec.type === 'image') {
+        // Find opening ![ hide (before image content) - it's 2 characters
+        const openingExclamationBracket = decorations.find((decoration) =>
+          decoration.type === 'hide' &&
+          decoration.endPos === contentDec.startPos &&
+          decoration.endPos - decoration.startPos === 2 // ![ is 2 chars
+        );
+        
+        // Find closing bracket hide (after image content)
+        const closingBracket = decorations.find((decoration) =>
+          decoration.type === 'hide' &&
+          decoration.startPos === contentDec.endPos &&
+          decoration.endPos - decoration.startPos === 1 // ] is 1 char
+        );
+        
+        if (openingExclamationBracket && closingBracket) {
+          // Find all hide decorations after the closing bracket that are part of the image
+          // Image structure: ](url) = ] hide ( url_content ) hide
+          // Note: URL content itself is NOT hidden, only parentheses are hidden
+          // So we need to find the opening paren hide, then the closing paren hide
+          const hidesAfterBracket = decorations
+            .filter((decoration) =>
+              decoration.type === 'hide' &&
+              decoration.startPos >= closingBracket.endPos
+            )
+            .sort((a, b) => a.startPos - b.startPos);
+          
+          // Find the opening parenthesis hide (should be first or second hide after bracket)
+          // Allow for optional whitespace between ] and (
+          const openingParen = hidesAfterBracket.find((hide) =>
+            hide.startPos >= closingBracket.endPos &&
+            hide.endPos - hide.startPos === 1 // ( is 1 char
+          );
+          
+          // Find the closing parenthesis hide (should be the last hide after opening paren)
+          // The URL content between parentheses is not hidden, so there will be a gap
+          let closingParen: DecorationRange | undefined;
+          
+          if (openingParen) {
+            // Find the closing paren - it should be a hide decoration after the opening paren
+            // Since URL content is not hidden, we look for the last hide that could be the closing paren
+            const hidesAfterOpeningParen = hidesAfterBracket.filter((hide) =>
+              hide.startPos > openingParen.endPos
+            );
+            
+            if (hidesAfterOpeningParen.length > 0) {
+              // The closing paren should be a single-character hide decoration
+              // It might not be immediately after opening paren due to URL content gap
+              closingParen = hidesAfterOpeningParen.find((hide) =>
+                hide.endPos - hide.startPos === 1 // ) is 1 char
+              );
+              
+              // If not found by length, use the last one (fallback)
+              if (!closingParen && hidesAfterOpeningParen.length > 0) {
+                closingParen = hidesAfterOpeningParen[hidesAfterOpeningParen.length - 1];
+              }
+            }
+          }
+          
+          if (closingParen) {
+            // Scope spans from opening ![ to closing parenthesis
+            const scopeStart = openingExclamationBracket.startPos;
+            const scopeEnd = closingParen.endPos;
+            const range = this.createRange(scopeStart, scopeEnd, originalText);
+            if (range) {
+              scopes.push({
+                startPos: scopeStart,
+                endPos: scopeEnd,
+                range,
+              });
+            }
+          } else {
+            // Fallback: if no closing paren found, use closing bracket
+            const scopeStart = openingExclamationBracket.startPos;
+            const scopeEnd = closingBracket.endPos;
+            const range = this.createRange(scopeStart, scopeEnd, originalText);
+            if (range) {
+              scopes.push({
+                startPos: scopeStart,
+                endPos: scopeEnd,
+                range,
+              });
+            }
+          }
+        }
+        continue;
+      }
+
+      // Special handling for links: they have [text](url) structure
+      // Structure: [hide] link_content [hide] (hide url_content hide) hide
+      // The link decoration only covers the text part, but the scope should include the URL
+      if (contentDec.type === 'link') {
+        // Find opening bracket hide (before link content)
+        const openingBracket = decorations.find((decoration) =>
+          decoration.type === 'hide' &&
+          decoration.endPos === contentDec.startPos
+        );
+        
+        // Find closing bracket hide (after link content)
+        const closingBracket = decorations.find((decoration) =>
+          decoration.type === 'hide' &&
+          decoration.startPos === contentDec.endPos
+        );
+        
+        if (openingBracket && closingBracket) {
+          // Find all hide decorations after the closing bracket that are part of the link
+          // Link structure: ](url) = ] hide ( hide url hide ) hide
+          // We need to find the sequence: opening paren, url content, closing paren
+          const hidesAfterBracket = decorations
+            .filter((decoration) =>
+              decoration.type === 'hide' &&
+              decoration.startPos >= closingBracket.endPos
+            )
+            .sort((a, b) => a.startPos - b.startPos);
+          
+          // Find the closing parenthesis by looking for the last hide in a contiguous sequence
+          // The link URL part should be a contiguous sequence of hide decorations
+          // We'll find the last one that's part of this sequence
+          let closingParen: DecorationRange | undefined;
+          
+          if (hidesAfterBracket.length > 0) {
+            // Start from the closing bracket and find contiguous hides
+            // A gap indicates we've left the link construct
+            let currentPos = closingBracket.endPos;
+            let lastInSequence: DecorationRange | undefined;
+            
+            for (const hide of hidesAfterBracket) {
+              // Check if this hide is contiguous (starts at or right after current position)
+              if (hide.startPos <= currentPos + 1) {
+                lastInSequence = hide;
+                currentPos = Math.max(currentPos, hide.endPos);
+              } else {
+                // We've hit a gap - the previous hide was the last of the link
+                break;
+              }
+            }
+            
+            closingParen = lastInSequence;
+          }
+          
+          if (closingParen) {
+            // Scope spans from opening bracket to closing parenthesis
+            const scopeStart = openingBracket.startPos;
+            const scopeEnd = closingParen.endPos;
+            const range = this.createRange(scopeStart, scopeEnd, originalText);
+            if (range) {
+              scopes.push({
+                startPos: scopeStart,
+                endPos: scopeEnd,
+                range,
+              });
+            }
+          } else {
+            // Fallback: if no closing paren found, use closing bracket
+            // This handles edge cases like reference-style links
+            const scopeStart = openingBracket.startPos;
+            const scopeEnd = closingBracket.endPos;
+            const range = this.createRange(scopeStart, scopeEnd, originalText);
+            if (range) {
+              scopes.push({
+                startPos: scopeStart,
+                endPos: scopeEnd,
+                range,
+              });
+            }
+          }
+        }
+        continue;
+      }
+
       // Special handling for code blocks: they have a different structure
       // The codeBlock decoration spans the entire block including fences,
       // but the fences are hidden separately
@@ -851,14 +1026,18 @@ export class Decorator {
 
     const selectedRanges: Range[] = [];
     const cursorPositions: Position[] = [];
-    const cursorLines = new Set<number>();
+    const activeLines = new Set<number>(); // Lines with selections or cursors
 
     for (const selection of this.activeEditor.selections) {
       if (!selection.isEmpty) {
         selectedRanges.push(selection);
+        // Add all lines in the selection to activeLines
+        for (let line = selection.start.line; line <= selection.end.line; line++) {
+          activeLines.add(line);
+        }
       } else {
         cursorPositions.push(selection.start);
-        cursorLines.add(selection.start.line);
+        activeLines.add(selection.start.line);
       }
     }
 
@@ -897,15 +1076,18 @@ export class Decorator {
       if (decoration.type === 'hide' || decoration.type === 'transparent') {
         const intersectsRaw = this.rangeIntersectsAny(range, rawRanges);
         const decorationLine = range.start.line;
-        const isGhostLine = cursorLines.size > 0 && cursorLines.has(decorationLine);
+        const isActiveLine = activeLines.size > 0 && activeLines.has(decorationLine);
 
         if (intersectsRaw) {
+          // Raw state: skip (show actual syntax)
           continue;
         }
-        if (isGhostLine) {
+        if (isActiveLine) {
+          // Ghost state: show faint markers on active lines
           ghostFaintRanges.push(range);
           continue;
         }
+        // Rendered state: hide markers normally
         const ranges = filtered.get(decoration.type) || [];
         ranges.push(range);
         filtered.set(decoration.type, ranges);
@@ -914,9 +1096,19 @@ export class Decorator {
 
       if (isMarkerDecorationType(decoration.type)) {
         const intersectsRaw = this.rangeIntersectsAny(range, rawRanges);
+        const decorationLine = range.start.line;
+        const isActiveLine = activeLines.size > 0 && activeLines.has(decorationLine);
+
         if (intersectsRaw) {
+          // Raw state: skip marker decorations (show actual syntax)
           continue;
         }
+        if (isActiveLine) {
+          // Ghost state: show faint markers on active lines
+          ghostFaintRanges.push(range);
+          continue;
+        }
+        // Rendered state: apply marker decorations normally
       }
 
       // Add to appropriate type array
@@ -942,6 +1134,7 @@ export class Decorator {
     ['strikethrough', this.strikethroughDecorationType],
     ['code', this.codeDecorationType],
     ['codeBlock', this.codeBlockDecorationType],
+    ['codeBlockLanguage', this.codeBlockLanguageDecorationType],
     ['heading', this.headingDecorationType],
     ['heading1', this.heading1DecorationType],
     ['heading2', this.heading2DecorationType],
@@ -1117,6 +1310,17 @@ export class Decorator {
    * Recreates the code decoration type when theme changes.
    * This ensures the background color adapts to the new theme.
    */
+  /**
+   * Gets the ghost faint opacity from configuration.
+   * 
+   * @private
+   * @returns {number} Opacity value between 0.0 and 1.0
+   */
+  private getGhostFaintOpacity(): number {
+    const config = workspace.getConfiguration('markdownInlineEditor');
+    return config.get<number>('decorations.ghostFaintOpacity', 0.3);
+  }
+
   recreateCodeDecorationType(): void {
     // Dispose the old decoration type
     this.codeDecorationType.dispose();
@@ -1126,6 +1330,23 @@ export class Decorator {
     
     // Update the decoration type map
     this.decorationTypeMap.set('code', this.codeDecorationType);
+    
+    // Reapply decorations with the new decoration type
+    if (this.activeEditor && this.isMarkdownDocument()) {
+      this.updateDecorationsForSelection();
+    }
+  }
+
+  /**
+   * Recreates the ghost faint decoration type with updated opacity from settings.
+   * Called when the ghostFaintOpacity configuration changes.
+   */
+  recreateGhostFaintDecorationType(): void {
+    // Dispose the old decoration type
+    this.ghostFaintDecorationType.dispose();
+    
+    // Create a new decoration type with updated opacity
+    this.ghostFaintDecorationType = GhostFaintDecorationType(this.getGhostFaintOpacity());
     
     // Reapply decorations with the new decoration type
     if (this.activeEditor && this.isMarkdownDocument()) {

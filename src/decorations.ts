@@ -56,11 +56,31 @@ export function TransparentDecorationType() {
  * Used in Ghost state to show subtle edit cues without fully restoring raw layout.
  * Makes markers faintly visible so users can locate formatting boundaries.
  * 
+ * @param {number} opacity - Opacity value between 0.0 and 1.0 (default: 0.3)
  * @returns {vscode.TextEditorDecorationType} A decoration type that makes text faint
  */
-export function GhostFaintDecorationType() {
+export function GhostFaintDecorationType(opacity: number = 0.3) {
+  // Clamp opacity to valid range
+  const clampedOpacity = Math.max(0, Math.min(1, opacity));
   return window.createTextEditorDecorationType({
-    opacity: '0.5',
+    opacity: clampedOpacity.toString(),
+  });
+}
+
+/**
+ * Creates a decoration type for code block language identifiers.
+ * 
+ * Renders the language identifier (e.g., "python", "javascript") with a subtle badge-like appearance.
+ * Uses a light background, reduced opacity, and smaller font size to create a non-intrusive label
+ * that clearly indicates the language without competing with the code content.
+ * 
+ * @returns {vscode.TextEditorDecorationType} A decoration type for code block language identifiers
+ */
+export function CodeBlockLanguageDecorationType() {
+  return window.createTextEditorDecorationType({
+    opacity: '0.3',
+    fontStyle: 'italic',
+    textDecoration: 'underline',
   });
 }
 
