@@ -584,6 +584,21 @@ export class Decorator {
     const contentDecorations = decorations.filter((decoration) => scopeContentTypes.has(decoration.type));
 
     for (const contentDec of contentDecorations) {
+      // Special handling for horizontal rules: they are self-contained
+      // The entire decoration (e.g., "---") is both the marker and the content
+      // No separate hide decorations exist, so the decoration itself is the scope
+      if (contentDec.type === 'horizontalRule') {
+        const range = this.createRange(contentDec.startPos, contentDec.endPos, originalText);
+        if (range) {
+          scopes.push({
+            startPos: contentDec.startPos,
+            endPos: contentDec.endPos,
+            range,
+          });
+        }
+        continue;
+      }
+
       // Special handling for code blocks: they have a different structure
       // The codeBlock decoration spans the entire block including fences,
       // but the fences are hidden separately

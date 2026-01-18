@@ -83,6 +83,48 @@ describe('Decorator filtering behavior', () => {
     expect(filtered.get('checkboxUnchecked')?.length).toBe(1);
     expect(filtered.has('listItem')).toBe(false);
   });
+
+  it('reveals horizontal rule in raw state when cursor/selection intersects', () => {
+    const text = '---';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 3, type: 'horizontalRule' },
+    ];
+
+    // Test with cursor inside horizontal rule
+    const selection = new Selection(new Position(0, 1), new Position(0, 1));
+    const filtered = filterDecorationsForSelection(text, decorations, selection);
+
+    // Horizontal rule decoration should be skipped (raw state - show actual ---)
+    expect(filtered.has('horizontalRule')).toBe(false);
+  });
+
+  it('shows horizontal rule in rendered state when cursor/selection does not intersect', () => {
+    const text = '---\nother text';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 3, type: 'horizontalRule' },
+    ];
+
+    // Test with cursor on different line
+    const selection = new Selection(new Position(1, 0), new Position(1, 0));
+    const filtered = filterDecorationsForSelection(text, decorations, selection);
+
+    // Horizontal rule decoration should be applied (rendered state - show visual separator)
+    expect(filtered.get('horizontalRule')?.length).toBe(1);
+  });
+
+  it('reveals horizontal rule in raw state when selection covers it', () => {
+    const text = '---';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 3, type: 'horizontalRule' },
+    ];
+
+    // Test with selection covering the entire horizontal rule
+    const selection = new Selection(new Position(0, 0), new Position(0, 3));
+    const filtered = filterDecorationsForSelection(text, decorations, selection);
+
+    // Horizontal rule decoration should be skipped (raw state - show actual ---)
+    expect(filtered.has('horizontalRule')).toBe(false);
+  });
 });
 
 describe('Marker decoration categorization', () => {
