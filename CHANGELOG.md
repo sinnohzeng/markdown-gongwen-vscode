@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Syntax Shadowing Milestone 2: 3-state model (Rendered / Ghost / Raw)
+  - Implements scope-based detection for precise syntax marker visibility
+  - **Rendered state (default)**: Syntax markers hidden, only formatted content visible
+  - **Ghost state**: Cursor on line but not inside construct - markers show at reduced opacity (configurable via `markdownInlineEditor.decorations.ghostFaintOpacity`, default: 0.3)
+  - **Raw state**: Cursor/selection inside construct - markers fully visible for editing
+  - Uses smallest containing scope for cursor positions, preventing multi-line constructs from being revealed when cursor is only on one line
+  - Configuration setting `markdownInlineEditor.decorations.ghostFaintOpacity` to control ghost state opacity (0.0-1.0, default: 0.3)
+
+### Removed
+- `markdownInlineEditor.defaultBehaviors.editor.applyDecorations` setting
+  - This setting was redundant since users can toggle decorations via the command (`mdInline.toggleDecorations`)
+  - Decorations are enabled by default, and users can toggle them on/off as needed
+  - The diff view setting (`defaultBehaviors.diffView.applyDecorations`) remains as it serves a distinct purpose
+
 ## [1.8.0] - 2026-01-10
 
 ### Added
@@ -68,9 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.0] - 2026-01-09
 
 ### Added
-- Default behaviors settings for diff view and regular editor
+- Default behaviors settings for diff view
 - `markdownInlineEditor.defaultBehaviors.diffView.applyDecorations` setting (default: false)
-- `markdownInlineEditor.defaultBehaviors.editor.applyDecorations` setting (default: true)
 - Automatic detection of diff views (Git, merge editor, Copilot inline diffs)
 - Support for side-by-side diff views with decorations disabled on both sides
 - Raw markdown display in diff views by default for easier change review

@@ -92,11 +92,10 @@ The implemented feature set above reflects code-level behavior and tests. Any
 feature listed under `docs/features/todo/` is not included here unless it is
 explicitly present in parsing/decorating logic or tests.
 
-## Recommendations: Complexity Reduction (Preparing for Syntax Shadowing M2/M3)
+## Recommendations: Complexity Reduction (Syntax Shadowing M2 Complete)
 
-Context: Milestone 1 (keep semantic styling while editing) is implemented. Next milestones:
-- `docs/features/todo/syntax-shadowing-m2-three-state-model.md` (Rendered / Ghost / Raw)
-- `docs/features/todo/syntax-shadowing-m3-stability-refinements.md` (stability + expanded “smart click”, starting with tables)
+Context: Milestone 1 (keep semantic styling while editing) is implemented. Milestone 2 is also implemented.
+- ✅ `docs/features/done/syntax-shadowing-m2-three-state-model.md` (Rendered / Ghost / Raw) - **DONE**
 
 ### 1) Introduce an explicit “shadowing state” decision (even before Ghost exists)
 
@@ -114,7 +113,7 @@ M2 explicitly calls for splitting today’s single hidden category into buckets 
   - **layer**: marker/replacement vs semantic vs interaction vs metadata
   - **bucket**: marker | metadata | structuralToken (future) | semantic
   - **state policy**: whether to apply in Rendered/Ghost/Raw
-  - **layout sensitivity**: prefer `transparent` vs `hide` (M3)
+  - **layout sensitivity**: prefer `transparent` vs `hide` (for future table support)
 - Then `isMarkerDecorationType()` becomes a thin query into this map (or can be removed entirely).
 
 This reduces “add a new decoration type” from “update multiple switch/if sites” to “update one policy entry + add tests”.
@@ -122,7 +121,7 @@ This reduces “add a new decoration type” from “update multiple switch/if s
 ### 3) Generalize “smart click” as interaction zones (avoid one-off checkbox logic)
 
 Today, checkbox handling is a special-case in filtering (“keep visible if cursor is inside checkbox range”).
-M3 wants this concept expanded (e.g. link click intent vs edit intent).
+This concept could be expanded in the future (e.g. link click intent vs edit intent).
 
 - Model “interaction zones” as first-class data (range + intent), and have one generic rule:
   - **If the cursor is inside an interaction zone**, keep the interaction decoration active regardless of state.
@@ -130,11 +129,11 @@ M3 wants this concept expanded (e.g. link click intent vs edit intent).
 
 ### 4) Separate “what a decoration means” from “how it is rendered”
 
-M3’s stability work (tables) is essentially “choose a different hiding strategy in layout-sensitive contexts”.
+Future stability work (tables) would essentially be "choose a different hiding strategy in layout-sensitive contexts".
 
 - Prefer representing “hiding strategy” as data (e.g. compact hide vs transparent hide) chosen by context,
   rather than multiplying decoration types or adding more conditional logic in filtering.
-- Add a context classifier (start simple): `isInTableCell(line)` (M3 scope), later extend to other layout-sensitive regions.
+- Add a context classifier (start simple): `isInTableCell(line)` , later extend to other layout-sensitive regions.
 
 ### 5) Make precedence/layering rules explicit for nested constructs
 
@@ -148,6 +147,6 @@ M2 calls out nested constructs (e.g. bold inside links, inline code inside empha
 Add tests around the *state decision* and *policy application* (not just end visuals):
 - Multi-cursor and multi-selection cases (line-level vs range-level state)
 - Nested constructs producing stable/consistent output in Ghost/Raw
-- Table examples (even before M3) to prevent regressions once stability rules land
+- Table examples  to prevent regressions once stability rules land
 
-Net effect: M2/M3 become mainly “extend policy/state + add decorations”, rather than “grow conditional logic in filtering”.
+Net effect: Future improvements become mainly “extend policy/state + add decorations”, rather than “grow conditional logic in filtering”.

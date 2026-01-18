@@ -18,6 +18,24 @@ export interface DecorationRange {
 }
 
 /**
+ * Represents a markdown construct scope (e.g., **bold**, [link](url)).
+ * Positions are in normalized text offsets (LF line endings).
+ */
+export interface ScopeRange {
+  startPos: number;
+  endPos: number;
+  kind?: string;
+}
+
+/**
+ * Result of parsing markdown for decorations and scopes.
+ */
+export interface ParseResult {
+  decorations: DecorationRange[];
+  scopes: ScopeRange[];
+}
+
+/**
  * Types of decorations that can be applied to markdown content.
  */
 export type DecorationType =
@@ -29,6 +47,7 @@ export type DecorationType =
   | 'strikethrough'
   | 'code'
   | 'codeBlock'
+  | 'codeBlockLanguage'
   | 'heading'
   | 'heading1'
   | 'heading2'
@@ -44,7 +63,8 @@ export type DecorationType =
   | 'checkboxUnchecked'
   | 'checkboxChecked'
   | 'horizontalRule'
-  | 'frontmatter';
+  | 'frontmatter'
+  | 'frontmatterDelimiter';
 
 /**
  * Type for the unified processor used to parse markdown text to a Root AST node.
@@ -119,31 +139,42 @@ export class MarkdownParser {
    * @returns {DecorationRange[]} Array of decoration ranges, sorted by startPos
    */
   extractDecorations(text: string): DecorationRange[] {
+    return this.extractDecorationsWithScopes(text).decorations;
+  }
+
+  /**
+   * Extracts decoration ranges and explicit scope ranges from markdown text.
+   * 
+   * @param {string} text - The markdown text to parse
+   * @returns {ParseResult} Decorations and scopes, sorted by startPos
+   */
+  extractDecorationsWithScopes(text: string): ParseResult {
     if (!text || typeof text !== 'string') {
-      return [];
+      return { decorations: [], scopes: [] };
     }
 
     // Normalize line endings to \n for consistent position tracking
     // Optimization: Only normalize if document contains CRLF
-    const normalizedText = text.indexOf('\r') !== -1 
+    const normalizedText = text.indexOf('\r') !== -1
       ? text.replace(/\r\n|\r/g, '\n')
       : text;
-    
+
     const decorations: DecorationRange[] = [];
-    
+    const scopes: ScopeRange[] = [];
+
     // Process frontmatter before remark parsing to avoid conflicts with thematic break detection
-    this.processFrontmatter(normalizedText, decorations);
-    
+    this.processFrontmatter(normalizedText, decorations, scopes);
+
     try {
       // Parse markdown into AST
       const ast = this.processor.parse(normalizedText) as Root;
-      
-      // Process AST nodes and extract decorations
-      this.processAST(ast, normalizedText, decorations);
-      
+
+      // Process AST nodes and extract decorations + scopes
+      this.processAST(ast, normalizedText, decorations, scopes);
+
       // Handle edge cases: empty image alt text that remark doesn't parse as Image node
       this.handleEmptyImageAlt(normalizedText, decorations);
-      
+
       // Sort decorations by start position
       decorations.sort((a, b) => a.startPos - b.startPos);
     } catch (error) {
@@ -151,7 +182,10 @@ export class MarkdownParser {
       console.error('Error parsing markdown:', error);
     }
 
-    return decorations;
+    return {
+      decorations,
+      scopes: this.dedupeScopes(scopes),
+    };
   }
 
   /**
@@ -167,7 +201,8 @@ export class MarkdownParser {
   private processAST(
     ast: Root,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     // Track processed blockquote positions to avoid duplicates from nested blockquotes
     const processedBlockquotePositions = new Set<number>();
@@ -197,47 +232,47 @@ export class MarkdownParser {
 
         switch (node.type) {
           case 'heading':
-            this.processHeading(node as Heading, text, decorations);
+            this.processHeading(node as Heading, text, decorations, scopes);
             break;
 
           case 'strong':
-            this.processStrong(node as Strong, text, decorations, currentAncestors);
+            this.processStrong(node as Strong, text, decorations, scopes, currentAncestors);
             break;
 
           case 'emphasis':
-            this.processEmphasis(node as Emphasis, text, decorations, currentAncestors);
+            this.processEmphasis(node as Emphasis, text, decorations, scopes, currentAncestors);
             break;
 
           case 'delete':
-            this.processStrikethrough(node as Delete, text, decorations);
+            this.processStrikethrough(node as Delete, text, decorations, scopes);
             break;
 
           case 'inlineCode':
-            this.processInlineCode(node as InlineCode, text, decorations);
+            this.processInlineCode(node as InlineCode, text, decorations, scopes);
             break;
 
           case 'code':
-            this.processCodeBlock(node as Code, text, decorations);
+            this.processCodeBlock(node as Code, text, decorations, scopes);
             break;
 
           case 'link':
-            this.processLink(node as Link, text, decorations);
+            this.processLink(node as Link, text, decorations, scopes);
             break;
 
           case 'image':
-            this.processImage(node as Image, text, decorations);
+            this.processImage(node as Image, text, decorations, scopes);
             break;
 
           case 'blockquote':
-            this.processBlockquote(node as Blockquote, text, decorations, processedBlockquotePositions);
+            this.processBlockquote(node as Blockquote, text, decorations, scopes, processedBlockquotePositions);
             break;
 
           case 'listItem':
-            this.processListItem(node as ListItem, text, decorations);
+            this.processListItem(node as ListItem, text, decorations, scopes);
             break;
 
           case 'thematicBreak':
-            this.processThematicBreak(node as ThematicBreak, text, decorations);
+            this.processThematicBreak(node as ThematicBreak, text, decorations, scopes);
             break;
         }
       } catch (error) {
@@ -291,12 +326,46 @@ export class MarkdownParser {
   }
 
   /**
+   * Adds a scope range for a markdown construct if valid.
+   */
+  private addScope(scopes: ScopeRange[], startPos: number, endPos: number, kind?: string): void {
+    if (startPos < endPos) {
+      scopes.push({ startPos, endPos, kind });
+    }
+  }
+
+  /**
+   * Deduplicates and sorts scopes by start position.
+   */
+  private dedupeScopes(scopes: ScopeRange[]): ScopeRange[] {
+    if (scopes.length === 0) {
+      return [];
+    }
+
+    const unique = new Map<string, ScopeRange>();
+    for (const scope of scopes) {
+      const key = `${scope.startPos}:${scope.endPos}`;
+      if (!unique.has(key)) {
+        unique.set(key, scope);
+      }
+    }
+
+    return Array.from(unique.values()).sort((a, b) => {
+      if (a.startPos !== b.startPos) {
+        return a.startPos - b.startPos;
+      }
+      return a.endPos - b.endPos;
+    });
+  }
+
+  /**
    * Processes a heading node.
    */
   private processHeading(
     node: Heading,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -356,6 +425,8 @@ export class MarkdownParser {
         type: 'heading',
       });
     }
+
+    this.addScope(scopes, start, contentEnd, 'heading');
   }
 
   /**
@@ -365,6 +436,7 @@ export class MarkdownParser {
     node: Strong,
     text: string,
     decorations: DecorationRange[],
+    scopes: ScopeRange[],
     ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
@@ -383,6 +455,7 @@ export class MarkdownParser {
     const contentType: DecorationType = isBoldItalic ? 'boldItalic' : 'bold';
 
     this.addMarkerDecorations(decorations, start, end, markerLength, contentType);
+    this.addScope(scopes, start, end, contentType);
 
     // Process children for nested decorations (handled by visit)
   }
@@ -397,6 +470,7 @@ export class MarkdownParser {
     node: Emphasis,
     text: string,
     decorations: DecorationRange[],
+    scopes: ScopeRange[],
     ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
@@ -428,23 +502,40 @@ export class MarkdownParser {
     const contentType: DecorationType = isBoldItalic ? 'boldItalic' : 'italic';
 
     this.addMarkerDecorations(decorations, start, end, markerLength, contentType);
+    this.addScope(scopes, start, end, contentType);
   }
 
   /**
    * Processes a strikethrough (delete) node.
+   * 
+   * Validates that the node actually uses ~~ (double tilde) markers,
+   * not single ~, to prevent incorrect parsing of single tildes as strikethrough.
    */
   private processStrikethrough(
     node: Delete,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
 
+    // Validate that this is actually strikethrough (~~text~~) and not single tilde (~text~)
+    // Check for double tilde at the start
+    if (start + 1 >= text.length || text[start] !== '~' || text[start + 1] !== '~') {
+      return; // Not a valid strikethrough marker
+    }
+
+    // Check for double tilde at the end
+    if (end < 2 || text[end - 2] !== '~' || text[end - 1] !== '~') {
+      return; // Not a valid strikethrough marker
+    }
+
     // Strikethrough uses ~~ markers (length 2)
     this.addMarkerDecorations(decorations, start, end, 2, 'strikethrough');
+    this.addScope(scopes, start, end, 'strikethrough');
   }
 
   /**
@@ -457,7 +548,8 @@ export class MarkdownParser {
   private processInlineCode(
     node: InlineCode,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -483,39 +575,141 @@ export class MarkdownParser {
     // which is required for borders to render correctly on single lines
     decorations.push({ startPos: start, endPos: start + markerLength, type: 'transparent' });
     decorations.push({ startPos: end - markerLength, endPos: end, type: 'transparent' });
+
+    this.addScope(scopes, start, end, 'code');
   }
 
   /**
    * Processes a code block node.
+   * 
+   * Supports both backtick (```) and tilde (~~~) fences, with variable length (3+ characters).
+   * Detects the fence type and length from the text to properly handle all GFM code block variants.
    */
   private processCodeBlock(
     node: Code,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
-    const start = node.position!.start.offset!;
-    const end = node.position!.end.offset!
+    const codeStart = node.position!.start.offset!;
+    const codeEnd = node.position!.end.offset!;
 
-    // Find opening fence (```)
-    const fenceStart = text.indexOf('```', start);
-    if (fenceStart === -1) return;
+    // Detect opening fence: scan from codeStart backwards to find fence start
+    // The fence should be at the start of a line (or after only whitespace)
+    let fenceStart = codeStart;
+    let fenceChar: string | null = null;
+    let fenceLength = 0;
+    
+    // Find the line start before the code block
+    const lineStart = text.lastIndexOf('\n', codeStart - 1) + 1;
+    
+    // Scan from line start to find the fence
+    for (let pos = lineStart; pos < codeStart && pos < text.length; pos++) {
+      const char = text[pos];
+      if (char === '`' || char === '~') {
+        // Count consecutive fence characters
+        let count = 1;
+        let checkPos = pos + 1;
+        while (checkPos < text.length && text[checkPos] === char && count < 20) {
+          count++;
+          checkPos++;
+        }
+        
+        // Valid fence must be 3+ characters
+        if (count >= 3) {
+          fenceStart = pos;
+          fenceChar = char;
+          fenceLength = count;
+          break;
+        }
+      }
+    }
 
-    // Find closing fence
-    const closingFence = text.lastIndexOf('```', end);
+    // Fallback: if no fence found, try searching forward from codeStart
+    if (!fenceChar) {
+      for (let pos = codeStart; pos < Math.min(codeStart + 20, text.length); pos++) {
+        const char = text[pos];
+        if (char === '`' || char === '~') {
+          let count = 1;
+          let checkPos = pos + 1;
+          while (checkPos < text.length && text[checkPos] === char && count < 20) {
+            count++;
+            checkPos++;
+          }
+          if (count >= 3) {
+            fenceStart = pos;
+            fenceChar = char;
+            fenceLength = count;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!fenceChar || fenceLength < 3) {
+      // Final fallback: assume standard ``` backticks
+      const fallbackFence = text.indexOf('```', codeStart - 10);
+      if (fallbackFence === -1 || fallbackFence > codeStart) return;
+      fenceStart = fallbackFence;
+      fenceChar = '`';
+      fenceLength = 3;
+    }
+
+    // Find closing fence: scan backwards from codeEnd
+    let closingFence = -1;
+    const closingLineStart = text.lastIndexOf('\n', codeEnd - 1) + 1;
+    
+    // Search backwards from codeEnd to find closing fence
+    for (let pos = codeEnd - 1; pos >= closingLineStart && pos >= fenceStart + fenceLength; pos--) {
+      if (text[pos] === fenceChar) {
+        // Count consecutive fence characters backwards
+        let count = 1;
+        let checkPos = pos - 1;
+        while (checkPos >= 0 && text[checkPos] === fenceChar && count < 20) {
+          count++;
+          checkPos--;
+        }
+        
+        // Closing fence must be at least as long as opening fence
+        if (count >= fenceLength) {
+          closingFence = pos - count + 1;
+          break;
+        }
+      }
+    }
+
+    if (closingFence === -1) {
+      // Fallback: search forward from codeEnd
+      for (let pos = codeEnd; pos < Math.min(codeEnd + 20, text.length); pos++) {
+        if (text[pos] === fenceChar) {
+          let count = 1;
+          let checkPos = pos + 1;
+          while (checkPos < text.length && text[checkPos] === fenceChar && count < 20) {
+            count++;
+            checkPos++;
+          }
+          if (count >= fenceLength) {
+            closingFence = pos;
+            break;
+          }
+        }
+      }
+    }
+
     if (closingFence === -1 || closingFence <= fenceStart) return;
 
     // Find the end of the opening fence line (including language identifier and newline)
     const openingLineEnd = text.indexOf('\n', fenceStart);
-    const openingEnd = openingLineEnd !== -1 && openingLineEnd < closingFence ? openingLineEnd + 1 : fenceStart + 3;
+    const openingFenceEnd = fenceStart + fenceLength;
 
-    // Find the end of the closing fence (just after ```)
-    const closingFenceEnd = closingFence + 3;
+    // Find the end of the closing fence
+    const closingFenceEnd = closingFence + fenceLength;
     
     // Find if there's a newline after the closing fence
     const closingLineEnd = text.indexOf('\n', closingFence);
-    const closingEnd = closingLineEnd !== -1 ? closingLineEnd + 1 : end;
+    const closingEnd = closingLineEnd !== -1 ? closingLineEnd + 1 : codeEnd;
 
     // Apply code block background to the entire block including fence lines
     // but NOT including the newline after the closing fence
@@ -525,19 +719,48 @@ export class MarkdownParser {
       type: 'codeBlock',
     });
 
-    // Hide the opening fence line (```, language identifier, and newline)
+    // Hide the opening fence markers
     decorations.push({
       startPos: fenceStart,
-      endPos: openingEnd,
+      endPos: openingFenceEnd,
       type: 'hide',
     });
 
-    // Hide the closing fence line (```, and newline if present)
+    // Find language identifier (between fence and newline)
+    const languageStart = openingFenceEnd;
+    const languageEnd = openingLineEnd !== -1 && openingLineEnd < closingFence 
+      ? openingLineEnd 
+      : openingFenceEnd;
+
+    // Apply language identifier decoration if there's a language (not just whitespace)
+    if (languageEnd > languageStart) {
+      const languageText = text.substring(languageStart, languageEnd).trim();
+      if (languageText.length > 0) {
+        decorations.push({
+          startPos: languageStart,
+          endPos: languageEnd,
+          type: 'codeBlockLanguage',
+        });
+      }
+    }
+
+    // Hide the newline after the language identifier (if present)
+    if (openingLineEnd !== -1 && openingLineEnd < closingFence) {
+      decorations.push({
+        startPos: openingLineEnd,
+        endPos: openingLineEnd + 1,
+        type: 'hide',
+      });
+    }
+
+    // Hide the closing fence line (fence and newline if present)
     decorations.push({
       startPos: closingFence,
       endPos: closingEnd,
       type: 'hide',
     });
+
+    this.addScope(scopes, fenceStart, closingEnd, 'codeBlock');
   }
 
   /**
@@ -546,7 +769,8 @@ export class MarkdownParser {
   private processLink(
     node: Link,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -619,6 +843,8 @@ export class MarkdownParser {
         });
       }
     }
+
+    this.addScope(scopes, start, end, 'link');
   }
 
   /**
@@ -627,7 +853,8 @@ export class MarkdownParser {
   private processImage(
     node: Image,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -691,6 +918,8 @@ export class MarkdownParser {
         }
       }
     }
+
+    this.addScope(scopes, start, end, 'image');
   }
 
   /**
@@ -705,6 +934,7 @@ export class MarkdownParser {
     node: Blockquote,
     text: string,
     decorations: DecorationRange[],
+    scopes: ScopeRange[],
     processedPositions: Set<number>
   ): void {
     if (!this.hasValidPosition(node)) return;
@@ -763,6 +993,8 @@ export class MarkdownParser {
       if (nextLine === -1 || nextLine >= end) break;
       pos = nextLine + 1;
     }
+
+    this.addScope(scopes, start, end, 'blockquote');
   }
 
   /**
@@ -776,7 +1008,8 @@ export class MarkdownParser {
   private processListItem(
     node: ListItem,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -792,6 +1025,8 @@ export class MarkdownParser {
     }
     
     if (markerEnd >= end) return;
+
+    this.addScope(scopes, start, end, 'listItem');
     
     const markerStart = markerEnd;
     
@@ -925,7 +1160,8 @@ export class MarkdownParser {
   private processThematicBreak(
     node: ThematicBreak,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -950,6 +1186,8 @@ export class MarkdownParser {
       endPos: end,
       type: 'horizontalRule',
     });
+
+    this.addScope(scopes, start, end, 'horizontalRule');
   }
 
 
@@ -1053,7 +1291,7 @@ export class MarkdownParser {
    * @param {string} text - The normalized markdown text (CRLF normalized to LF)
    * @param {DecorationRange[]} decorations - Array to accumulate decorations
    */
-  private processFrontmatter(text: string, decorations: DecorationRange[]): void {
+  private processFrontmatter(text: string, decorations: DecorationRange[], scopes: ScopeRange[]): void {
     if (!text || text.length < MarkdownParser.MIN_FRONTMATTER_LENGTH) {
       return;
     }
@@ -1127,11 +1365,31 @@ export class MarkdownParser {
             ? closingDelimiterStart + MarkdownParser.MIN_FRONTMATTER_LENGTH  // End at end of --- (no newline, end of document)
             : closingLineEnd;             // End at newline position (exclusive, so newline is not included)
           
-          // Apply decoration to entire block from opening delimiter start to end of closing delimiter line
+          // Apply background decoration to entire block from opening delimiter start to end of closing delimiter line
           decorations.push({
             startPos: openingDelimiterStart,
             endPos: closingLineEndPos,
             type: 'frontmatter',
+          });
+
+          this.addScope(scopes, openingDelimiterStart, closingLineEndPos, 'frontmatter');
+
+          // Apply opacity decoration to opening delimiter (---)
+          // The delimiter is exactly 3 characters: ---
+          const openingDelimiterEnd = openingDelimiterStart + MarkdownParser.MIN_FRONTMATTER_LENGTH;
+          decorations.push({
+            startPos: openingDelimiterStart,
+            endPos: openingDelimiterEnd,
+            type: 'frontmatterDelimiter',
+          });
+
+          // Apply opacity decoration to closing delimiter (---)
+          // The delimiter is exactly 3 characters: ---
+          const closingDelimiterEnd = closingDelimiterStart + MarkdownParser.MIN_FRONTMATTER_LENGTH;
+          decorations.push({
+            startPos: closingDelimiterStart,
+            endPos: closingDelimiterEnd,
+            type: 'frontmatterDelimiter',
           });
         }
         return;

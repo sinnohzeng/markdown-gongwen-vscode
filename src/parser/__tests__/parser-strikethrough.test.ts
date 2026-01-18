@@ -92,5 +92,28 @@ describe('MarkdownParser - Strikethrough Text', () => {
       expect(strikethroughDecorations[1].endPos).toBe(17);
     });
   });
+
+  describe('single tilde should not be strikethrough', () => {
+    it('should not treat single tilde as strikethrough', () => {
+      const markdown = '~not strikethrough~';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should not have any strikethrough decorations
+      const strikethroughDecorations = result.filter(d => d.type === 'strikethrough');
+      expect(strikethroughDecorations.length).toBe(0);
+    });
+
+    it('should distinguish between single and double tilde', () => {
+      const markdown = '~single~ and ~~double~~';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should only have one strikethrough decoration (for double tilde)
+      const strikethroughDecorations = result.filter(d => d.type === 'strikethrough');
+      expect(strikethroughDecorations.length).toBe(1);
+      
+      // Should be for "double", not "single"
+      expect(strikethroughDecorations[0].startPos).toBeGreaterThan(10);
+    });
+  });
 });
 

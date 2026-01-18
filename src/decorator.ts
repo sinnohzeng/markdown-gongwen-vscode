@@ -2,12 +2,14 @@ import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, workspace, wi
 import {
   HideDecorationType,
   TransparentDecorationType,
+  GhostFaintDecorationType,
   BoldDecorationType,
   ItalicDecorationType,
   BoldItalicDecorationType,
   StrikethroughDecorationType,
   CodeDecorationType,
   CodeBlockDecorationType,
+  CodeBlockLanguageDecorationType,
   HeadingDecorationType,
   Heading1DecorationType,
   Heading2DecorationType,
@@ -24,8 +26,9 @@ import {
   CheckboxUncheckedDecorationType,
   CheckboxCheckedDecorationType,
   FrontmatterDecorationType,
+  FrontmatterDelimiterDecorationType,
 } from './decorations';
-import { MarkdownParser, DecorationRange, DecorationType } from './parser';
+import { MarkdownParser, DecorationRange, DecorationType, ScopeRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { isMarkerDecorationType } from './decorator/decoration-categories';
 
@@ -47,8 +50,19 @@ const PERFORMANCE_CONSTANTS = {
 interface CacheEntry {
   version: number;
   decorations: DecorationRange[];
+  scopes: ScopeEntry[];
   text: string;
   lastAccessed: number;
+}
+
+/**
+ * Represents a markdown construct scope (e.g., bold, italic, link).
+ * The scope spans from the start of the opening marker to the end of the closing marker.
+ */
+interface ScopeEntry {
+  startPos: number;
+  endPos: number;
+  range: Range;
 }
 
 /**
@@ -94,12 +108,14 @@ export class Decorator {
 
   private hideDecorationType = HideDecorationType();
   private transparentDecorationType = TransparentDecorationType();
+  private ghostFaintDecorationType = GhostFaintDecorationType(this.getGhostFaintOpacity());
   private boldDecorationType = BoldDecorationType();
   private italicDecorationType = ItalicDecorationType();
   private boldItalicDecorationType = BoldItalicDecorationType();
   private strikethroughDecorationType = StrikethroughDecorationType();
   private codeDecorationType = CodeDecorationType();
   private codeBlockDecorationType = CodeBlockDecorationType();
+  private codeBlockLanguageDecorationType = CodeBlockLanguageDecorationType(this.getCodeBlockLanguageOpacity());
   private headingDecorationType = HeadingDecorationType();
   private heading1DecorationType = Heading1DecorationType();
   private heading2DecorationType = Heading2DecorationType();
@@ -116,6 +132,7 @@ export class Decorator {
   private checkboxUncheckedDecorationType = CheckboxUncheckedDecorationType();
   private checkboxCheckedDecorationType = CheckboxCheckedDecorationType();
   private frontmatterDecorationType = FrontmatterDecorationType();
+  private frontmatterDelimiterDecorationType = FrontmatterDelimiterDecorationType(this.getFrontmatterDelimiterOpacity());
 
   /**
    * Sets the active text editor and immediately updates decorations.
@@ -359,6 +376,9 @@ export class Decorator {
     for (const decorationType of this.decorationTypeMap.values()) {
       this.activeEditor.setDecorations(decorationType, []);
     }
+    
+    // Also clear ghost faint decoration (not in decorationTypeMap)
+    this.activeEditor.setDecorations(this.ghostFaintDecorationType, []);
   }
 
   /**
@@ -389,7 +409,7 @@ export class Decorator {
     const document = this.activeEditor.document;
 
     // Parse document (uses cache if version unchanged)
-    const decorations = this.parseDocument(document);
+    const { decorations, scopes } = this.parseDocument(document);
 
     // Re-validate version before applying (race condition protection)
     if (this.isDocumentStale(document)) {
@@ -402,7 +422,7 @@ export class Decorator {
     const originalText = cached?.text || document.getText();
 
     // Filter decorations based on selections (pass original text for offset adjustment)
-    const filtered = this.filterDecorations(decorations, originalText);
+    const filtered = this.filterDecorations(decorations, scopes, originalText);
 
     // Apply decorations
     this.applyDecorations(filtered);
@@ -518,14 +538,14 @@ export class Decorator {
   }
 
   /**
-   * Parses the document and returns decoration ranges.
+   * Parses the document and returns decoration ranges and scopes.
    * Uses cache if document version is unchanged.
    * 
    * @private
    * @param {TextDocument} document - The document to parse
-   * @returns {DecorationRange[]} Array of decoration ranges
+   * @returns Parsed decorations and scopes
    */
-  private parseDocument(document: TextDocument): DecorationRange[] {
+  private parseDocument(document: TextDocument): { decorations: DecorationRange[]; scopes: ScopeEntry[] } {
     const cacheKey = document.uri.toString();
     const cached = this.getCachedDecorations(document);
 
@@ -535,96 +555,319 @@ export class Decorator {
       if (entry) {
         entry.lastAccessed = ++this.accessCounter;
       }
-      return cached;
+      return { decorations: cached.decorations, scopes: cached.scopes };
     }
 
     // Parse document
     const documentText = document.getText();
-    const decorations = this.parser.extractDecorations(documentText);
+    const { decorations, scopes } = this.parser.extractDecorationsWithScopes(documentText);
+    const scopeEntries = this.buildScopeEntries(scopes, documentText);
 
     // Cache the result
-    this.setCachedDecorations(document, decorations, documentText);
+    this.setCachedDecorations(document, decorations, scopeEntries, documentText);
 
-    return decorations;
+    return { decorations, scopes: scopeEntries };
+  }
+
+  /**
+   * Builds scope entries from parser-emitted scope ranges.
+   */
+  private buildScopeEntries(scopes: ScopeRange[], originalText: string): ScopeEntry[] {
+    if (!this.activeEditor || scopes.length === 0) {
+      return [];
+    }
+
+    const entries: ScopeEntry[] = [];
+    for (const scope of scopes) {
+      const range = this.createRange(scope.startPos, scope.endPos, originalText);
+      if (range) {
+        entries.push({
+          startPos: scope.startPos,
+          endPos: scope.endPos,
+          range,
+        });
+      }
+    }
+
+    return entries;
+  }
+
+  /**
+   * Collects raw ranges from selections.
+   * Returns all scopes that intersect with any selection range.
+   * 
+   * @private
+   * @param {Range[]} selectedRanges - Non-empty selection ranges
+   * @param {ScopeEntry[]} scopes - All scope entries
+   * @returns {Range[]} Ranges that should show raw markdown
+   */
+  private collectRawRanges(selectedRanges: Range[], scopes: ScopeEntry[]): Range[] {
+    if (!this.activeEditor || selectedRanges.length === 0 || scopes.length === 0) {
+      return [];
+    }
+
+    const rawRanges: Range[] = [];
+    for (const selection of selectedRanges) {
+      for (const scope of scopes) {
+        const intersection = selection.intersection(scope.range);
+        if (intersection !== undefined) {
+          rawRanges.push(scope.range);
+        }
+      }
+    }
+
+    return rawRanges;
+  }
+
+  /**
+   * Collects cursor scope ranges.
+   * Returns the smallest scope containing each cursor position.
+   * 
+   * Includes boundary positions (start and end) so that cursors directly at
+   * the construct boundaries show raw state instead of ghost state.
+   * 
+   * @private
+   * @param {Position[]} cursorPositions - Cursor positions (empty selections)
+   * @param {ScopeEntry[]} scopes - All scope entries
+   * @returns {Range[]} Ranges that should show raw markdown
+   */
+  private collectCursorScopeRanges(cursorPositions: Position[], scopes: ScopeEntry[]): Range[] {
+    if (!this.activeEditor || cursorPositions.length === 0 || scopes.length === 0) {
+      return [];
+    }
+
+    const cursorRanges: Range[] = [];
+    for (const position of cursorPositions) {
+      // Check if cursor is inside scope or at its boundaries (start or end)
+      // Range.contains() uses exclusive end, so we also check if position equals start or end
+      const matchingScopes = scopes.filter((scope) => {
+        const isInside = scope.range.contains(position);
+        const isAtStart = position.line === scope.range.start.line && 
+                          position.character === scope.range.start.character;
+        const isAtEnd = position.line === scope.range.end.line && 
+                        position.character === scope.range.end.character;
+        return isInside || isAtStart || isAtEnd;
+      });
+      
+      if (matchingScopes.length === 0) {
+        continue;
+      }
+
+      const smallestScope = matchingScopes.reduce((smallest, scope) => {
+        if (!smallest) {
+          return scope;
+        }
+        const smallestLength = smallest.endPos - smallest.startPos;
+        const scopeLength = scope.endPos - scope.startPos;
+        return scopeLength < smallestLength ? scope : smallest;
+      }, undefined as ScopeEntry | undefined);
+
+      if (smallestScope) {
+        cursorRanges.push(smallestScope.range);
+      }
+    }
+
+    return cursorRanges;
+  }
+
+  /**
+   * Merges overlapping ranges into a single array of non-overlapping ranges.
+   * 
+   * @private
+   * @param {Range[]} ranges - Ranges to merge
+   * @returns {Range[]} Merged ranges
+   */
+  private mergeRanges(ranges: Range[]): Range[] {
+    if (ranges.length === 0) {
+      return [];
+    }
+
+    const sorted = [...ranges].sort((a, b) => {
+      if (a.start.line !== b.start.line) {
+        return a.start.line - b.start.line;
+      }
+      return a.start.character - b.start.character;
+    });
+
+    const merged: Range[] = [sorted[0]];
+    for (let i = 1; i < sorted.length; i++) {
+      const current = sorted[i];
+      const last = merged[merged.length - 1];
+
+      if (current.start.isBeforeOrEqual(last.end) && current.end.isAfterOrEqual(last.start)) {
+        merged[merged.length - 1] = new Range(
+          last.start,
+          current.end.isAfter(last.end) ? current.end : last.end
+        );
+      } else {
+        merged.push(current);
+      }
+    }
+
+    return merged;
+  }
+
+  /**
+   * Checks if a range intersects with any of the given ranges.
+   * 
+   * @private
+   * @param {Range} range - Range to check
+   * @param {Range[]} ranges - Ranges to check against
+   * @returns {boolean} True if range intersects with any of the given ranges
+   */
+  private rangeIntersectsAny(range: Range, ranges: Range[]): boolean {
+    return ranges.some((candidate) => {
+      const intersection = range.intersection(candidate);
+      return intersection !== undefined;
+    });
   }
 
   /**
    * Filters decorations based on current selections and groups by type.
+   * Implements 3-state model: Rendered (default), Ghost (cursor on line), Raw (cursor/selection in scope).
    * 
    * @private
    * @param {DecorationRange[]} decorations - Decorations to filter
    * @param {string} originalText - Original document text (for offset adjustment)
    * @returns {Map<DecorationType, Range[]>} Filtered decorations grouped by type
    */
-  private filterDecorations(decorations: DecorationRange[], originalText: string): Map<DecorationType, Range[]> {
+  private filterDecorations(
+    decorations: DecorationRange[],
+    scopes: ScopeEntry[],
+    originalText: string
+  ): Map<DecorationType, Range[]> {
     if (!this.activeEditor) {
       return new Map();
     }
 
-    // Pre-compute selected line ranges for O(1) lookups
-    const selectedLines = new Set<number>();
     const selectedRanges: Range[] = [];
     const cursorPositions: Position[] = [];
+    const activeLines = new Set<number>(); // Lines with selections or cursors
 
     for (const selection of this.activeEditor.selections) {
-      // Add all lines in the selection to the set
-      for (let line = selection.start.line; line <= selection.end.line; line++) {
-        selectedLines.add(line);
-      }
-      // Store non-empty selections for precise range intersection checks
       if (!selection.isEmpty) {
         selectedRanges.push(selection);
+        // Add all lines in the selection to activeLines
+        for (let line = selection.start.line; line <= selection.end.line; line++) {
+          activeLines.add(line);
+        }
       } else {
-        // Store cursor positions for checkbox exclusion check
         cursorPositions.push(selection.start);
+        activeLines.add(selection.start.line);
       }
     }
 
-    // Group decorations by type using Map
+    const rawRanges = this.mergeRanges([
+      ...this.collectRawRanges(selectedRanges, scopes),
+      ...this.collectCursorScopeRanges(cursorPositions, scopes),
+    ]);
+
+    const selectionOnlyMarkerTypes = new Set<DecorationType>([
+      'blockquote',
+      'listItem',
+      'checkboxUnchecked',
+      'checkboxChecked',
+    ]);
+    const headingTypes = new Set<DecorationType>([
+      'heading',
+      'heading1',
+      'heading2',
+      'heading3',
+      'heading4',
+      'heading5',
+      'heading6',
+    ]);
+    const headingMarkerEndPositions = new Set<number>();
+    for (const decoration of decorations) {
+      if (headingTypes.has(decoration.type)) {
+        headingMarkerEndPositions.add(decoration.startPos);
+      }
+    }
+
     const filtered = new Map<DecorationType, Range[]>();
+    const ghostFaintRanges: Range[] = [];
+
+    const selectionOrCursorOverlaps = (range: Range): boolean => {
+      const selectionOverlaps = selectedRanges.some((selection) => {
+        const intersection = range.intersection(selection);
+        return intersection !== undefined;
+      });
+      if (selectionOverlaps) {
+        return true;
+      }
+      return cursorPositions.some((position) => range.contains(position));
+    };
 
     for (const decoration of decorations) {
       const range = this.createRange(decoration.startPos, decoration.endPos, originalText);
       if (!range) continue;
+      const isActiveLine = activeLines.size > 0 && activeLines.has(range.start.line);
 
-      // Special handling for checkbox decorations:
-      // - Keep checkbox visible when clicking on it (for toggle functionality)
-      // - Show raw markdown when clicking elsewhere on the line
-      const isCheckbox = decoration.type === 'checkboxChecked' || decoration.type === 'checkboxUnchecked';
-      
-      if (isCheckbox) {
-        // Check if cursor is within the checkbox range - if so, keep it visible
-        const cursorInCheckbox = cursorPositions.some(pos => 
-          pos.line === range.start.line && 
-          pos.character >= range.start.character && 
-          pos.character <= range.end.character
-        );
-        
-        if (cursorInCheckbox) {
-          // Keep checkbox visible when clicking on it
-          const ranges = filtered.get(decoration.type) || [];
-          ranges.push(range);
-          filtered.set(decoration.type, ranges);
+      if (selectionOnlyMarkerTypes.has(decoration.type)) {
+        if (selectionOrCursorOverlaps(range)) {
+          // Raw state: show actual marker characters
           continue;
         }
+        // Rendered state: apply marker decorations even on active lines
+        const ranges = filtered.get(decoration.type) || [];
+        ranges.push(range);
+        filtered.set(decoration.type, ranges);
+        continue;
+      }
+
+      if (headingTypes.has(decoration.type) && isActiveLine) {
+        // Show raw heading text (no heading styling) on active lines
+        continue;
       }
       
-      // Only suppress marker/replacement decorations when selection overlaps
-      // or cursor is on the line. Semantic styling stays active.
-      if (isMarkerDecorationType(decoration.type)) {
-        const shouldRevealRaw =
-          this.isRangeSelected(range, selectedRanges) ||
-          this.isLineOfRangeSelected(range, selectedLines);
+      if (decoration.type === 'hide' || decoration.type === 'transparent') {
+        const intersectsRaw = this.rangeIntersectsAny(range, rawRanges);
+        const isHeadingMarkerHide = decoration.type === 'hide' &&
+          headingMarkerEndPositions.has(decoration.endPos);
 
-        if (shouldRevealRaw) {
+        if (intersectsRaw) {
+          // Raw state: skip (show actual syntax)
           continue;
         }
+        if (isHeadingMarkerHide && isActiveLine) {
+          // Show heading markers on active lines
+          continue;
+        }
+        if (isActiveLine) {
+          // Ghost state: show faint markers on active lines
+          ghostFaintRanges.push(range);
+          continue;
+        }
+        // Rendered state: hide markers normally
+        const ranges = filtered.get(decoration.type) || [];
+        ranges.push(range);
+        filtered.set(decoration.type, ranges);
+        continue;
+      }
+
+      if (isMarkerDecorationType(decoration.type)) {
+        const intersectsRaw = this.rangeIntersectsAny(range, rawRanges);
+
+        if (intersectsRaw) {
+          // Raw state: skip marker decorations (show actual syntax)
+          continue;
+        }
+        if (isActiveLine) {
+          // Ghost state: show faint markers on active lines
+          ghostFaintRanges.push(range);
+          continue;
+        }
+        // Rendered state: apply marker decorations normally
       }
 
       // Add to appropriate type array
       const ranges = filtered.get(decoration.type) || [];
       ranges.push(range);
       filtered.set(decoration.type, ranges);
+    }
+
+    if (ghostFaintRanges.length > 0) {
+      filtered.set('ghostFaint' as DecorationType, ghostFaintRanges);
     }
 
     return filtered;
@@ -640,6 +883,7 @@ export class Decorator {
     ['strikethrough', this.strikethroughDecorationType],
     ['code', this.codeDecorationType],
     ['codeBlock', this.codeBlockDecorationType],
+    ['codeBlockLanguage', this.codeBlockLanguageDecorationType],
     ['heading', this.headingDecorationType],
     ['heading1', this.heading1DecorationType],
     ['heading2', this.heading2DecorationType],
@@ -656,6 +900,7 @@ export class Decorator {
     ['checkboxUnchecked', this.checkboxUncheckedDecorationType],
     ['checkboxChecked', this.checkboxCheckedDecorationType],
     ['frontmatter', this.frontmatterDecorationType],
+    ['frontmatterDelimiter', this.frontmatterDelimiterDecorationType],
   ]);
 
   /**
@@ -672,7 +917,10 @@ export class Decorator {
     // Apply all decorations by iterating through the type map
     for (const [type, decorationType] of this.decorationTypeMap.entries()) {
       this.activeEditor.setDecorations(decorationType, filteredDecorations.get(type) || []);
-    };
+    }
+
+    const ghostFaintRanges = filteredDecorations.get('ghostFaint' as DecorationType) || [];
+    this.activeEditor.setDecorations(this.ghostFaintDecorationType, ghostFaintRanges);
   }
 
   /**
@@ -680,9 +928,9 @@ export class Decorator {
    * 
    * @private
    * @param {TextDocument} document - The document to get cache for
-   * @returns {DecorationRange[] | null} Cached decorations or null if cache miss/version mismatch
+   * @returns {CacheEntry | null} Cached entry or null if cache miss/version mismatch
    */
-  private getCachedDecorations(document: TextDocument): DecorationRange[] | null {
+  private getCachedDecorations(document: TextDocument): CacheEntry | null {
     const cacheKey = document.uri.toString();
     const cached = this.decorationCache.get(cacheKey);
 
@@ -695,7 +943,7 @@ export class Decorator {
       return null;
     }
 
-    return cached.decorations;
+    return cached;
   }
 
   /**
@@ -705,9 +953,15 @@ export class Decorator {
    * @private
    * @param {TextDocument} document - The document to cache
    * @param {DecorationRange[]} decorations - Decorations to cache
+   * @param {ScopeEntry[]} scopes - Scope entries to cache
    * @param {string} text - Document text to cache
    */
-  private setCachedDecorations(document: TextDocument, decorations: DecorationRange[], text: string): void {
+  private setCachedDecorations(
+    document: TextDocument,
+    decorations: DecorationRange[],
+    scopes: ScopeEntry[],
+    text: string
+  ): void {
     const cacheKey = document.uri.toString();
 
     // Evict least recently used if cache is full
@@ -718,6 +972,7 @@ export class Decorator {
     this.decorationCache.set(cacheKey, {
       version: document.version,
       decorations,
+      scopes,
       text,
       lastAccessed: ++this.accessCounter,
     });
@@ -812,6 +1067,39 @@ export class Decorator {
    * Recreates the code decoration type when theme changes.
    * This ensures the background color adapts to the new theme.
    */
+  /**
+   * Gets the ghost faint opacity from configuration.
+   * 
+   * @private
+   * @returns {number} Opacity value between 0.0 and 1.0
+   */
+  private getGhostFaintOpacity(): number {
+    const config = workspace.getConfiguration('markdownInlineEditor');
+    return config.get<number>('decorations.ghostFaintOpacity', 0.3);
+  }
+
+  /**
+   * Gets the frontmatter delimiter opacity from configuration.
+   * 
+   * @private
+   * @returns {number} Opacity value between 0.0 and 1.0
+   */
+  private getFrontmatterDelimiterOpacity(): number {
+    const config = workspace.getConfiguration('markdownInlineEditor');
+    return config.get<number>('decorations.frontmatterDelimiterOpacity', 0.3);
+  }
+
+  /**
+   * Gets the code block language opacity from configuration.
+   * 
+   * @private
+   * @returns {number} Opacity value between 0.0 and 1.0
+   */
+  private getCodeBlockLanguageOpacity(): number {
+    const config = workspace.getConfiguration('markdownInlineEditor');
+    return config.get<number>('decorations.codeBlockLanguageOpacity', 0.3);
+  }
+
   recreateCodeDecorationType(): void {
     // Dispose the old decoration type
     this.codeDecorationType.dispose();
@@ -826,6 +1114,77 @@ export class Decorator {
     if (this.activeEditor && this.isMarkdownDocument()) {
       this.updateDecorationsForSelection();
     }
+  }
+
+  /**
+   * Helper method to recreate a decoration type with updated settings.
+   * Handles dispose, recreate, optional map update, and reapply.
+   * 
+   * @private
+   * @param {TextEditorDecorationType} oldDecorationType - The decoration type to dispose
+   * @param {() => TextEditorDecorationType} createNew - Factory function to create new decoration type
+   * @param {(newType: TextEditorDecorationType) => void} updateProperty - Callback to update the property
+   * @param {DecorationType | undefined} mapKey - Optional key to update in decorationTypeMap
+   */
+  private recreateDecorationType(
+    oldDecorationType: TextEditorDecorationType,
+    createNew: () => TextEditorDecorationType,
+    updateProperty: (newType: TextEditorDecorationType) => void,
+    mapKey?: DecorationType
+  ): void {
+    // Dispose the old decoration type
+    oldDecorationType.dispose();
+    
+    // Create a new decoration type
+    const newDecorationType = createNew();
+    updateProperty(newDecorationType);
+    
+    // Update the decoration type map if key provided
+    if (mapKey) {
+      this.decorationTypeMap.set(mapKey, newDecorationType);
+    }
+    
+    // Reapply decorations with the new decoration type
+    if (this.activeEditor && this.isMarkdownDocument()) {
+      this.updateDecorationsForSelection();
+    }
+  }
+
+  /**
+   * Recreates the ghost faint decoration type with updated opacity from settings.
+   * Called when the ghostFaintOpacity configuration changes.
+   */
+  recreateGhostFaintDecorationType(): void {
+    this.recreateDecorationType(
+      this.ghostFaintDecorationType,
+      () => GhostFaintDecorationType(this.getGhostFaintOpacity()),
+      (newType) => { this.ghostFaintDecorationType = newType; }
+    );
+  }
+
+  /**
+   * Recreates the frontmatter delimiter decoration type with updated opacity from settings.
+   * Called when the frontmatterDelimiterOpacity configuration changes.
+   */
+  recreateFrontmatterDelimiterDecorationType(): void {
+    this.recreateDecorationType(
+      this.frontmatterDelimiterDecorationType,
+      () => FrontmatterDelimiterDecorationType(this.getFrontmatterDelimiterOpacity()),
+      (newType) => { this.frontmatterDelimiterDecorationType = newType; }
+    );
+  }
+
+  /**
+   * Recreates the code block language decoration type with updated opacity from settings.
+   * Called when the codeBlockLanguageOpacity configuration changes.
+   */
+  recreateCodeBlockLanguageDecorationType(): void {
+    this.recreateDecorationType(
+      this.codeBlockLanguageDecorationType,
+      () => CodeBlockLanguageDecorationType(this.getCodeBlockLanguageOpacity()),
+      (newType) => { this.codeBlockLanguageDecorationType = newType; },
+      'codeBlockLanguage'
+    );
   }
 
   /**
@@ -847,6 +1206,7 @@ export class Decorator {
     for (const decorationType of this.decorationTypeMap.values()) {
       decorationType.dispose();
     }
+    this.ghostFaintDecorationType.dispose();
   }
 
   /**

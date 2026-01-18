@@ -57,17 +57,35 @@
     "configuration": {
       "title": "Markdown Inline Editor",
       "properties": {
-        "markdownInlineEditor.defaultBehaviors.editor.applyDecorations": {
-          "type": "boolean",
-          "default": true,
-          "description": "Apply decorators in editor",
-          "markdownDescription": "When enabled, markdown syntax is hidden and replaced with rendered decorations (bold, italic, headings, etc.) in regular markdown editors. When disabled, raw markdown syntax is always shown."
-        },
         "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": {
           "type": "boolean",
           "default": false,
           "description": "Apply decorators in diff view",
-          "markdownDescription": "When enabled, markdown decorations (bold, italic, headings, etc.) are applied in diff views (Git diffs, merge editors, Copilot inline diffs). When disabled, raw markdown syntax is shown to make changes easier to review."
+          "markdownDescription": "Apply markdown decorations in diff views. Disabled by default to show raw syntax for easier review."
+        },
+        "markdownInlineEditor.decorations.ghostFaintOpacity": {
+          "type": "number",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity for ghost faint decorations",
+          "markdownDescription": "Opacity of syntax markers when cursor is on a line (0.0-1.0)."
+        },
+        "markdownInlineEditor.decorations.frontmatterDelimiterOpacity": {
+          "type": "number",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity for frontmatter delimiters",
+          "markdownDescription": "Opacity of frontmatter delimiters (---) (0.0-1.0)."
+        },
+        "markdownInlineEditor.decorations.codeBlockLanguageOpacity": {
+          "type": "number",
+          "default": 0.3,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Opacity for code block language identifiers",
+          "markdownDescription": "Opacity of code block language identifiers (0.0-1.0)."
         }
       }
     }

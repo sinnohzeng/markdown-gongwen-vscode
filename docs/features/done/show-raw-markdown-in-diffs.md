@@ -1,7 +1,7 @@
 ---
-status: TODO
+status: DONE
 githubIssue: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20
-updateDate: 2026-01-09
+updateDate: 2026-01-18
 priority: High
 ---
 
@@ -13,7 +13,7 @@ Add a configuration setting to show raw markdown syntax when viewing diffs, allo
 
 ## Implementation
 
-Add VS Code configuration option `markdownInlineEditor.showRawInDiffs` (boolean, default: `true`) that detects when editor is in diff mode and shows raw markdown syntax instead of rendered decorations.
+VS Code configuration option `markdownInlineEditor.defaultBehaviors.diffView.applyDecorations` (boolean, default: `false`) controls whether decorations are applied in diff views. When disabled (default), raw markdown syntax is shown instead of rendered decorations, making it easier to review changes. The extension automatically detects diff contexts including Git source control diffs, merge editors, and Copilot inline diffs.
 
 **Diff Detection:**
 - Check if active editor is a diff editor using `vscode.window.activeTextEditor` and `DiffEditor` type
@@ -35,7 +35,7 @@ Add VS Code configuration option `markdownInlineEditor.showRawInDiffs` (boolean,
 **Code Modules:**
 - `src/extension.ts` - Configuration reading and change listeners
 - `src/decorator.ts` - Diff detection and decoration skipping logic
-- `src/link-provider.ts` - May need diff-aware behavior (optional)
+- `src/link-provider.ts` - Diff-aware behavior for link navigation
 - `package.json` - Configuration contribution
 
 **Systems & Features:**
@@ -53,30 +53,30 @@ Add VS Code configuration option `markdownInlineEditor.showRawInDiffs` (boolean,
 Feature: Show raw markdown in diffs configuration
 
   Scenario: Enable setting
-    When I enable "show raw markdown in diffs" setting
-    And I open a diff view
-    Then markdown decorations are disabled
-    And raw markdown syntax is visible
-
-  Scenario: Disable setting
-    When I disable "show raw markdown in diffs" setting
+    When I enable "defaultBehaviors.diffView.applyDecorations" setting
     And I open a diff view
     Then markdown decorations are enabled
     And markdown is rendered as usual
+
+  Scenario: Disable setting (default)
+    When I disable "defaultBehaviors.diffView.applyDecorations" setting
+    And I open a diff view
+    Then markdown decorations are disabled
+    And raw markdown syntax is visible
 ```
 
 ### Source Control Diff View
 ```gherkin
 Feature: Show raw markdown in source control diff
 
-  Scenario: Diff view with setting enabled
-    Given "show raw markdown in diffs" setting is enabled
+  Scenario: Diff view with setting disabled (default)
+    Given "defaultBehaviors.diffView.applyDecorations" setting is disabled
     When I open source control diff view
     Then decorations are disabled
     And raw markdown changes are visible
 
-  Scenario: Diff view with setting disabled
-    Given "show raw markdown in diffs" setting is disabled
+  Scenario: Diff view with setting enabled
+    Given "defaultBehaviors.diffView.applyDecorations" setting is enabled
     When I open source control diff view
     Then decorations are enabled
     And markdown is rendered
@@ -86,14 +86,14 @@ Feature: Show raw markdown in source control diff
 ```gherkin
 Feature: Show raw markdown in Copilot inline diffs
 
-  Scenario: Copilot diff with setting enabled
-    Given "show raw markdown in diffs" setting is enabled
+  Scenario: Copilot diff with setting disabled (default)
+    Given "defaultBehaviors.diffView.applyDecorations" setting is disabled
     When Copilot shows inline diff
     Then decorations are disabled
     And raw markdown changes are visible
 
-  Scenario: Copilot diff with setting disabled
-    Given "show raw markdown in diffs" setting is disabled
+  Scenario: Copilot diff with setting enabled
+    Given "defaultBehaviors.diffView.applyDecorations" setting is enabled
     When Copilot shows inline diff
     Then decorations are enabled
     And markdown is rendered
@@ -105,11 +105,11 @@ Feature: Show raw markdown in diffs edge cases
 
   Scenario: Setting change during diff view
     Given I have a diff view open
-    When I change "show raw markdown in diffs" setting
+    When I change "defaultBehaviors.diffView.applyDecorations" setting
     Then decorations update immediately
 
   Scenario: Normal editor view unaffected
-    Given "show raw markdown in diffs" setting is enabled
+    Given "defaultBehaviors.diffView.applyDecorations" setting is disabled
     When I open a normal markdown file
     Then decorations are enabled
 ```
@@ -118,15 +118,15 @@ Feature: Show raw markdown in diffs edge cases
 
 - High user demand - makes reviewing markdown changes much easier
 - Problem: Rendered markdown can obscure actual changes (e.g., heading level changes like `##` to `###` look like removals)
-- Solution: Configuration option to show raw markdown syntax in diff contexts
+- Solution: Configuration option to show raw markdown syntax in diff contexts (disabled by default)
 - Affects both source control view and Copilot inline diffs
-- Users can currently work around by clicking the line, but it's inconvenient
+- Implemented: Automatic detection of diff contexts (Git, merge editor, Copilot inline diffs)
 - Feasibility: High
 - Usefulness: High
 - Risk: Low (optional setting, doesn't break existing behavior)
-- Effort: 1-2 weeks
-- VS Code API: Use `vscode.window.activeTextEditor` and check for diff editor type or URI scheme
-- Default behavior: Show raw markdown in diff views by default (default: `true`), users can opt-out if desired
+- Effort: Completed
+- VS Code API: Uses `vscode.window.activeTextEditor` and checks for diff editor type or URI scheme
+- Default behavior: Show raw markdown in diff views by default (setting default: `false`), users can opt-in to enable decorations
 
 ## Examples
 
@@ -146,9 +146,11 @@ Raw markdown visible: `##` → `###` change is clear
 **Configuration:**
 ```json
 {
-  "markdownInlineEditor.showRawInDiffs": true
+  "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": false
 }
 ```
+
+Default is `false` (raw markdown shown). Set to `true` to enable decorations in diff views.
 
 - **Source Control Diff**: When viewing changes in Git diff, raw markdown is shown instead of rendered
 - **Copilot Inline Diff**: When Copilot suggests changes, raw markdown diff is visible

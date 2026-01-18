@@ -198,7 +198,7 @@ Add test cases for:
 
 ### Step 4: Documentation
 
-**File:** `docs/features/inline-code.md`
+**File:** `docs/features/done/inline-code.md`
 
 Update documentation to reflect new styling approach.
 

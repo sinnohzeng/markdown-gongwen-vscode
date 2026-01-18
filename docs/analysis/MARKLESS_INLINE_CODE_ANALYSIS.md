@@ -93,7 +93,7 @@ After:  [boxed code with outset border and rounded corners]
 
 ## Recommended Integration
 
-See [IMPLEMENTATION_PLAN_inline-code-styling.md](./IMPLEMENTATION_PLAN_inline-code-styling.md) for detailed integration plan.
+See [IMPLEMENTATION_PLAN_inline-code-styling.md](analysis/IMPLEMENTATION_PLAN_inline-code-styling.md) for detailed integration plan.
 
 **Quick Summary:**
 - Add `border: '1px solid'` with `ThemeColor`

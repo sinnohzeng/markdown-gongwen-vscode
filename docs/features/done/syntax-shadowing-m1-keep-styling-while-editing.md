@@ -30,21 +30,6 @@ Deep-dive background and design variants: [docs/plans/syntax-shadowing-rework-an
   - `src/decorator.ts` - Updated filtering logic in `filterDecorations()` method (lines 614-622)
   - `src/decorator/__tests__/decorator-filtering.test.ts` - Test coverage
 
-## Goal
-
-When the cursor is on a line (or when a selection overlaps), show raw syntax *only for syntax/marker decorations*, but keep semantic styling for the content.
-
-## Desired behavior
-
-- Keep semantic decorations active on the active line (e.g. bold/italic/link/heading styling).
-- Disable only the decorations that hide/replace raw syntax markers (today mainly `hide`, and any future "replacement" decorators).
-- Preserve existing "smart click" behavior for checkboxes (clicking the checkbox should still work without forcing raw reveal of the whole line).
-
-## Non-goals (Milestone 1)
-
-- No new "Ghost cues" (that’s Milestone 2).
-- No change to the parsing model and no reclassification of hidden ranges (that’s Milestone 2).
-
 ## Acceptance Criteria
 
 ```gherkin
@@ -71,4 +56,40 @@ Feature: Checkbox click does not break interaction
     When I click on the checkbox
     Then the checkbox toggles
     And the line does not unexpectedly lose semantic styling
+```
+
+## Notes
+
+- This milestone focuses on keeping semantic styling while revealing syntax markers.
+- Goal: When the cursor is on a line (or when a selection overlaps), show raw syntax *only for syntax/marker decorations*, but keep semantic styling for the content.
+- Desired behavior:
+  - Keep semantic decorations active on the active line (e.g. bold/italic/link/heading styling).
+  - Disable only the decorations that hide/replace raw syntax markers (today mainly `hide`, and any future "replacement" decorators).
+  - Preserve existing "smart click" behavior for checkboxes (clicking the checkbox should still work without forcing raw reveal of the whole line).
+- Non-goals (Milestone 1):
+  - No new "Ghost cues" (that's Milestone 2).
+  - No change to the parsing model and no reclassification of hidden ranges (that's Milestone 2).
+
+## Examples
+
+**Example 1: Bold text with cursor on line**
+```markdown
+**bold text** and more text
+```
+- When cursor is on this line: `**bold text**` shows raw markers, but text remains bold styled
+- When cursor is away: `**bold text**` markers are hidden, text is bold styled
+
+**Example 2: Link with cursor on line**
+```markdown
+[Click here](https://example.com) for more info
+```
+- When cursor is on this line: `[Click here](https://example.com)` shows raw syntax, but link styling is preserved
+- When cursor is away: Link syntax is hidden, link styling is visible
+
+**Example 3: Checkbox interaction**
+```markdown
+- [ ] Task item
+```
+- Clicking checkbox toggles it without forcing raw reveal of entire line
+- Semantic styling remains intact during checkbox interaction
 ```

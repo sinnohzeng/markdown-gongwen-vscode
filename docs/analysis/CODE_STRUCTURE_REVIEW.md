@@ -70,7 +70,6 @@ The codebase has good separation in some areas (`position-mapping.ts`, `decorati
 **Issue:**
 - Configuration reading is duplicated:
   - `getDiffViewApplyDecorationsSetting()` in `extension.ts`
-  - `getEditorApplyDecorationsSetting()` in `extension.ts`
   - Direct `getConfiguration()` call in `link-provider.ts`
 - Same configuration key accessed in multiple places
 
@@ -90,11 +89,6 @@ The codebase has good separation in some areas (`position-mapping.ts`, `decorati
 export function getDiffViewApplyDecorations(): boolean {
   const config = vscode.workspace.getConfiguration('markdownInlineEditor');
   return config.get<boolean>('defaultBehaviors.diffView.applyDecorations', false);
-}
-
-export function getEditorApplyDecorations(): boolean {
-  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
-  return config.get<boolean>('defaultBehaviors.editor.applyDecorations', true);
 }
 ```
 

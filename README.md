@@ -57,55 +57,54 @@ Enhance your Markdown workflow with these complementary extensions:
 
 ## Supported Features
 
-The extension currently supports **13 markdown features** with syntax hiding. Formatting appears inline while syntax markers stay hidden—click any text to reveal and edit raw Markdown.
+The extension currently supports **14 markdown features** with syntax hiding. Formatting appears inline while syntax markers stay hidden—click any text to reveal and edit raw Markdown.
 
 ### Text Formatting
-* [x] **Bold** (`**text**`) • [Details](docs/features/bold.md)
-* [x] **Italic** (`*text*`) • [Details](docs/features/italic.md)
-* [x] **Bold + Italic** (`***text***`) • [Details](docs/features/bold-italic.md)
-* [x] **Strikethrough** (`~~text~~`) • [Details](docs/features/strikethrough.md)
-* [x] **Inline Code** (`` `code` ``) • [Details](docs/features/inline-code.md)
+* [x] **Bold** (`**text**`) • [Details](docs/features/done/bold.md)
+* [x] **Italic** (`*text*`) • [Details](docs/features/done/italic.md)
+* [x] **Bold + Italic** (`***text***`) • [Details](docs/features/done/bold-italic.md)
+* [x] **Strikethrough** (`~~text~~`) • [Details](docs/features/done/strikethrough.md)
+* [x] **Inline Code** (`` `code` ``) • [Details](docs/features/done/inline-code.md)
 
 ### Structure
-* [x] **Headings** (`# H1` through `###### H6`) • [Details](docs/features/headings.md)
-* [x] **Links** (`[text](url)`) • [Details](docs/features/links.md)
-* [x] **Images** (`![alt](img.png)`) • [Details](docs/features/images.md)
-* [x] **Blockquotes** (`> quote`) • [Details](docs/features/blockquotes.md)
-* [x] **Horizontal Rules** (`---`, `***`, `___`) • [Details](docs/features/horizontal-rules.md)
+* [x] **Headings** (`# H1` through `###### H6`) • [Details](docs/features/done/headings.md)
+* [x] **Links** (`[text](url)`) • [Details](docs/features/done/links.md)
+* [x] **Images** (`![alt](img.png)`) • [Details](docs/features/done/images.md)
+* [x] **Blockquotes** (`> quote`) • [Details](docs/features/done/blockquotes.md)
+* [x] **Horizontal Rules** (`---`, `***`, `___`) • [Details](docs/features/done/horizontal-rules.md)
 
 ### Lists
-* [x] **Unordered Lists** (`-`, `*`, `+`) • [Details](docs/features/unordered-lists.md)
-* [x] **Task Lists** (`- [ ]` / `- [x]`) • [Details](docs/features/task-lists.md)
+* [x] **Unordered Lists** (`-`, `*`, `+`) • [Details](docs/features/done/unordered-lists.md)
+* [x] **Task Lists** (`- [ ]` / `- [x]`) • [Details](docs/features/done/task-lists.md)
 
 ### Code
-* [x] **Code Blocks** (`` ```lang ``) • [Details](docs/features/code-blocks.md)
-* [x] **YAML Frontmatter** • [Details](docs/features/yaml-frontmatter.md) • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
+* [x] **Code Blocks** (`` ```lang ``) • [Details](docs/features/done/code-blocks.md)
+* [x] **YAML Frontmatter** • [Details](docs/features/done/yaml-frontmatter.md) • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
 
 ### Configuration
-* [x] **Show Raw Markdown in Diffs** • [Details](docs/features/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
-* [x] **Show Raw Markdown in Editor** • [Details](docs/features/show-raw-markdown-in-editor.md)
+* [x] **Show Raw Markdown in Diffs** • [Details](docs/features/done/show-raw-markdown-in-diffs.md) • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
 
 ## Upcoming Features
 
 ### Work in progress
-* [ ] **Set Default Feature Activation** – Allow users to configure which Markdown features are decorated/enabled by default (e.g., selectively apply decorators for headings, bold, italic, etc.) • [Details](docs/features/default-feature-activation.md)
+* [ ] **Set Default Feature Activation** – Allow users to configure which Markdown features are decorated/enabled by default (e.g., selectively apply decorators for headings, bold, italic, etc.) • [Details](docs/features/todo/default-feature-activation.md)
 
 ### High Priority
-* [ ] **Tables** • [Details](docs/features/tables.md) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
-* [ ] **Autolinks** • [Details](docs/features/autolinks.md) • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
-* [ ] **Mermaid Diagrams** • [Details](docs/features/mermaid-diagrams.md) • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
-* [ ] **LaTeX/Math** • [Details](docs/features/latex-math.md) • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
+* [ ] **Tables** • [Details](docs/features/todo/tables.md) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
+* [ ] **Autolinks** • [Details](docs/features/todo/autolinks.md) • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
+* [ ] **Mermaid Diagrams** • [Details](docs/features/todo/mermaid-diagrams.md) • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
+* [ ] **LaTeX/Math** • [Details](docs/features/todo/latex-math.md) • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 
 ### Medium Priority
-* [ ] **Per-File Toggle State** • [Details](docs/features/per-file-toggle-state.md) • [Issue #28](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/28)
-* [ ] **Column alignment in tables with markup** • [Details](docs/features/table-column-alignment.md) • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
+* [ ] **Per-File Toggle State** • [Details](docs/features/todo/per-file-toggle-state.md) • [Issue #28](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/28)
+* [ ] **Column alignment in tables with markup** • [Details](docs/features/todo/table-column-alignment.md) • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
 
 ### Low Priority
-* [ ] **HTML Tags** • [Details](docs/features/html-tags.md) • [Issue #29](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/29)
-* [ ] **Mentions/References** • [Details](docs/features/mentions-references.md) • [Issue #25](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/25)
-* [ ] **Emoji Support** • [Details](docs/features/emoji-support.md) • [Issue #30](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/30)
-* [ ] **Ordered List Auto-Numbering** • [Details](docs/features/ordered-list-auto-numbering.md) • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
-* [ ] **Footnotes** • [Details](docs/features/footnotes.md) • [Issue #32](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/32)
+* [ ] **HTML Tags** • [Details](docs/features/todo/html-tags.md) • [Issue #29](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/29)
+* [ ] **Mentions/References** • [Details](docs/features/todo/mentions-references.md) • [Issue #25](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/25)
+* [ ] **Emoji Support** • [Details](docs/features/todo/emoji-support.md) • [Issue #30](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/30)
+* [ ] **Ordered List Auto-Numbering** • [Details](docs/features/todo/ordered-list-auto-numbering.md) • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
+* [ ] **Footnotes** • [Details](docs/features/todo/footnotes.md) • [Issue #32](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/32)
 
 ## Getting Started (Developers)
 

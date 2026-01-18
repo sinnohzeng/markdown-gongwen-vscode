@@ -14,16 +14,6 @@ function getDiffViewApplyDecorationsSetting(): boolean {
 }
 
 /**
- * Reads the defaultBehaviors.editor.applyDecorations configuration setting.
- * 
- * @returns {boolean} True if decorations should be applied in regular editors
- */
-function getEditorApplyDecorationsSetting(): boolean {
-  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
-  return config.get<boolean>('defaultBehaviors.editor.applyDecorations', true);
-}
-
-/**
  * Activates the markdown inline preview extension.
  * 
  * This function is called by VS Code when the extension is activated (typically
@@ -45,11 +35,6 @@ export function activate(context: vscode.ExtensionContext) {
   const decorator = new Decorator();
   const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
   decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
-  
-  const editorApplyDecorations = getEditorApplyDecorationsSetting();
-  if (!editorApplyDecorations && decorator.isEnabled()) {
-    decorator.toggleDecorations();
-  }
   
   decorator.setActiveEditor(vscode.window.activeTextEditor);
 
@@ -126,13 +111,16 @@ export function activate(context: vscode.ExtensionContext) {
       decorator.updateDecorationsForSelection();
     }
     
-    if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.editor.applyDecorations')) {
-      const editorApplyDecorations = getEditorApplyDecorationsSetting();
-      const currentlyEnabled = decorator.isEnabled();
-      if (editorApplyDecorations !== currentlyEnabled) {
-        decorator.toggleDecorations();
-        decorator.updateDecorationsForSelection();
-      }
+    if (event.affectsConfiguration('markdownInlineEditor.decorations.ghostFaintOpacity')) {
+      decorator.recreateGhostFaintDecorationType();
+    }
+    
+    if (event.affectsConfiguration('markdownInlineEditor.decorations.frontmatterDelimiterOpacity')) {
+      decorator.recreateFrontmatterDelimiterDecorationType();
+    }
+    
+    if (event.affectsConfiguration('markdownInlineEditor.decorations.codeBlockLanguageOpacity')) {
+      decorator.recreateCodeBlockLanguageDecorationType();
     }
   });
 
