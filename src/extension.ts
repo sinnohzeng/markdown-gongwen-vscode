@@ -14,16 +14,6 @@ function getDiffViewApplyDecorationsSetting(): boolean {
 }
 
 /**
- * Reads the defaultBehaviors.editor.applyDecorations configuration setting.
- * 
- * @returns {boolean} True if decorations should be applied in regular editors
- */
-function getEditorApplyDecorationsSetting(): boolean {
-  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
-  return config.get<boolean>('defaultBehaviors.editor.applyDecorations', true);
-}
-
-/**
  * Reads the decorations.ghostFaintOpacity configuration setting.
  * 
  * @returns {number} Opacity value between 0.0 and 1.0 for ghost faint decorations
@@ -75,11 +65,6 @@ export function activate(context: vscode.ExtensionContext) {
   const decorator = new Decorator();
   const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
   decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
-  
-  const editorApplyDecorations = getEditorApplyDecorationsSetting();
-  if (!editorApplyDecorations && decorator.isEnabled()) {
-    decorator.toggleDecorations();
-  }
   
   decorator.setActiveEditor(vscode.window.activeTextEditor);
 
@@ -154,15 +139,6 @@ export function activate(context: vscode.ExtensionContext) {
       const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
       decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
       decorator.updateDecorationsForSelection();
-    }
-    
-    if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.editor.applyDecorations')) {
-      const editorApplyDecorations = getEditorApplyDecorationsSetting();
-      const currentlyEnabled = decorator.isEnabled();
-      if (editorApplyDecorations !== currentlyEnabled) {
-        decorator.toggleDecorations();
-        decorator.updateDecorationsForSelection();
-      }
     }
     
     if (event.affectsConfiguration('markdownInlineEditor.decorations.ghostFaintOpacity')) {

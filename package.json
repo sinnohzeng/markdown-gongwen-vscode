@@ -57,12 +57,6 @@
     "configuration": {
       "title": "Markdown Inline Editor",
       "properties": {
-        "markdownInlineEditor.defaultBehaviors.editor.applyDecorations": {
-          "type": "boolean",
-          "default": true,
-          "description": "Apply decorators in editor",
-          "markdownDescription": "Hide markdown syntax and show rendered decorations in regular editors."
-        },
         "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": {
           "type": "boolean",
           "default": false,
