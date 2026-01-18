@@ -314,7 +314,6 @@ export function CheckboxUncheckedDecorationType() {
     textDecoration: 'none; display: none;', // Hide the original [ ]
     before: {
       contentText: '☐',
-      fontWeight: 'bold',
       color: new ThemeColor('editor.foreground'),
     },
   });
@@ -332,8 +331,7 @@ export function CheckboxCheckedDecorationType() {
   return window.createTextEditorDecorationType({
     textDecoration: 'none; display: none;', // Hide the original [x]
     before: {
-      contentText: '☑',
-      fontWeight: 'bold',
+      contentText: '🗹',
       color: new ThemeColor('editor.foreground'),
     },
   });
