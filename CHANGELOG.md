@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-01-18
+
+### Added
+- Enhanced syntax shadowing behavior for leading structural markers
+  - Blockquote bars, list bullets, and checkbox icons now stay fully rendered on active lines
+  - Raw syntax only appears when caret/selection directly overlaps the marker characters
+  - Headings show raw `#` markers and remove heading styling when cursor is on the heading line
+  - Ordered list numbers remain always visible (no ghost/raw behavior)
+
 ### Added
 - Syntax Shadowing Milestone 2: 3-state model (Rendered / Ghost / Raw)
   - Implements scope-based detection for precise syntax marker visibility
@@ -277,6 +286,8 @@ _No changes documented_
   - Task lists (checkboxes)
   - Strikethrough
 
+[1.8.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.4...v1.8.0
+[1.9.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.4...v1.8.0
 [1.7.4]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.3...v1.7.4
 [1.7.3]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.7.2...v1.7.3
