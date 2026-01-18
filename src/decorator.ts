@@ -28,7 +28,7 @@ import {
   FrontmatterDecorationType,
   FrontmatterDelimiterDecorationType,
 } from './decorations';
-import { MarkdownParser, DecorationRange, DecorationType } from './parser';
+import { MarkdownParser, DecorationRange, DecorationType, ScopeRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { isMarkerDecorationType } from './decorator/decoration-categories';
 
@@ -50,6 +50,7 @@ const PERFORMANCE_CONSTANTS = {
 interface CacheEntry {
   version: number;
   decorations: DecorationRange[];
+  scopes: ScopeEntry[];
   text: string;
   lastAccessed: number;
 }
@@ -408,7 +409,7 @@ export class Decorator {
     const document = this.activeEditor.document;
 
     // Parse document (uses cache if version unchanged)
-    const decorations = this.parseDocument(document);
+    const { decorations, scopes } = this.parseDocument(document);
 
     // Re-validate version before applying (race condition protection)
     if (this.isDocumentStale(document)) {
@@ -421,7 +422,7 @@ export class Decorator {
     const originalText = cached?.text || document.getText();
 
     // Filter decorations based on selections (pass original text for offset adjustment)
-    const filtered = this.filterDecorations(decorations, originalText);
+    const filtered = this.filterDecorations(decorations, scopes, originalText);
 
     // Apply decorations
     this.applyDecorations(filtered);
@@ -537,14 +538,14 @@ export class Decorator {
   }
 
   /**
-   * Parses the document and returns decoration ranges.
+   * Parses the document and returns decoration ranges and scopes.
    * Uses cache if document version is unchanged.
    * 
    * @private
    * @param {TextDocument} document - The document to parse
-   * @returns {DecorationRange[]} Array of decoration ranges
+   * @returns Parsed decorations and scopes
    */
-  private parseDocument(document: TextDocument): DecorationRange[] {
+  private parseDocument(document: TextDocument): { decorations: DecorationRange[]; scopes: ScopeEntry[] } {
     const cacheKey = document.uri.toString();
     const cached = this.getCachedDecorations(document);
 
@@ -554,335 +555,41 @@ export class Decorator {
       if (entry) {
         entry.lastAccessed = ++this.accessCounter;
       }
-      return cached;
+      return { decorations: cached.decorations, scopes: cached.scopes };
     }
 
     // Parse document
     const documentText = document.getText();
-    const decorations = this.parser.extractDecorations(documentText);
+    const { decorations, scopes } = this.parser.extractDecorationsWithScopes(documentText);
+    const scopeEntries = this.buildScopeEntries(scopes, documentText);
 
     // Cache the result
-    this.setCachedDecorations(document, decorations, documentText);
+    this.setCachedDecorations(document, decorations, scopeEntries, documentText);
 
-    return decorations;
+    return { decorations, scopes: scopeEntries };
   }
 
   /**
-   * Extracts scope entries from decorations.
-   * A scope represents a complete markdown construct (e.g., **bold**, *italic*, [link](url)).
-   * 
-   * @private
-   * @param {DecorationRange[]} decorations - All decorations from parser
-   * @param {string} originalText - Original document text (for offset adjustment)
-   * @returns {ScopeEntry[]} Array of scope entries
+   * Builds scope entries from parser-emitted scope ranges.
    */
-  private extractScopes(decorations: DecorationRange[], originalText: string): ScopeEntry[] {
-    if (!this.activeEditor) {
+  private buildScopeEntries(scopes: ScopeRange[], originalText: string): ScopeEntry[] {
+    if (!this.activeEditor || scopes.length === 0) {
       return [];
     }
 
-    const scopes: ScopeEntry[] = [];
-    const scopeContentTypes: Set<DecorationType> = new Set([
-      'bold', 'italic', 'boldItalic', 'strikethrough', 'code', 'link', 'image',
-      'heading', 'heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6',
-      'codeBlock', 'blockquote', 'listItem', 'orderedListItem', 'horizontalRule', 'frontmatter'
-    ]);
-
-    const contentDecorations = decorations.filter((decoration) => scopeContentTypes.has(decoration.type));
-
-    for (const contentDec of contentDecorations) {
-      // Special handling for horizontal rules: they are self-contained
-      // The entire decoration (e.g., "---") is both the marker and the content
-      // No separate hide decorations exist, so the decoration itself is the scope
-      if (contentDec.type === 'horizontalRule') {
-        const range = this.createRange(contentDec.startPos, contentDec.endPos, originalText);
-        if (range) {
-          scopes.push({
-            startPos: contentDec.startPos,
-            endPos: contentDec.endPos,
-            range,
-          });
-        }
-        continue;
-      }
-
-      // Special handling for inline code: code decoration spans entire range including backticks,
-      // and transparent decorations overlap with the code decoration boundaries
-      if (contentDec.type === 'code') {
-        // Find transparent decorations that overlap with code decoration boundaries
-        // Opening transparent should start at the same position as code decoration
-        const openingTransparent = decorations.find((decoration) =>
-          decoration.type === 'transparent' &&
-          decoration.startPos === contentDec.startPos
-        );
-        // Closing transparent should end at the same position as code decoration
-        const closingTransparent = decorations.find((decoration) =>
-          decoration.type === 'transparent' &&
-          decoration.endPos === contentDec.endPos
-        );
-
-        if (openingTransparent && closingTransparent) {
-          // Scope spans from opening transparent start to closing transparent end
-          const scopeStart = openingTransparent.startPos;
-          const scopeEnd = closingTransparent.endPos;
-          const range = this.createRange(scopeStart, scopeEnd, originalText);
-          if (range) {
-            scopes.push({
-              startPos: scopeStart,
-              endPos: scopeEnd,
-              range,
-            });
-          }
-        }
-        continue;
-      }
-
-      // Special handling for images: they have ![alt](url) structure
-      // Structure: ![hide] image_content [hide] (hide url hide) hide
-      // Similar to links, but starts with ![
-      if (contentDec.type === 'image') {
-        // Find opening ![ hide (before image content) - it's 2 characters
-        const openingExclamationBracket = decorations.find((decoration) =>
-          decoration.type === 'hide' &&
-          decoration.endPos === contentDec.startPos &&
-          decoration.endPos - decoration.startPos === 2 // ![ is 2 chars
-        );
-        
-        // Find closing bracket hide (after image content)
-        const closingBracket = decorations.find((decoration) =>
-          decoration.type === 'hide' &&
-          decoration.startPos === contentDec.endPos &&
-          decoration.endPos - decoration.startPos === 1 // ] is 1 char
-        );
-        
-        if (openingExclamationBracket && closingBracket) {
-          // Find all hide decorations after the closing bracket that are part of the image
-          // Image structure: ](url) = ] hide ( url_content ) hide
-          // Note: URL content itself is NOT hidden, only parentheses are hidden
-          // So we need to find the opening paren hide, then the closing paren hide
-          const hidesAfterBracket = decorations
-            .filter((decoration) =>
-              decoration.type === 'hide' &&
-              decoration.startPos >= closingBracket.endPos
-            )
-            .sort((a, b) => a.startPos - b.startPos);
-          
-          // Find the opening parenthesis hide (should be first or second hide after bracket)
-          // Allow for optional whitespace between ] and (
-          const openingParen = hidesAfterBracket.find((hide) =>
-            hide.startPos >= closingBracket.endPos &&
-            hide.endPos - hide.startPos === 1 // ( is 1 char
-          );
-          
-          // Find the closing parenthesis hide (should be the last hide after opening paren)
-          // The URL content between parentheses is not hidden, so there will be a gap
-          let closingParen: DecorationRange | undefined;
-          
-          if (openingParen) {
-            // Find the closing paren - it should be a hide decoration after the opening paren
-            // Since URL content is not hidden, we look for the last hide that could be the closing paren
-            const hidesAfterOpeningParen = hidesAfterBracket.filter((hide) =>
-              hide.startPos > openingParen.endPos
-            );
-            
-            if (hidesAfterOpeningParen.length > 0) {
-              // The closing paren should be a single-character hide decoration
-              // It might not be immediately after opening paren due to URL content gap
-              closingParen = hidesAfterOpeningParen.find((hide) =>
-                hide.endPos - hide.startPos === 1 // ) is 1 char
-              );
-              
-              // If not found by length, use the last one (fallback)
-              if (!closingParen && hidesAfterOpeningParen.length > 0) {
-                closingParen = hidesAfterOpeningParen[hidesAfterOpeningParen.length - 1];
-              }
-            }
-          }
-          
-          if (closingParen) {
-            // Scope spans from opening ![ to closing parenthesis
-            const scopeStart = openingExclamationBracket.startPos;
-            const scopeEnd = closingParen.endPos;
-            const range = this.createRange(scopeStart, scopeEnd, originalText);
-            if (range) {
-              scopes.push({
-                startPos: scopeStart,
-                endPos: scopeEnd,
-                range,
-              });
-            }
-          } else {
-            // Fallback: if no closing paren found, use closing bracket
-            const scopeStart = openingExclamationBracket.startPos;
-            const scopeEnd = closingBracket.endPos;
-            const range = this.createRange(scopeStart, scopeEnd, originalText);
-            if (range) {
-              scopes.push({
-                startPos: scopeStart,
-                endPos: scopeEnd,
-                range,
-              });
-            }
-          }
-        }
-        continue;
-      }
-
-      // Special handling for links: they have [text](url) structure
-      // Structure: [hide] link_content [hide] (hide url_content hide) hide
-      // The link decoration only covers the text part, but the scope should include the URL
-      if (contentDec.type === 'link') {
-        // Find opening bracket hide (before link content)
-        const openingBracket = decorations.find((decoration) =>
-          decoration.type === 'hide' &&
-          decoration.endPos === contentDec.startPos
-        );
-        
-        // Find closing bracket hide (after link content)
-        const closingBracket = decorations.find((decoration) =>
-          decoration.type === 'hide' &&
-          decoration.startPos === contentDec.endPos
-        );
-        
-        if (openingBracket && closingBracket) {
-          // Find all hide decorations after the closing bracket that are part of the link
-          // Link structure: ](url) = ] hide ( hide url hide ) hide
-          // We need to find the sequence: opening paren, url content, closing paren
-          const hidesAfterBracket = decorations
-            .filter((decoration) =>
-              decoration.type === 'hide' &&
-              decoration.startPos >= closingBracket.endPos
-            )
-            .sort((a, b) => a.startPos - b.startPos);
-          
-          // Find the closing parenthesis by looking for the last hide in a contiguous sequence
-          // The link URL part should be a contiguous sequence of hide decorations
-          // We'll find the last one that's part of this sequence
-          let closingParen: DecorationRange | undefined;
-          
-          if (hidesAfterBracket.length > 0) {
-            // Start from the closing bracket and find contiguous hides
-            // A gap indicates we've left the link construct
-            let currentPos = closingBracket.endPos;
-            let lastInSequence: DecorationRange | undefined;
-            
-            for (const hide of hidesAfterBracket) {
-              // Check if this hide is contiguous (starts at or right after current position)
-              if (hide.startPos <= currentPos + 1) {
-                lastInSequence = hide;
-                currentPos = Math.max(currentPos, hide.endPos);
-              } else {
-                // We've hit a gap - the previous hide was the last of the link
-                break;
-              }
-            }
-            
-            closingParen = lastInSequence;
-          }
-          
-          if (closingParen) {
-            // Scope spans from opening bracket to closing parenthesis
-            const scopeStart = openingBracket.startPos;
-            const scopeEnd = closingParen.endPos;
-            const range = this.createRange(scopeStart, scopeEnd, originalText);
-            if (range) {
-              scopes.push({
-                startPos: scopeStart,
-                endPos: scopeEnd,
-                range,
-              });
-            }
-          } else {
-            // Fallback: if no closing paren found, use closing bracket
-            // This handles edge cases like reference-style links
-            const scopeStart = openingBracket.startPos;
-            const scopeEnd = closingBracket.endPos;
-            const range = this.createRange(scopeStart, scopeEnd, originalText);
-            if (range) {
-              scopes.push({
-                startPos: scopeStart,
-                endPos: scopeEnd,
-                range,
-              });
-            }
-          }
-        }
-        continue;
-      }
-
-      // Special handling for code blocks: they have a different structure
-      // The codeBlock decoration spans the entire block including fences,
-      // but the fences are hidden separately
-      if (contentDec.type === 'codeBlock') {
-        // Find the opening hide decoration that starts at the same position as codeBlock
-        const openingHide = decorations.find((decoration) =>
-          decoration.type === 'hide' &&
-          decoration.startPos === contentDec.startPos
-        );
-        // Find the closing hide decoration
-        // The codeBlock ends at closingFenceEnd (closingFence + 3)
-        // The closing hide starts at closingFence (which is codeBlock.endPos - 3)
-        // It should start after the opening hide ends
-        const closingFenceStart = contentDec.endPos - 3; // closingFence position
-        const closingHide = decorations.find((decoration) =>
-          decoration.type === 'hide' &&
-          decoration.startPos === closingFenceStart &&
-          decoration.startPos > (openingHide?.endPos ?? contentDec.startPos)
-        );
-
-        if (openingHide && closingHide) {
-          // Scope spans from opening hide start to closing hide end
-          const scopeStart = openingHide.startPos;
-          const scopeEnd = closingHide.endPos;
-          const range = this.createRange(scopeStart, scopeEnd, originalText);
-          if (range) {
-            scopes.push({
-              startPos: scopeStart,
-              endPos: scopeEnd,
-              range,
-            });
-          }
-        }
-        continue;
-      }
-
-      // Standard pattern: content decoration with hide/transparent decorations before/after
-      // Other constructs (bold, italic, etc.) have hide decorations adjacent to content
-      const beforeHide = decorations.find((decoration) =>
-        (decoration.type === 'hide' || decoration.type === 'transparent') &&
-        decoration.endPos === contentDec.startPos
-      );
-      const afterHide = decorations.find((decoration) =>
-        (decoration.type === 'hide' || decoration.type === 'transparent') &&
-        decoration.startPos === contentDec.endPos
-      );
-
-      if (beforeHide && afterHide) {
-        const scopeStart = beforeHide.startPos;
-        const scopeEnd = afterHide.endPos;
-        const range = this.createRange(scopeStart, scopeEnd, originalText);
-        if (range) {
-          scopes.push({
-            startPos: scopeStart,
-            endPos: scopeEnd,
-            range,
-          });
-        }
-      } else if (beforeHide) {
-        const scopeStart = beforeHide.startPos;
-        const scopeEnd = contentDec.endPos;
-        const range = this.createRange(scopeStart, scopeEnd, originalText);
-        if (range) {
-          scopes.push({
-            startPos: scopeStart,
-            endPos: scopeEnd,
-            range,
-          });
-        }
+    const entries: ScopeEntry[] = [];
+    for (const scope of scopes) {
+      const range = this.createRange(scope.startPos, scope.endPos, originalText);
+      if (range) {
+        entries.push({
+          startPos: scope.startPos,
+          endPos: scope.endPos,
+          range,
+        });
       }
     }
 
-    return scopes;
+    return entries;
   }
 
   /**
@@ -1024,7 +731,11 @@ export class Decorator {
    * @param {string} originalText - Original document text (for offset adjustment)
    * @returns {Map<DecorationType, Range[]>} Filtered decorations grouped by type
    */
-  private filterDecorations(decorations: DecorationRange[], originalText: string): Map<DecorationType, Range[]> {
+  private filterDecorations(
+    decorations: DecorationRange[],
+    scopes: ScopeEntry[],
+    originalText: string
+  ): Map<DecorationType, Range[]> {
     if (!this.activeEditor) {
       return new Map();
     }
@@ -1046,10 +757,9 @@ export class Decorator {
       }
     }
 
-    const scopeEntries = this.extractScopes(decorations, originalText);
     const rawRanges = this.mergeRanges([
-      ...this.collectRawRanges(selectedRanges, scopeEntries),
-      ...this.collectCursorScopeRanges(cursorPositions, scopeEntries),
+      ...this.collectRawRanges(selectedRanges, scopes),
+      ...this.collectCursorScopeRanges(cursorPositions, scopes),
     ]);
 
     const filtered = new Map<DecorationType, Range[]>();
@@ -1184,9 +894,9 @@ export class Decorator {
    * 
    * @private
    * @param {TextDocument} document - The document to get cache for
-   * @returns {DecorationRange[] | null} Cached decorations or null if cache miss/version mismatch
+   * @returns {CacheEntry | null} Cached entry or null if cache miss/version mismatch
    */
-  private getCachedDecorations(document: TextDocument): DecorationRange[] | null {
+  private getCachedDecorations(document: TextDocument): CacheEntry | null {
     const cacheKey = document.uri.toString();
     const cached = this.decorationCache.get(cacheKey);
 
@@ -1199,7 +909,7 @@ export class Decorator {
       return null;
     }
 
-    return cached.decorations;
+    return cached;
   }
 
   /**
@@ -1209,9 +919,15 @@ export class Decorator {
    * @private
    * @param {TextDocument} document - The document to cache
    * @param {DecorationRange[]} decorations - Decorations to cache
+   * @param {ScopeEntry[]} scopes - Scope entries to cache
    * @param {string} text - Document text to cache
    */
-  private setCachedDecorations(document: TextDocument, decorations: DecorationRange[], text: string): void {
+  private setCachedDecorations(
+    document: TextDocument,
+    decorations: DecorationRange[],
+    scopes: ScopeEntry[],
+    text: string
+  ): void {
     const cacheKey = document.uri.toString();
 
     // Evict least recently used if cache is full
@@ -1222,6 +938,7 @@ export class Decorator {
     this.decorationCache.set(cacheKey, {
       version: document.version,
       decorations,
+      scopes,
       text,
       lastAccessed: ++this.accessCounter,
     });

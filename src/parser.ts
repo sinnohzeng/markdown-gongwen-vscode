@@ -18,6 +18,24 @@ export interface DecorationRange {
 }
 
 /**
+ * Represents a markdown construct scope (e.g., **bold**, [link](url)).
+ * Positions are in normalized text offsets (LF line endings).
+ */
+export interface ScopeRange {
+  startPos: number;
+  endPos: number;
+  kind?: string;
+}
+
+/**
+ * Result of parsing markdown for decorations and scopes.
+ */
+export interface ParseResult {
+  decorations: DecorationRange[];
+  scopes: ScopeRange[];
+}
+
+/**
  * Types of decorations that can be applied to markdown content.
  */
 export type DecorationType =
@@ -121,31 +139,42 @@ export class MarkdownParser {
    * @returns {DecorationRange[]} Array of decoration ranges, sorted by startPos
    */
   extractDecorations(text: string): DecorationRange[] {
+    return this.extractDecorationsWithScopes(text).decorations;
+  }
+
+  /**
+   * Extracts decoration ranges and explicit scope ranges from markdown text.
+   * 
+   * @param {string} text - The markdown text to parse
+   * @returns {ParseResult} Decorations and scopes, sorted by startPos
+   */
+  extractDecorationsWithScopes(text: string): ParseResult {
     if (!text || typeof text !== 'string') {
-      return [];
+      return { decorations: [], scopes: [] };
     }
 
     // Normalize line endings to \n for consistent position tracking
     // Optimization: Only normalize if document contains CRLF
-    const normalizedText = text.indexOf('\r') !== -1 
+    const normalizedText = text.indexOf('\r') !== -1
       ? text.replace(/\r\n|\r/g, '\n')
       : text;
-    
+
     const decorations: DecorationRange[] = [];
-    
+    const scopes: ScopeRange[] = [];
+
     // Process frontmatter before remark parsing to avoid conflicts with thematic break detection
-    this.processFrontmatter(normalizedText, decorations);
-    
+    this.processFrontmatter(normalizedText, decorations, scopes);
+
     try {
       // Parse markdown into AST
       const ast = this.processor.parse(normalizedText) as Root;
-      
-      // Process AST nodes and extract decorations
-      this.processAST(ast, normalizedText, decorations);
-      
+
+      // Process AST nodes and extract decorations + scopes
+      this.processAST(ast, normalizedText, decorations, scopes);
+
       // Handle edge cases: empty image alt text that remark doesn't parse as Image node
       this.handleEmptyImageAlt(normalizedText, decorations);
-      
+
       // Sort decorations by start position
       decorations.sort((a, b) => a.startPos - b.startPos);
     } catch (error) {
@@ -153,7 +182,10 @@ export class MarkdownParser {
       console.error('Error parsing markdown:', error);
     }
 
-    return decorations;
+    return {
+      decorations,
+      scopes: this.dedupeScopes(scopes),
+    };
   }
 
   /**
@@ -169,7 +201,8 @@ export class MarkdownParser {
   private processAST(
     ast: Root,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     // Track processed blockquote positions to avoid duplicates from nested blockquotes
     const processedBlockquotePositions = new Set<number>();
@@ -199,47 +232,47 @@ export class MarkdownParser {
 
         switch (node.type) {
           case 'heading':
-            this.processHeading(node as Heading, text, decorations);
+            this.processHeading(node as Heading, text, decorations, scopes);
             break;
 
           case 'strong':
-            this.processStrong(node as Strong, text, decorations, currentAncestors);
+            this.processStrong(node as Strong, text, decorations, scopes, currentAncestors);
             break;
 
           case 'emphasis':
-            this.processEmphasis(node as Emphasis, text, decorations, currentAncestors);
+            this.processEmphasis(node as Emphasis, text, decorations, scopes, currentAncestors);
             break;
 
           case 'delete':
-            this.processStrikethrough(node as Delete, text, decorations);
+            this.processStrikethrough(node as Delete, text, decorations, scopes);
             break;
 
           case 'inlineCode':
-            this.processInlineCode(node as InlineCode, text, decorations);
+            this.processInlineCode(node as InlineCode, text, decorations, scopes);
             break;
 
           case 'code':
-            this.processCodeBlock(node as Code, text, decorations);
+            this.processCodeBlock(node as Code, text, decorations, scopes);
             break;
 
           case 'link':
-            this.processLink(node as Link, text, decorations);
+            this.processLink(node as Link, text, decorations, scopes);
             break;
 
           case 'image':
-            this.processImage(node as Image, text, decorations);
+            this.processImage(node as Image, text, decorations, scopes);
             break;
 
           case 'blockquote':
-            this.processBlockquote(node as Blockquote, text, decorations, processedBlockquotePositions);
+            this.processBlockquote(node as Blockquote, text, decorations, scopes, processedBlockquotePositions);
             break;
 
           case 'listItem':
-            this.processListItem(node as ListItem, text, decorations);
+            this.processListItem(node as ListItem, text, decorations, scopes);
             break;
 
           case 'thematicBreak':
-            this.processThematicBreak(node as ThematicBreak, text, decorations);
+            this.processThematicBreak(node as ThematicBreak, text, decorations, scopes);
             break;
         }
       } catch (error) {
@@ -293,12 +326,46 @@ export class MarkdownParser {
   }
 
   /**
+   * Adds a scope range for a markdown construct if valid.
+   */
+  private addScope(scopes: ScopeRange[], startPos: number, endPos: number, kind?: string): void {
+    if (startPos < endPos) {
+      scopes.push({ startPos, endPos, kind });
+    }
+  }
+
+  /**
+   * Deduplicates and sorts scopes by start position.
+   */
+  private dedupeScopes(scopes: ScopeRange[]): ScopeRange[] {
+    if (scopes.length === 0) {
+      return [];
+    }
+
+    const unique = new Map<string, ScopeRange>();
+    for (const scope of scopes) {
+      const key = `${scope.startPos}:${scope.endPos}`;
+      if (!unique.has(key)) {
+        unique.set(key, scope);
+      }
+    }
+
+    return Array.from(unique.values()).sort((a, b) => {
+      if (a.startPos !== b.startPos) {
+        return a.startPos - b.startPos;
+      }
+      return a.endPos - b.endPos;
+    });
+  }
+
+  /**
    * Processes a heading node.
    */
   private processHeading(
     node: Heading,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -358,6 +425,8 @@ export class MarkdownParser {
         type: 'heading',
       });
     }
+
+    this.addScope(scopes, start, contentEnd, 'heading');
   }
 
   /**
@@ -367,6 +436,7 @@ export class MarkdownParser {
     node: Strong,
     text: string,
     decorations: DecorationRange[],
+    scopes: ScopeRange[],
     ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
@@ -385,6 +455,7 @@ export class MarkdownParser {
     const contentType: DecorationType = isBoldItalic ? 'boldItalic' : 'bold';
 
     this.addMarkerDecorations(decorations, start, end, markerLength, contentType);
+    this.addScope(scopes, start, end, contentType);
 
     // Process children for nested decorations (handled by visit)
   }
@@ -399,6 +470,7 @@ export class MarkdownParser {
     node: Emphasis,
     text: string,
     decorations: DecorationRange[],
+    scopes: ScopeRange[],
     ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
@@ -430,6 +502,7 @@ export class MarkdownParser {
     const contentType: DecorationType = isBoldItalic ? 'boldItalic' : 'italic';
 
     this.addMarkerDecorations(decorations, start, end, markerLength, contentType);
+    this.addScope(scopes, start, end, contentType);
   }
 
   /**
@@ -441,7 +514,8 @@ export class MarkdownParser {
   private processStrikethrough(
     node: Delete,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -461,6 +535,7 @@ export class MarkdownParser {
 
     // Strikethrough uses ~~ markers (length 2)
     this.addMarkerDecorations(decorations, start, end, 2, 'strikethrough');
+    this.addScope(scopes, start, end, 'strikethrough');
   }
 
   /**
@@ -473,7 +548,8 @@ export class MarkdownParser {
   private processInlineCode(
     node: InlineCode,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -499,6 +575,8 @@ export class MarkdownParser {
     // which is required for borders to render correctly on single lines
     decorations.push({ startPos: start, endPos: start + markerLength, type: 'transparent' });
     decorations.push({ startPos: end - markerLength, endPos: end, type: 'transparent' });
+
+    this.addScope(scopes, start, end, 'code');
   }
 
   /**
@@ -510,7 +588,8 @@ export class MarkdownParser {
   private processCodeBlock(
     node: Code,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -624,7 +703,6 @@ export class MarkdownParser {
     // Find the end of the opening fence line (including language identifier and newline)
     const openingLineEnd = text.indexOf('\n', fenceStart);
     const openingFenceEnd = fenceStart + fenceLength;
-    const openingEnd = openingLineEnd !== -1 && openingLineEnd < closingFence ? openingLineEnd + 1 : openingFenceEnd;
 
     // Find the end of the closing fence
     const closingFenceEnd = closingFence + fenceLength;
@@ -681,6 +759,8 @@ export class MarkdownParser {
       endPos: closingEnd,
       type: 'hide',
     });
+
+    this.addScope(scopes, fenceStart, closingEnd, 'codeBlock');
   }
 
   /**
@@ -689,7 +769,8 @@ export class MarkdownParser {
   private processLink(
     node: Link,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -762,6 +843,8 @@ export class MarkdownParser {
         });
       }
     }
+
+    this.addScope(scopes, start, end, 'link');
   }
 
   /**
@@ -770,7 +853,8 @@ export class MarkdownParser {
   private processImage(
     node: Image,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -834,6 +918,8 @@ export class MarkdownParser {
         }
       }
     }
+
+    this.addScope(scopes, start, end, 'image');
   }
 
   /**
@@ -848,6 +934,7 @@ export class MarkdownParser {
     node: Blockquote,
     text: string,
     decorations: DecorationRange[],
+    scopes: ScopeRange[],
     processedPositions: Set<number>
   ): void {
     if (!this.hasValidPosition(node)) return;
@@ -906,6 +993,8 @@ export class MarkdownParser {
       if (nextLine === -1 || nextLine >= end) break;
       pos = nextLine + 1;
     }
+
+    this.addScope(scopes, start, end, 'blockquote');
   }
 
   /**
@@ -919,7 +1008,8 @@ export class MarkdownParser {
   private processListItem(
     node: ListItem,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -935,6 +1025,8 @@ export class MarkdownParser {
     }
     
     if (markerEnd >= end) return;
+
+    this.addScope(scopes, start, end, 'listItem');
     
     const markerStart = markerEnd;
     
@@ -1068,7 +1160,8 @@ export class MarkdownParser {
   private processThematicBreak(
     node: ThematicBreak,
     text: string,
-    decorations: DecorationRange[]
+    decorations: DecorationRange[],
+    scopes: ScopeRange[]
   ): void {
     if (!this.hasValidPosition(node)) return;
 
@@ -1093,6 +1186,8 @@ export class MarkdownParser {
       endPos: end,
       type: 'horizontalRule',
     });
+
+    this.addScope(scopes, start, end, 'horizontalRule');
   }
 
 
@@ -1196,7 +1291,7 @@ export class MarkdownParser {
    * @param {string} text - The normalized markdown text (CRLF normalized to LF)
    * @param {DecorationRange[]} decorations - Array to accumulate decorations
    */
-  private processFrontmatter(text: string, decorations: DecorationRange[]): void {
+  private processFrontmatter(text: string, decorations: DecorationRange[], scopes: ScopeRange[]): void {
     if (!text || text.length < MarkdownParser.MIN_FRONTMATTER_LENGTH) {
       return;
     }
@@ -1276,6 +1371,8 @@ export class MarkdownParser {
             endPos: closingLineEndPos,
             type: 'frontmatter',
           });
+
+          this.addScope(scopes, openingDelimiterStart, closingLineEndPos, 'frontmatter');
 
           // Apply opacity decoration to opening delimiter (---)
           // The delimiter is exactly 3 characters: ---

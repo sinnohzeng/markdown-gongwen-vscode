@@ -9,22 +9,38 @@ jest.mock('../../parser', () => ({
 import { Decorator } from '../../decorator';
 import type { DecorationRange, DecorationType } from '../../parser';
 import { isMarkerDecorationType } from '../decoration-categories';
-import { TextDocument, TextEditor, Selection, Position, Uri } from '../../test/__mocks__/vscode';
+import { TextDocument, TextEditor, Selection, Position, Uri, Range } from '../../test/__mocks__/vscode';
+
+type ScopeEntry = {
+  startPos: number;
+  endPos: number;
+  range: ReturnType<typeof Range>;
+};
 
 function filterDecorationsForSelection(
   text: string,
   decorations: DecorationRange[],
+  scopeRanges: Array<[number, number]>,
   selection: ReturnType<typeof Selection>
 ): Map<DecorationType, unknown[]> {
   const document = new TextDocument(Uri.file('test.md'), 'markdown', 1, text);
   const editor = new TextEditor(document, [selection]);
+  const scopes: ScopeEntry[] = scopeRanges.map(([startPos, endPos]) => ({
+    startPos,
+    endPos,
+    range: new Range(document.positionAt(startPos), document.positionAt(endPos)),
+  }));
   const decorator = new Decorator() as unknown as {
     activeEditor: ReturnType<typeof TextEditor>;
-    filterDecorations: (ranges: DecorationRange[], originalText: string) => Map<DecorationType, unknown[]>;
+    filterDecorations: (
+      ranges: DecorationRange[],
+      scopes: ScopeEntry[],
+      originalText: string
+    ) => Map<DecorationType, unknown[]>;
   };
 
   decorator.activeEditor = editor;
-  return decorator.filterDecorations(decorations, text);
+  return decorator.filterDecorations(decorations, scopes, text);
 }
 
 describe('Decorator filtering behavior', () => {
@@ -37,7 +53,7 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(0, 3), new Position(0, 3));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 8]], selection);
 
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.has('hide')).toBe(false);
@@ -52,7 +68,7 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(0, 1), new Position(0, 1));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 9]], selection);
 
     expect(filtered.has('heading1')).toBe(false);
     expect(filtered.has('heading')).toBe(false);
@@ -65,7 +81,7 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(1, 0), new Position(1, 0));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 6]], selection);
 
     expect(filtered.get('listItem')?.length).toBe(1);
   });
@@ -78,7 +94,7 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(0, 3), new Position(0, 3));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 10]], selection);
 
     expect(filtered.get('checkboxUnchecked')?.length).toBe(1);
     expect(filtered.has('listItem')).toBe(false);
@@ -92,7 +108,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor inside horizontal rule
     const selection = new Selection(new Position(0, 1), new Position(0, 1));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 3]], selection);
 
     // Horizontal rule decoration should be skipped (raw state - show actual ---)
     expect(filtered.has('horizontalRule')).toBe(false);
@@ -106,7 +122,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor on different line
     const selection = new Selection(new Position(1, 0), new Position(1, 0));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 3]], selection);
 
     // Horizontal rule decoration should be applied (rendered state - show visual separator)
     expect(filtered.get('horizontalRule')?.length).toBe(1);
@@ -120,7 +136,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with selection covering the entire horizontal rule
     const selection = new Selection(new Position(0, 0), new Position(0, 3));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 3]], selection);
 
     // Horizontal rule decoration should be skipped (raw state - show actual ---)
     expect(filtered.has('horizontalRule')).toBe(false);
@@ -136,7 +152,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor at the end boundary (right after closing backtick)
     const selection = new Selection(new Position(0, 21), new Position(0, 21));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 21]], selection);
 
     // Transparent decorations should be skipped (raw state - show actual backticks)
     expect(filtered.has('transparent')).toBe(false);
@@ -154,7 +170,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor at the start boundary (at opening backtick)
     const selection = new Selection(new Position(0, 0), new Position(0, 0));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 21]], selection);
 
     // Transparent decorations should be skipped (raw state - show actual backticks)
     expect(filtered.has('transparent')).toBe(false);
@@ -172,7 +188,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor inside the code content
     const selection = new Selection(new Position(0, 5), new Position(0, 5));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 13]], selection);
 
     // Transparent decorations should be skipped (raw state - show actual backticks)
     expect(filtered.has('transparent')).toBe(false);
@@ -190,7 +206,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with selection covering the entire code construct
     const selection = new Selection(new Position(0, 0), new Position(0, 13));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 13]], selection);
 
     // Transparent decorations should be skipped (raw state - show actual backticks)
     expect(filtered.has('transparent')).toBe(false);
@@ -211,7 +227,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor inside the link text
     const selection = new Selection(new Position(0, 5), new Position(0, 5));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 32]], selection);
 
     // All hide decorations should be skipped (raw state - show [text](url))
     expect(filtered.has('hide')).toBe(false);
@@ -232,7 +248,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor in the URL part
     const selection = new Selection(new Position(0, 20), new Position(0, 20));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 32]], selection);
 
     // All hide decorations should be skipped (raw state - show [text](url))
     expect(filtered.has('hide')).toBe(false);
@@ -253,7 +269,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with selection covering the entire link construct
     const selection = new Selection(new Position(0, 0), new Position(0, 32));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 32]], selection);
 
     // All hide decorations should be skipped (raw state - show [text](url))
     expect(filtered.has('hide')).toBe(false);
@@ -273,7 +289,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor inside the alt text
     const selection = new Selection(new Position(0, 5), new Position(0, 5));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 21]], selection);
 
     // All hide decorations should be skipped (raw state - show ![alt](url))
     expect(filtered.has('hide')).toBe(false);
@@ -293,7 +309,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with cursor in the URL part (between parentheses)
     const selection = new Selection(new Position(0, 15), new Position(0, 15));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 21]], selection);
 
     // All hide decorations should be skipped (raw state - show ![alt](url))
     expect(filtered.has('hide')).toBe(false);
@@ -313,7 +329,7 @@ describe('Decorator filtering behavior', () => {
 
     // Test with selection covering the entire image construct
     const selection = new Selection(new Position(0, 0), new Position(0, 21));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 21]], selection);
 
     // All hide decorations should be skipped (raw state - show ![alt](url))
     expect(filtered.has('hide')).toBe(false);
@@ -330,7 +346,7 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(0, 10), new Position(0, 10));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 8]], selection);
 
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.has('hide')).toBe(false);
@@ -349,7 +365,15 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(0, 4), new Position(0, 4));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(
+      text,
+      decorations,
+      [
+        [0, 8],
+        [9, 17],
+      ],
+      selection
+    );
 
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.get('italic')?.length).toBe(1);
@@ -366,7 +390,7 @@ describe('Decorator filtering behavior', () => {
     ];
 
     const selection = new Selection(new Position(1, 0), new Position(1, 0));
-    const filtered = filterDecorationsForSelection(text, decorations, selection);
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 8]], selection);
 
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.get('hide')?.length).toBe(2);
