@@ -60,6 +60,12 @@ Configure ghost opacity: `markdownInlineEditor.decorations.ghostFaintOpacity` (d
   <em style="font-size:90%; color:#888;">Left: Markdown as rendered—formatting is shown inline, raw syntax markers are hidden for clarity.</em><br>
   <em style="font-size:90%; color:#888;">Right: Selecting a line reveals the original Markdown syntax for direct editing.</em>
 </p>
+<p align="center" style="max-width:95%; margin-left:auto; margin-right:auto;">
+  <img src="assets/code-blocks-frontmatter.png" alt="Code blocks and YAML frontmatter rendering" width="95%"><br>
+  <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
+    <em>Code blocks with syntax highlighting and YAML frontmatter with background styling—all syntax markers hidden for a clean reading experience.</em>
+  </span>
+</p>
 
 ## Get Started: Install the Extension
 
