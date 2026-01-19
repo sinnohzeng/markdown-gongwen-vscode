@@ -267,6 +267,42 @@ describe('Decorator filtering behavior', () => {
     expect(filtered.get('code')?.length).toBe(1);
   });
 
+  it('suppresses code block background decoration in raw state (selection inside code block)', () => {
+    const text = '```\ncode\n```';
+    const decorations: DecorationRange[] = [
+      // Background for the whole code block (fenceStart..closingFenceEnd)
+      { startPos: 0, endPos: 12, type: 'codeBlock' },
+      // Hide opening fence
+      { startPos: 0, endPos: 3, type: 'hide' },
+      // Hide newline after opening fence
+      { startPos: 3, endPos: 4, type: 'hide' },
+      // Hide closing fence (and any trailing newline - none here)
+      { startPos: 9, endPos: 12, type: 'hide' },
+    ];
+
+    // Select inside the code content line ("code")
+    const selection = new Selection(new Position(1, 1), new Position(1, 3));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 12]], selection);
+
+    // In raw state, we should show the original markdown (including fences),
+    // and avoid applying the opaque background decoration that can hide selection.
+    expect(filtered.has('codeBlock')).toBe(false);
+    expect(filtered.has('hide')).toBe(false);
+  });
+
+  it('keeps code block background decoration when selection is outside the code block', () => {
+    const text = '```\ncode\n```\noutside';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 12, type: 'codeBlock' },
+    ];
+
+    // Cursor/selection on the outside line
+    const selection = new Selection(new Position(3, 0), new Position(3, 0));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 12]], selection);
+
+    expect(filtered.get('codeBlock')?.length).toBe(1);
+  });
+
   it('reveals link URL in raw state when cursor is inside the link', () => {
     const text = '[link text](https://example.com)';
     const decorations: DecorationRange[] = [

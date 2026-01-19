@@ -803,6 +803,18 @@ export class Decorator {
       if (!range) continue;
       const isActiveLine = activeLines.size > 0 && activeLines.has(range.start.line);
 
+      // Code blocks and frontmatter use full-line background decorations.
+      // When we enter Raw state (cursor/selection intersects the scope),
+      // keeping those opaque backgrounds can make VS Code's native selection highlight
+      // appear invisible. In Raw state we prefer the unstyled editor surface anyway,
+      // so we suppress these background decorations.
+      if (decoration.type === 'codeBlock' || decoration.type === 'frontmatter') {
+        const intersectsRaw = this.rangeIntersectsAny(range, rawRanges);
+        if (intersectsRaw) {
+          continue;
+        }
+      }
+
       if (selectionOnlyMarkerTypes.has(decoration.type)) {
         if (selectionOrCursorOverlaps(range)) {
           // Raw state: show actual marker characters
