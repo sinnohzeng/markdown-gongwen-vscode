@@ -17,6 +17,57 @@
 * **Theme-aware** – Automatically adapts to your VS Code theme
 * **Zero configuration** – Works out of the box
 
+## Demo
+
+<p align="center" style="max-width:95%; margin-left:auto; margin-right:auto;">
+  <img src="assets/demo.gif" alt="Markdown Inline Editor Demo" width="95%"><br>
+  <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
+    <em>Figure: Interactive demo—see formatting applied inline, reveal raw Markdown with a click, and watch the extension adapt instantly to color theme changes.</em>
+  </span>
+</p>
+
+<p align="center">
+  <img src="assets/example-ui.png" alt="Markdown Inline Editor - formatted view" width="47%">
+  <img src="assets/example-ui-selected-line.png" alt="Raw Markdown revealed on selection" width="47%">
+</p>
+<p align="center">
+  <em style="font-size:90%; color:#888;">Left: Markdown as rendered—formatting is shown inline, raw syntax markers are hidden for clarity.</em><br>
+  <em style="font-size:90%; color:#888;">Right: Selecting a line reveals the original Markdown syntax for direct editing.</em>
+</p>
+
+<p align="center">
+  <img src="assets/syntax-shadowing.png" alt="Shadow syntax markers" width="47%">
+  <img src="assets/code-blocks.png" alt="Code blocks and YAML frontmatter rendering" width="47%">
+</p>
+<p align="center">
+  <em style="font-size:90%; color:#888;">Left: Faint shadow syntax markers visible in ghost state for edit cues.</em><br>
+  <em style="font-size:90%; color:#888;">Right: Code blocks and frontmatter are cleanly rendered with hidden raw markers when not editing.</em>
+</p>
+
+## Get Started: Install the Extension
+
+1. **Install** the extension from:
+   - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CodeSmith.markdown-inline-editor-vscode)
+   - [OpenVSX Registry](https://open-vsx.org/extension/CodeSmith/markdown-inline-editor-vscode)
+   - [Github Releases](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/releases)
+2. **Open** any `.md` file
+3. **Start typing** – formatting appears automatically with syntax hidden (Rendered state)
+4. **Move cursor** – Faint syntax markers appear on active lines (Ghost state)
+5. **Click/select text** – Raw Markdown syntax becomes fully visible for editing (Raw state)
+6. **Toggle anytime** – Click the toolbar button or use `Ctrl+Shift+P` / `Cmd+Shift+P` → "Toggle Markdown Decorations"
+
+## Recommended Extensions
+
+Enhance your Markdown workflow with these complementary extensions:
+
+- **[Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)**
+    - Keyboard shortcuts (e.g., <kbd>Alt</kbd>+<kbd>C</kbd> to toggle checkboxes)
+    - Auto-formatting, table of contents, preview, and more
+
+- **[Mermaid Chart](https://marketplace.visualstudio.com/items?itemName=MermaidChart.vscode-mermaid-chart)**
+    - Create and edit diagrams directly within Markdown
+    - Preview and quickly iterate on charts
+
 ## 🎯 Syntax Shadowing: 3-State Model
 
 The extension uses an intelligent **3-state syntax shadowing system** that adapts syntax visibility based on your editing context:
@@ -43,60 +94,6 @@ The extension uses an intelligent **3-state syntax shadowing system** that adapt
 - **Ordered list numbers** always remain visible
 
 Configure ghost opacity: `markdownInlineEditor.decorations.ghostFaintOpacity` (default: 0.3)
-
-<p align="center" style="max-width:95%; margin-left:auto; margin-right:auto;">
-  <img src="assets/syntax-shadowing.png" alt="Syntax Shadowing 3-State Model demonstration" width="95%"><br>
-  <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
-    <em>Visual demonstration of the 3-state model: Rendered (syntax hidden), Ghost (faint markers on active line), and Raw (full syntax visible when editing).</em>
-  </span>
-</p>
-
-## Demo
-
-<p align="center" style="max-width:95%; margin-left:auto; margin-right:auto;">
-  <img src="assets/demo.gif" alt="Markdown Inline Editor Demo" width="95%"><br>
-  <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
-    <em>Figure: Interactive demo—see formatting applied inline, reveal raw Markdown with a click, and watch the extension adapt instantly to color theme changes.</em>
-  </span>
-</p>
-<p align="center">
-  <img src="assets/example-ui.png" alt="Markdown Inline Editor - formatted view" width="47%">
-  <img src="assets/example-ui-selected-line.png" alt="Raw Markdown revealed on selection" width="47%">
-</p>
-<p align="center">
-  <em style="font-size:90%; color:#888;">Left: Markdown as rendered—formatting is shown inline, raw syntax markers are hidden for clarity.</em><br>
-  <em style="font-size:90%; color:#888;">Right: Selecting a line reveals the original Markdown syntax for direct editing.</em>
-</p>
-<p align="center" style="max-width:95%; margin-left:auto; margin-right:auto;">
-  <img src="assets/code-blocks.png" alt="Code blocks and YAML frontmatter rendering" width="95%"><br>
-  <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
-    <em>Code blocks with syntax highlighting and YAML frontmatter with background styling—all syntax markers hidden for a clean reading experience.</em>
-  </span>
-</p>
-
-## Get Started: Install the Extension
-
-1. **Install** the extension from:
-   - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=CodeSmith.markdown-inline-editor-vscode)
-   - [OpenVSX Registry](https://open-vsx.org/extension/CodeSmith/markdown-inline-editor-vscode)
-   - [Github Releases](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/releases)
-2. **Open** any `.md` file
-3. **Start typing** – formatting appears automatically with syntax hidden (Rendered state)
-4. **Move cursor** – Faint syntax markers appear on active lines (Ghost state)
-5. **Click/select text** – Raw Markdown syntax becomes fully visible for editing (Raw state)
-6. **Toggle anytime** – Click the toolbar button or use `Ctrl+Shift+P` / `Cmd+Shift+P` → "Toggle Markdown Decorations"
-
-## Recommended Extensions
-
-Enhance your Markdown workflow with these complementary extensions:
-
-- **[Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)**
-    - Keyboard shortcuts (e.g., <kbd>Alt</kbd>+<kbd>C</kbd> to toggle checkboxes)
-    - Auto-formatting, table of contents, preview, and more
-
-- **[Mermaid Chart](https://marketplace.visualstudio.com/items?itemName=MermaidChart.vscode-mermaid-chart)**
-    - Create and edit diagrams directly within Markdown
-    - Preview and quickly iterate on charts
 
 ## Supported Features
 
@@ -212,17 +209,17 @@ npm install
 
 ### Key Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run compile` | Compile TypeScript to JavaScript |
-| `npm run bundle` | Bundle with esbuild |
-| `npm test` | Run all tests |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Generate coverage report |
-| `npm run lint` | Run ESLint |
-| `npm run package` | Create `.vsix` package |
-| `npm run clean` | Clean build artifacts |
-| `npm run build` | Full build (compile + bundle + package) |
+| Command                 | Description                             |
+| ----------------------- | --------------------------------------- |
+| `npm run compile`       | Compile TypeScript to JavaScript        |
+| `npm run bundle`        | Bundle with esbuild                     |
+| `npm test`              | Run all tests                           |
+| `npm run test:watch`    | Run tests in watch mode                 |
+| `npm run test:coverage` | Generate coverage report                |
+| `npm run lint`          | Run ESLint                              |
+| `npm run package`       | Create `.vsix` package                  |
+| `npm run clean`         | Clean build artifacts                   |
+| `npm run build`         | Full build (compile + bundle + package) |
 
 ### Executing
 
