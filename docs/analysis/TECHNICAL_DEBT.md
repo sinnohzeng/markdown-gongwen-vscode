@@ -134,7 +134,7 @@ private logDebug(message: string, ...args: any[]): void {
 
 ---
 
-### 7. Test Coverage Gaps
+### 7. Test Coverage Gaps (Partially Addressed)
 
 **Status:** Open  
 **Location:** Various test files
@@ -154,9 +154,19 @@ private logDebug(message: string, ...args: any[]): void {
   - Complex nested structures
   - Concurrent document changes
 
+**Recent Improvements:**
+- ✅ Added comprehensive tests for hover providers (image and link)
+- ✅ Added tests for link click handler
+- ✅ Added tests for hover utilities (URL resolution, caching, diff view handling)
+- ✅ Current test count: 57+ passing tests across multiple test suites
+
 **Related Files:**
 - `src/decorator/__tests__/`
 - `src/parser/__tests__/`
+- `src/hover-utils/__tests__/` (new)
+- `src/image-hover-provider/__tests__/` (new)
+- `src/link-hover-provider/__tests__/` (new)
+- `src/link-click-handler/__tests__/` (new)
 
 ---
 

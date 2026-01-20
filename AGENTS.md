@@ -14,9 +14,17 @@
     - `parser-remark.ts` – remark dependency helper
     - `decorations.ts` – decoration types/factories
     - `link-provider.ts` – clickable link provider for markdown documents
+    - `link-hover-provider.ts` – hover provider for link URLs
+    - `image-hover-provider.ts` – hover provider for image previews
+    - `link-click-handler.ts` – single-click navigation handler
+    - `hover-utils.ts` – shared utilities for hover providers (caching, URL resolution)
     - `position-mapping.ts` – position mapping utilities (CRLF/LF normalization)
     - `parser/__tests__/` – parser tests
     - `link-provider/__tests__/` – link provider tests
+    - `hover-utils/__tests__/` – hover utilities tests
+    - `image-hover-provider/__tests__/` – image hover provider tests
+    - `link-hover-provider/__tests__/` – link hover provider tests
+    - `link-click-handler/__tests__/` – click handler tests
 - `dist/` – compiled output (do not edit)
 - `docs/` – documentation, optimization notes
 - `assets/` – icons and static files
@@ -37,8 +45,9 @@
 **Boundaries**
 - Only modify code in `/src/`, ignore `/dist/` and generated files
 - Never parse whole document on selection change (use cache)
-- Test *all* changes, maintain/expand `/src/parser/__tests__/`
+- Test *all* changes, maintain/expand test suites in `*/__tests__/` directories
 - Handle large files and malformed markdown gracefully
+- Maintain test coverage: currently 57+ passing tests across parser, hover providers, and click handler
 
 **Git Workflow**
 - Use feature branches per focus area (parser, decoration, etc.)

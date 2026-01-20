@@ -60,7 +60,7 @@ extractDecorations(text: string): DecorationRange[] {
 
 ### 4. Testing
 
-**All changes must include tests.** The project uses Jest for testing.
+**All changes must include tests.** The project uses Jest for testing with **57+ passing tests** across multiple test suites.
 
 **Run tests:**
 ```bash
@@ -69,15 +69,22 @@ npm run test:watch    # Watch mode for development
 npm run test:coverage # Generate coverage report
 ```
 
-**Test file location:**
+**Test file locations:**
 - Parser tests: `src/parser/__tests__/`
-- Follow existing test patterns and naming conventions
+- Link provider tests: `src/link-provider/__tests__/`
+- Hover utilities tests: `src/hover-utils/__tests__/`
+- Image hover provider tests: `src/image-hover-provider/__tests__/`
+- Link hover provider tests: `src/link-hover-provider/__tests__/`
+- Link click handler tests: `src/link-click-handler/__tests__/`
+
+Follow existing test patterns and naming conventions (kebab-case for test files).
 
 **Test requirements:**
 - ✅ All existing tests must pass
 - ✅ New features need test coverage
 - ✅ Edge cases should be tested
 - ✅ Performance-critical paths should have benchmarks
+- ✅ Provider classes should test ESM module loading (use `MarkdownParser.create()` in tests)
 
 **Example test structure:**
 ```typescript
@@ -210,9 +217,10 @@ This extension prioritizes performance, especially for:
    - Create a new decoration type factory if needed
    - Register it in `decorator.ts`
 
-3. **Write tests** (`src/parser/__tests__/`):
-   - Create or update test file
+3. **Write tests** (in appropriate `*/__tests__/` directory):
+   - Create or update test file in the relevant test directory
    - Test various edge cases
+   - For providers using `MarkdownParser`, use `MarkdownParser.create()` and replace the parser after instantiation
 
 4. **Update documentation:**
    - Update README.md if it's a user-facing feature

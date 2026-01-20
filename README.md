@@ -190,8 +190,18 @@ src/
 ├── decorator.ts          # Decoration management and caching
 ├── decorations.ts        # VS Code decoration type definitions
 ├── link-provider.ts      # Clickable link provider
+├── link-hover-provider.ts # Hover provider for link URLs
+├── image-hover-provider.ts # Hover provider for image previews
+├── link-click-handler.ts # Single-click navigation handler
+├── hover-utils.ts        # Shared utilities for hover providers
 ├── position-mapping.ts   # Position mapping utilities (CRLF handling)
-└── parser/__tests__/     # Comprehensive test suite
+└── */__tests__/         # Comprehensive test suites
+    ├── parser/__tests__/     # Parser tests
+    ├── link-provider/__tests__/ # Link provider tests
+    ├── hover-utils/__tests__/   # Hover utilities tests
+    ├── image-hover-provider/__tests__/ # Image hover tests
+    ├── link-hover-provider/__tests__/  # Link hover tests
+    └── link-click-handler/__tests__/   # Click handler tests
 ```
 
 **How it works:**
@@ -200,6 +210,21 @@ src/
 3. **Scope-based detection** – Precisely identifies markdown constructs for context-aware syntax visibility
 4. **Caching** – Intelligent caching prevents redundant parsing on selection changes
 5. **3-state model** – Rendered (hidden), Ghost (faint), Raw (visible) states adapt to editing context
+6. **Hover providers** – Show image previews and link URLs on hover
+7. **Click handler** – Optional single-click navigation for links and images
+
+### Testing
+
+The project maintains comprehensive test coverage with **57+ passing tests** across multiple test suites:
+
+- **Parser tests** (`parser/__tests__/`) – Core markdown parsing logic
+- **Hover utilities tests** (`hover-utils/__tests__/`) – Image URL resolution, caching, diff view handling
+- **Image hover provider tests** (`image-hover-provider/__tests__/`) – Image preview hover functionality
+- **Link hover provider tests** (`link-hover-provider/__tests__/`) – Link URL hover functionality
+- **Link click handler tests** (`link-click-handler/__tests__/`) – Single-click navigation behavior
+- **Link provider tests** (`link-provider/__tests__/`) – Clickable link provider functionality
+
+Run tests with `npm test` or `npm run test:watch` for development.
 
 ### Installing
 
