@@ -1,4 +1,5 @@
 import { TextDocument, Uri } from '../../test/__mocks__/vscode';
+import { isDiffLikeUri } from '../../diff-context';
 
 /**
  * Tests for diff mode detection functionality.
@@ -59,26 +60,24 @@ describe('Decorator - Diff Mode', () => {
   });
 
   describe('diff scheme detection logic', () => {
-    const diffSchemes = ['git', 'vscode-merge', 'vscode-diff'];
-
     it('should identify git scheme as diff scheme', () => {
       const gitUri = Uri.parse('git:/path/to/file.md');
-      expect(diffSchemes.includes(gitUri.scheme)).toBe(true);
+      expect(isDiffLikeUri(gitUri as any)).toBe(true);
     });
 
     it('should identify vscode-merge scheme as diff scheme', () => {
       const mergeUri = Uri.parse('vscode-merge:/path/to/file.md');
-      expect(diffSchemes.includes(mergeUri.scheme)).toBe(true);
+      expect(isDiffLikeUri(mergeUri as any)).toBe(true);
     });
 
     it('should identify vscode-diff scheme as diff scheme', () => {
       const diffUri = Uri.parse('vscode-diff:/path/to/file.md');
-      expect(diffSchemes.includes(diffUri.scheme)).toBe(true);
+      expect(isDiffLikeUri(diffUri as any)).toBe(true);
     });
 
     it('should not identify file scheme as diff scheme', () => {
       const fileUri = Uri.file('test.md');
-      expect(diffSchemes.includes(fileUri.scheme)).toBe(false);
+      expect(isDiffLikeUri(fileUri as any)).toBe(false);
     });
   });
 });

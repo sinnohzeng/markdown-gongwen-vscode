@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
-import { MarkdownParser } from './parser';
+import { MarkdownParseCache } from './markdown-parse-cache';
 import { mapNormalizedToOriginal } from './position-mapping';
+import { shouldSkipInDiffView } from './diff-context';
+import { resolveImageTarget, resolveLinkTarget, toCommandUri } from './link-targets';
 
 /**
  * Provides clickable links and images for markdown documents.
@@ -13,7 +15,7 @@ import { mapNormalizedToOriginal } from './position-mapping';
  * - Images: Click to open image file in VS Code's image viewer
  */
 export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
-  private parser = new MarkdownParser();
+  constructor(private parseCache: MarkdownParseCache) {}
 
   /**
    * Provides document links for a markdown document.
@@ -30,19 +32,14 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
       return [];
     }
 
-    const config = vscode.workspace.getConfiguration('markdownInlineEditor');
-    const diffViewApplyDecorations = config.get<boolean>('defaultBehaviors.diffView.applyDecorations', false);
-    
     // Skip links in diff views when decorations are disabled (raw markdown mode)
-    if (!diffViewApplyDecorations) {
-      const diffSchemes: readonly string[] = ['git', 'vscode-merge', 'vscode-diff'];
-      if (diffSchemes.includes(document.uri.scheme)) {
-        return [];
-      }
+    if (shouldSkipInDiffView(document)) {
+      return [];
     }
 
-    const text = document.getText();
-    const decorations = this.parser.extractDecorations(text);
+    const parseEntry = this.parseCache.get(document);
+    const text = parseEntry.text;
+    const decorations = parseEntry.decorations;
     const links: vscode.DocumentLink[] = [];
 
     // Find all link decorations with URLs
@@ -63,28 +60,14 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
         let target: vscode.Uri | undefined;
 
         if (decoration.type === 'image') {
-          // For images, resolve the image file path
-          if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-            // External image URL - open in browser
-            target = vscode.Uri.parse(url);
-          } else {
-            // Local image file - resolve relative to document
-            const relative = url.startsWith('/') ? url.slice(1) : url;
-            target = vscode.Uri.joinPath(document.uri, '..', relative);
-          }
-        } else if (url.startsWith('#')) {
-          // Internal anchor link - use command to navigate within the same document
-          const anchor = url.substring(1);
-          target = vscode.Uri.parse(`command:markdown-inline-editor.navigateToAnchor?${encodeURIComponent(JSON.stringify([anchor, document.uri.toString()]))}`);
-        } else if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('mailto:')) {
-          // External URL
-          target = vscode.Uri.parse(url);
-        } else if (url.startsWith('/') || url.startsWith('./') || url.startsWith('../')) {
-          // Relative file path
-          target = vscode.Uri.joinPath(document.uri, '..', url);
+          target = resolveImageTarget(url, document.uri);
         } else {
-          // Try to resolve as relative path
-          target = vscode.Uri.joinPath(document.uri, '..', url);
+          const resolved = resolveLinkTarget(url, document.uri);
+          if (resolved?.kind === 'command') {
+            target = toCommandUri(resolved.command, resolved.args);
+          } else {
+            target = resolved?.uri;
+          }
         }
 
         if (target) {

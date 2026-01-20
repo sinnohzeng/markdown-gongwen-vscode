@@ -71,8 +71,10 @@ npm run test:coverage # Generate coverage report
 
 **Test file locations:**
 - Parser tests: `src/parser/__tests__/`
+- Parse cache tests: `src/markdown-parse-cache/__tests__/`
+- Diff context tests: `src/diff-context/__tests__/`
+- Link target tests: `src/link-targets/__tests__/`
 - Link provider tests: `src/link-provider/__tests__/`
-- Hover utilities tests: `src/hover-utils/__tests__/`
 - Image hover provider tests: `src/image-hover-provider/__tests__/`
 - Link hover provider tests: `src/link-hover-provider/__tests__/`
 - Link click handler tests: `src/link-click-handler/__tests__/`
@@ -215,7 +217,7 @@ This extension prioritizes performance, especially for:
 
 2. **Add decoration type** (`src/decorations.ts`):
    - Create a new decoration type factory if needed
-   - Register it in `decorator.ts`
+   - Register it in `decorator/decoration-type-registry.ts`
 
 3. **Write tests** (in appropriate `*/__tests__/` directory):
    - Create or update test file in the relevant test directory

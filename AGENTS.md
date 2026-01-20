@@ -7,27 +7,36 @@
 - Jest for tests
 
 **Project Structure**
-- `src/` – source code
-    - `extension.ts` – activation and extension entrypoint
-    - `decorator.ts` – manages markdown decorations/selection
-    - `parser.ts` – parses markdown to decoration ranges
-    - `parser-remark.ts` – remark dependency helper
-    - `decorations.ts` – decoration types/factories
-    - `link-provider.ts` – clickable link provider for markdown documents
-    - `link-hover-provider.ts` – hover provider for link URLs
-    - `image-hover-provider.ts` – hover provider for image previews
-    - `link-click-handler.ts` – single-click navigation handler
-    - `hover-utils.ts` – shared utilities for hover providers (caching, URL resolution)
-    - `position-mapping.ts` – position mapping utilities (CRLF/LF normalization)
-    - `parser/__tests__/` – parser tests
-    - `link-provider/__tests__/` – link provider tests
-    - `hover-utils/__tests__/` – hover utilities tests
-    - `image-hover-provider/__tests__/` – image hover provider tests
-    - `link-hover-provider/__tests__/` – link hover provider tests
-    - `link-click-handler/__tests__/` – click handler tests
-- `dist/` – compiled output (do not edit)
-- `docs/` – documentation, optimization notes
-- `assets/` – icons and static files
+- [`src/`](src/) – source code
+    - [`extension.ts`](src/extension.ts) – activation and extension entrypoint
+    - [`config.ts`](src/config.ts) – centralized configuration access
+    - [`diff-context.ts`](src/diff-context.ts) – unified diff view detection and policy
+    - [`link-targets.ts`](src/link-targets.ts) – unified link/image URL resolution
+    - [`markdown-parse-cache.ts`](src/markdown-parse-cache.ts) – shared parsing and caching service
+    - [`parser.ts`](src/parser.ts) – parses markdown to decoration ranges
+    - [`parser-remark.ts`](src/parser-remark.ts) – remark dependency helper
+    - [`decorations.ts`](src/decorations.ts) – decoration types/factories
+    - [`decorator.ts`](src/decorator.ts) – decoration orchestration (uses helper modules)
+    - [`decorator/decoration-type-registry.ts`](src/decorator/decoration-type-registry.ts) – decoration type lifecycle management
+    - [`decorator/visibility-model.ts`](src/decorator/visibility-model.ts) – 3-state filtering logic (Rendered/Ghost/Raw)
+    - [`decorator/checkbox-toggle.ts`](src/decorator/checkbox-toggle.ts) – checkbox click handling
+    - [`decorator/decoration-categories.ts`](src/decorator/decoration-categories.ts) – decoration type categorization
+    - [`link-provider.ts`](src/link-provider.ts) – clickable link provider for markdown documents
+    - [`link-hover-provider.ts`](src/link-hover-provider.ts) – hover provider for link URLs
+    - [`image-hover-provider.ts`](src/image-hover-provider.ts) – hover provider for image previews
+    - [`link-click-handler.ts`](src/link-click-handler.ts) – single-click navigation handler
+    - [`position-mapping.ts`](src/position-mapping.ts) – position mapping utilities (CRLF/LF normalization)
+    - [`parser/__tests__/`](src/parser/__tests__/ ) – parser tests
+    - [`markdown-parse-cache/__tests__/`](src/markdown-parse-cache/__tests__/ ) – parse cache tests
+    - [`diff-context/__tests__/`](src/diff-context/__tests__/ ) – diff context tests
+    - [`link-targets/__tests__/`](src/link-targets/__tests__/ ) – link target resolution tests
+    - [`link-provider/__tests__/`](src/link-provider/__tests__/ ) – link provider tests
+    - [`image-hover-provider/__tests__/`](src/image-hover-provider/__tests__/ ) – image hover provider tests
+    - [`link-hover-provider/__tests__/`](src/link-hover-provider/__tests__/ ) – link hover provider tests
+    - [`link-click-handler/__tests__/`](src/link-click-handler/__tests__/ ) – click handler tests
+- [`dist/`](dist/) – compiled output (do not edit)
+- [`docs/`](docs/) – documentation, optimization notes
+- [`assets/`](assets/) – icons and static files
 
 **Key Commands**
 - Compile: `npm run compile` (TypeScript compilation only)

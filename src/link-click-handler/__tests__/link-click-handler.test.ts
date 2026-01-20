@@ -1,5 +1,6 @@
 import { LinkClickHandler } from '../../link-click-handler';
 import { MarkdownParser } from '../../parser';
+import { MarkdownParseCache } from '../../markdown-parse-cache';
 import { TextDocument, Uri, Position, TextEditor, Selection, workspace, commands } from '../../test/__mocks__/vscode';
 
 // Mock workspace.getConfiguration
@@ -15,21 +16,14 @@ const mockExecuteCommand = jest.fn();
 
 describe('LinkClickHandler', () => {
   let handler: LinkClickHandler;
+  let parseCache: MarkdownParseCache;
 
   beforeEach(async () => {
-    // Create handler - it will fail to create parser in constructor due to ESM
-    // So we create it manually and replace the parser
-    try {
-      handler = new LinkClickHandler();
-    } catch {
-      // If constructor fails, create handler object manually
-      handler = Object.create(LinkClickHandler.prototype);
-      (handler as any).disposables = [];
-      (handler as any).isEnabled = false;
-    }
-    // Replace parser with async-created one
+    // Create parser and parse cache
     const parser = await MarkdownParser.create();
-    (handler as any).parser = parser;
+    parseCache = new MarkdownParseCache(parser);
+    // Create handler with parse cache
+    handler = new LinkClickHandler(parseCache);
     mockExecuteCommand.mockClear();
   });
 

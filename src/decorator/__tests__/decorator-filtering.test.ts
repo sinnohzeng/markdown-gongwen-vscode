@@ -30,7 +30,12 @@ function filterDecorationsForSelection(
     endPos,
     range: new Range(document.positionAt(startPos), document.positionAt(endPos)),
   }));
-  const decorator = new Decorator() as unknown as {
+  const parseCache = {
+    get: () => ({ version: 1, text, decorations: [], scopes: [] }),
+    invalidate: () => {},
+    clear: () => {},
+  };
+  const decorator = new Decorator(parseCache as any) as unknown as {
     activeEditor: ReturnType<typeof TextEditor>;
     filterDecorations: (
       ranges: DecorationRange[],
@@ -73,7 +78,7 @@ describe('Decorator filtering behavior', () => {
     expect(filtered.has('heading1')).toBe(false);
     expect(filtered.has('heading')).toBe(false);
     expect(filtered.has('hide')).toBe(false);
-    expect(filtered.has('ghostFaint' as DecorationType)).toBe(false);
+    expect(filtered.has('ghostFaint')).toBe(false);
   });
 
   it('does not suppress marker decorations on non-active lines', () => {
@@ -100,7 +105,7 @@ describe('Decorator filtering behavior', () => {
 
     expect(filtered.has('checkboxUnchecked')).toBe(false);
     expect(filtered.get('listItem')?.length).toBe(1);
-    expect(filtered.has('ghostFaint' as DecorationType)).toBe(false);
+    expect(filtered.has('ghostFaint')).toBe(false);
   });
 
   it('keeps blockquote decoration on active line when cursor is not on marker', () => {
@@ -113,7 +118,7 @@ describe('Decorator filtering behavior', () => {
     const filtered = filterDecorationsForSelection(text, decorations, [], selection);
 
     expect(filtered.get('blockquote')?.length).toBe(1);
-    expect(filtered.has('ghostFaint' as DecorationType)).toBe(false);
+    expect(filtered.has('ghostFaint')).toBe(false);
   });
 
   it('reveals raw blockquote marker when cursor is on marker', () => {
@@ -138,7 +143,7 @@ describe('Decorator filtering behavior', () => {
     const filtered = filterDecorationsForSelection(text, decorations, [], selection);
 
     expect(filtered.get('listItem')?.length).toBe(1);
-    expect(filtered.has('ghostFaint' as DecorationType)).toBe(false);
+    expect(filtered.has('ghostFaint')).toBe(false);
   });
 
   it('reveals raw list item marker when cursor is on marker', () => {
@@ -288,7 +293,7 @@ describe('Decorator filtering behavior', () => {
     // but keep the background and explicitly overlay selection color so it's visible.
     expect(filtered.get('codeBlock')?.length).toBe(1);
     expect(filtered.has('hide')).toBe(false);
-    expect(filtered.get('selectionOverlay' as DecorationType)?.length).toBe(1);
+    expect(filtered.get('selectionOverlay')?.length).toBe(1);
   });
 
   it('keeps code block background decoration when selection is outside the code block', () => {
@@ -440,7 +445,7 @@ describe('Decorator filtering behavior', () => {
 
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.has('hide')).toBe(false);
-    expect(filtered.get('ghostFaint' as DecorationType)?.length).toBe(2);
+    expect(filtered.get('ghostFaint')?.length).toBe(2);
   });
 
   it('renders raw markers only for the selected construct and ghosts others on the same line', () => {
@@ -468,7 +473,7 @@ describe('Decorator filtering behavior', () => {
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.get('italic')?.length).toBe(1);
     expect(filtered.has('hide')).toBe(false);
-    expect(filtered.get('ghostFaint' as DecorationType)?.length).toBe(2);
+    expect(filtered.get('ghostFaint')?.length).toBe(2);
   });
 
   it('does not ghost markers on non-active lines (rendered state)', () => {
@@ -484,7 +489,7 @@ describe('Decorator filtering behavior', () => {
 
     expect(filtered.get('bold')?.length).toBe(1);
     expect(filtered.get('hide')?.length).toBe(2);
-    expect(filtered.has('ghostFaint' as DecorationType)).toBe(false);
+    expect(filtered.has('ghostFaint')).toBe(false);
   });
 });
 

@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
-import { MarkdownParser, type DecorationRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
-import { getCachedDecorations, shouldSkipInDiffView } from './hover-utils';
+import { shouldSkipInDiffView } from './diff-context';
+import { config } from './config';
+import { MarkdownParseCache } from './markdown-parse-cache';
 
 /**
  * Provides a hover that shows the target URL for markdown links.
  */
 export class MarkdownLinkHoverProvider implements vscode.HoverProvider {
-  private parser = new MarkdownParser();
-  private cache = new Map<string, { version: number; decorations: DecorationRange[] }>();
+  constructor(private parseCache: MarkdownParseCache) {}
 
   provideHover(
     document: vscode.TextDocument,
@@ -27,14 +27,14 @@ export class MarkdownLinkHoverProvider implements vscode.HoverProvider {
       return;
     }
 
-    const text = document.getText();
+    const parseEntry = this.parseCache.get(document);
+    const text = parseEntry.text;
     if (token.isCancellationRequested) {
       return;
     }
-    const decorations = getCachedDecorations(document, this.parser, this.cache);
+    const decorations = parseEntry.decorations;
     const hoverOffset = document.offsetAt(position);
-    const config = vscode.workspace.getConfiguration('markdownInlineEditor');
-    const singleClickEnabled = config.get<boolean>('links.singleClickOpen', false);
+    const singleClickEnabled = config.links.singleClickOpen();
 
     for (const decoration of decorations) {
       if (token.isCancellationRequested) {

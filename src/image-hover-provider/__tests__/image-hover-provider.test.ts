@@ -1,5 +1,6 @@
 import { MarkdownImageHoverProvider } from '../../image-hover-provider';
 import { MarkdownParser } from '../../parser';
+import { MarkdownParseCache } from '../../markdown-parse-cache';
 import { TextDocument, Uri, Position, workspace, CancellationToken } from '../../test/__mocks__/vscode';
 
 // Mock workspace.getConfiguration
@@ -11,20 +12,14 @@ const mockGetConfiguration = jest.fn().mockReturnValue({
 
 describe('MarkdownImageHoverProvider', () => {
   let provider: MarkdownImageHoverProvider;
+  let parseCache: MarkdownParseCache;
 
   beforeEach(async () => {
-    // Create provider - it will fail to create parser in constructor due to ESM
-    // So we create it manually and replace the parser
-    try {
-      provider = new MarkdownImageHoverProvider();
-    } catch {
-      // If constructor fails, create provider object manually
-      provider = Object.create(MarkdownImageHoverProvider.prototype);
-      (provider as any).cache = new Map();
-    }
-    // Replace parser with async-created one
+    // Create parser and parse cache
     const parser = await MarkdownParser.create();
-    (provider as any).parser = parser;
+    parseCache = new MarkdownParseCache(parser);
+    // Create provider with parse cache
+    provider = new MarkdownImageHoverProvider(parseCache);
   });
 
   describe('provideHover', () => {
@@ -176,9 +171,9 @@ describe('MarkdownImageHoverProvider', () => {
       const position = new Position(0, 4);
       const token = new CancellationToken(false);
 
-      // Access the private parser through the provider
-      const providerParser = (provider as any).parser;
-      const parseSpy = jest.spyOn(providerParser, 'extractDecorations');
+      // Access the parser through the parse cache
+      const parser = (parseCache as any).parser;
+      const extractSpy = jest.spyOn(parser, 'extractDecorationsWithScopes');
       
       // First hover - should parse
       await provider.provideHover(document, position, token);
@@ -187,9 +182,9 @@ describe('MarkdownImageHoverProvider', () => {
       await provider.provideHover(document, position, token);
       
       // Should only parse once (second call uses cache)
-      expect(parseSpy).toHaveBeenCalledTimes(1);
+      expect(extractSpy).toHaveBeenCalledTimes(1);
       
-      parseSpy.mockRestore();
+      extractSpy.mockRestore();
     });
   });
 });

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { MarkdownParser } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
-import { resolveImageTarget } from './hover-utils';
+import { resolveImageTarget, resolveLinkTarget } from './link-targets';
+import { MarkdownParseCache } from './markdown-parse-cache';
 
 /**
  * Handles single-click navigation for markdown links and images.
@@ -11,9 +11,10 @@ import { resolveImageTarget } from './hover-utils';
  * text selection, so it's configurable and disabled by default.
  */
 export class LinkClickHandler {
-  private parser = new MarkdownParser();
   private disposables: vscode.Disposable[] = [];
   private isEnabled: boolean = false;
+
+  constructor(private parseCache: MarkdownParseCache) {}
 
   /**
    * Enables or disables single-click link navigation.
@@ -63,8 +64,9 @@ export class LinkClickHandler {
     }
 
     const document = editor.document;
-    const text = document.getText();
-    const decorations = this.parser.extractDecorations(text);
+    const parseEntry = this.parseCache.get(document);
+    const text = parseEntry.text;
+    const decorations = parseEntry.decorations;
     const clickOffset = document.offsetAt(position);
 
     // Find if the click is on a link or image
@@ -91,32 +93,32 @@ export class LinkClickHandler {
    * @param documentUri - The URI of the current document
    */
   private async openLink(url: string, type: 'link' | 'image', documentUri: vscode.Uri): Promise<void> {
-    let target: vscode.Uri | undefined;
     const trimmed = url.trim();
 
     if (type === 'image') {
-      target = resolveImageTarget(trimmed, documentUri);
-      if (target) {
-        await vscode.commands.executeCommand('vscode.open', target);
+      const target = resolveImageTarget(trimmed, documentUri);
+      if (!target) {
+        return;
       }
-    } else if (trimmed.startsWith('#')) {
-      // Internal anchor link - navigate within the same document
-      const anchor = trimmed.substring(1);
-      await vscode.commands.executeCommand('markdown-inline-editor.navigateToAnchor', anchor, documentUri.toString());
-    } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('mailto:')) {
-      // External URL - open in browser
-      target = vscode.Uri.parse(trimmed);
       await vscode.commands.executeCommand('vscode.open', target);
-    } else {
-      // Relative file path
-      const relative = trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
-      target = vscode.Uri.joinPath(documentUri, '..', relative);
-      try {
-        await vscode.commands.executeCommand('vscode.open', target);
-      } catch (error) {
-        // File might not exist, silently fail
-        console.warn('Failed to open link:', error);
-      }
+      return;
+    }
+
+    const target = resolveLinkTarget(trimmed, documentUri);
+    if (!target) {
+      return;
+    }
+
+    if (target.kind === 'command') {
+      await vscode.commands.executeCommand(target.command, ...target.args);
+      return;
+    }
+
+    try {
+      await vscode.commands.executeCommand('vscode.open', target.uri);
+    } catch (error) {
+      // File might not exist, silently fail
+      console.warn('Failed to open link:', error);
     }
   }
 
