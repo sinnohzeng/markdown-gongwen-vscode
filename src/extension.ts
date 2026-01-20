@@ -5,16 +5,9 @@ import { MarkdownImageHoverProvider } from './image-hover-provider';
 import { MarkdownLinkHoverProvider } from './link-hover-provider';
 import { LinkClickHandler } from './link-click-handler';
 import { normalizeAnchorText } from './position-mapping';
-
-/**
- * Reads the defaultBehaviors.diffView.applyDecorations configuration setting.
- * 
- * @returns {boolean} True if decorations should be applied in diff views
- */
-function getDiffViewApplyDecorationsSetting(): boolean {
-  const config = vscode.workspace.getConfiguration('markdownInlineEditor');
-  return config.get<boolean>('defaultBehaviors.diffView.applyDecorations', false);
-}
+import { config } from './config';
+import { MarkdownParser } from './parser';
+import { MarkdownParseCache } from './markdown-parse-cache';
 
 /**
  * Checks if a recommended extension is installed and optionally shows a notification.
@@ -93,8 +86,10 @@ function checkRecommendedExtensions(context: vscode.ExtensionContext): void {
  * activate(context);
  */
 export function activate(context: vscode.ExtensionContext) {
-  const decorator = new Decorator();
-  const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
+  const parser = new MarkdownParser();
+  const parseCache = new MarkdownParseCache(parser);
+  const decorator = new Decorator(parseCache);
+  const diffViewApplyDecorations = config.diffView.applyDecorations();
   decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
   
   decorator.setActiveEditor(vscode.window.activeTextEditor);
@@ -103,29 +98,29 @@ export function activate(context: vscode.ExtensionContext) {
   checkRecommendedExtensions(context);
 
   // Register link provider for clickable markdown links
-  const linkProvider = new MarkdownLinkProvider();
+  const linkProvider = new MarkdownLinkProvider(parseCache);
   const linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
     { language: 'markdown', scheme: 'file' },
     linkProvider
   );
 
   // Register hover provider for image previews on hover
-  const imageHoverProvider = new MarkdownImageHoverProvider();
+  const imageHoverProvider = new MarkdownImageHoverProvider(parseCache);
   const imageHoverProviderDisposable = vscode.languages.registerHoverProvider(
     { language: 'markdown', scheme: 'file' },
     imageHoverProvider
   );
 
   // Register hover provider for link URL previews
-  const linkHoverProvider = new MarkdownLinkHoverProvider();
+  const linkHoverProvider = new MarkdownLinkHoverProvider(parseCache);
   const linkHoverProviderDisposable = vscode.languages.registerHoverProvider(
     { language: 'markdown', scheme: 'file' },
     linkHoverProvider
   );
 
   // Setup single-click link handler (configurable)
-  const linkClickHandler = new LinkClickHandler();
-  const singleClickEnabled = vscode.workspace.getConfiguration('markdownInlineEditor').get<boolean>('links.singleClickOpen', false);
+  const linkClickHandler = new LinkClickHandler(parseCache);
+  const singleClickEnabled = config.links.singleClickOpen();
   linkClickHandler.setEnabled(singleClickEnabled);
 
   // Register command for toggling markdown decorations
@@ -189,7 +184,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   const changeConfiguration = vscode.workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.diffView.applyDecorations')) {
-      const diffViewApplyDecorations = getDiffViewApplyDecorationsSetting();
+      const diffViewApplyDecorations = config.diffView.applyDecorations();
       decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
       decorator.updateDecorationsForSelection();
     }
@@ -207,7 +202,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     if (event.affectsConfiguration('markdownInlineEditor.links.singleClickOpen')) {
-      const singleClickEnabled = vscode.workspace.getConfiguration('markdownInlineEditor').get<boolean>('links.singleClickOpen', false);
+      const singleClickEnabled = config.links.singleClickOpen();
       linkClickHandler.setEnabled(singleClickEnabled);
     }
   });
@@ -243,6 +238,6 @@ export function activate(context: vscode.ExtensionContext) {
  * // Called automatically by VS Code when extension is deactivated
  * deactivate(context);
  */
-export function deactivate(context: vscode.ExtensionContext) {
-  context.subscriptions.forEach((subscription) => subscription.dispose());
+export function deactivate(): void {
+  // VS Code disposes subscriptions automatically on deactivation.
 }

@@ -9,19 +9,28 @@
 **Project Structure**
 - `src/` – source code
     - `extension.ts` – activation and extension entrypoint
-    - `decorator.ts` – manages markdown decorations/selection
+    - `config.ts` – centralized configuration access
+    - `diff-context.ts` – unified diff view detection and policy
+    - `link-targets.ts` – unified link/image URL resolution
+    - `markdown-parse-cache.ts` – shared parsing and caching service
     - `parser.ts` – parses markdown to decoration ranges
     - `parser-remark.ts` – remark dependency helper
     - `decorations.ts` – decoration types/factories
+    - `decorator.ts` – decoration orchestration (uses helper modules)
+    - `decorator/decoration-type-registry.ts` – decoration type lifecycle management
+    - `decorator/visibility-model.ts` – 3-state filtering logic (Rendered/Ghost/Raw)
+    - `decorator/checkbox-toggle.ts` – checkbox click handling
+    - `decorator/decoration-categories.ts` – decoration type categorization
     - `link-provider.ts` – clickable link provider for markdown documents
     - `link-hover-provider.ts` – hover provider for link URLs
     - `image-hover-provider.ts` – hover provider for image previews
     - `link-click-handler.ts` – single-click navigation handler
-    - `hover-utils.ts` – shared utilities for hover providers (caching, URL resolution)
     - `position-mapping.ts` – position mapping utilities (CRLF/LF normalization)
     - `parser/__tests__/` – parser tests
+    - `markdown-parse-cache/__tests__/` – parse cache tests
+    - `diff-context/__tests__/` – diff context tests
+    - `link-targets/__tests__/` – link target resolution tests
     - `link-provider/__tests__/` – link provider tests
-    - `hover-utils/__tests__/` – hover utilities tests
     - `image-hover-provider/__tests__/` – image hover provider tests
     - `link-hover-provider/__tests__/` – link hover provider tests
     - `link-click-handler/__tests__/` – click handler tests

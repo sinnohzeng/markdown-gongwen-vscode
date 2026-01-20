@@ -185,20 +185,30 @@ Press `F5` to launch the Extension Development Host and test your changes.
 ```
 src/
 ├── extension.ts          # Extension entry point and activation
+├── config.ts             # Centralized configuration access
+├── diff-context.ts       # Unified diff view detection and policy
+├── link-targets.ts       # Unified link/image URL resolution
+├── markdown-parse-cache.ts # Shared parsing and caching service
 ├── parser.ts             # Markdown AST parsing (remark-based)
-├── parser-remark.ts      # Remark dependency helper
-├── decorator.ts          # Decoration management and caching
+├── parser-remark.ts     # Remark dependency helper
 ├── decorations.ts        # VS Code decoration type definitions
+├── decorator.ts          # Decoration orchestration
+├── decorator/
+│   ├── decoration-type-registry.ts  # Decoration type lifecycle
+│   ├── visibility-model.ts          # 3-state filtering logic
+│   ├── checkbox-toggle.ts           # Checkbox click handling
+│   └── decoration-categories.ts    # Decoration type categorization
 ├── link-provider.ts      # Clickable link provider
 ├── link-hover-provider.ts # Hover provider for link URLs
 ├── image-hover-provider.ts # Hover provider for image previews
 ├── link-click-handler.ts # Single-click navigation handler
-├── hover-utils.ts        # Shared utilities for hover providers
 ├── position-mapping.ts   # Position mapping utilities (CRLF handling)
 └── */__tests__/         # Comprehensive test suites
-    ├── parser/__tests__/     # Parser tests
-    ├── link-provider/__tests__/ # Link provider tests
-    ├── hover-utils/__tests__/   # Hover utilities tests
+    ├── parser/__tests__/              # Parser tests
+    ├── markdown-parse-cache/__tests__/ # Parse cache tests
+    ├── diff-context/__tests__/        # Diff context tests
+    ├── link-targets/__tests__/        # Link target resolution tests
+    ├── link-provider/__tests__/       # Link provider tests
     ├── image-hover-provider/__tests__/ # Image hover tests
     ├── link-hover-provider/__tests__/  # Link hover tests
     └── link-click-handler/__tests__/   # Click handler tests
@@ -206,19 +216,21 @@ src/
 
 **How it works:**
 1. **Parser** (`parser.ts`) – Uses remark to parse Markdown into an AST and extract scopes
-2. **Decorator** (`decorator.ts`) – Manages VS Code decorations with 3-state syntax shadowing
-3. **Scope-based detection** – Precisely identifies markdown constructs for context-aware syntax visibility
-4. **Caching** – Intelligent caching prevents redundant parsing on selection changes
+2. **Shared Cache** (`markdown-parse-cache.ts`) – Single parse cache instance shared across all components
+3. **Decorator** (`decorator.ts`) – Orchestrates decoration management with 3-state syntax shadowing
+4. **Scope-based detection** – Precisely identifies markdown constructs for context-aware syntax visibility
 5. **3-state model** – Rendered (hidden), Ghost (faint), Raw (visible) states adapt to editing context
-6. **Hover providers** – Show image previews and link URLs on hover
-7. **Click handler** – Optional single-click navigation for links and images
+6. **Hover providers** – Show image previews and link URLs on hover (use shared cache)
+7. **Click handler** – Optional single-click navigation for links and images (uses shared cache)
 
 ### Testing
 
 The project maintains comprehensive test coverage with **57+ passing tests** across multiple test suites:
 
 - **Parser tests** (`parser/__tests__/`) – Core markdown parsing logic
-- **Hover utilities tests** (`hover-utils/__tests__/`) – Image URL resolution, caching, diff view handling
+- **Parse cache tests** (`markdown-parse-cache/__tests__/`) – Shared caching and LRU eviction
+- **Diff context tests** (`diff-context/__tests__/`) – Diff view detection and policy
+- **Link target tests** (`link-targets/__tests__/`) – Link/image URL resolution
 - **Image hover provider tests** (`image-hover-provider/__tests__/`) – Image preview hover functionality
 - **Link hover provider tests** (`link-hover-provider/__tests__/`) – Link URL hover functionality
 - **Link click handler tests** (`link-click-handler/__tests__/`) – Single-click navigation behavior

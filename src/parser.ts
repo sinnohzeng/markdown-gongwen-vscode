@@ -43,6 +43,8 @@ export type DecorationType =
   | 'transparent'
   // Selection overlay used by the Decorator (not emitted by the parser)
   | 'selectionOverlay'
+  // Ghost-faint markers used by the Decorator (not emitted by the parser)
+  | 'ghostFaint'
   | 'bold'
   | 'italic'
   | 'boldItalic'

@@ -163,10 +163,12 @@ private logDebug(message: string, ...args: any[]): void {
 **Related Files:**
 - `src/decorator/__tests__/`
 - `src/parser/__tests__/`
-- `src/hover-utils/__tests__/` (new)
-- `src/image-hover-provider/__tests__/` (new)
-- `src/link-hover-provider/__tests__/` (new)
-- `src/link-click-handler/__tests__/` (new)
+- `src/markdown-parse-cache/__tests__/`
+- `src/diff-context/__tests__/`
+- `src/link-targets/__tests__/`
+- `src/image-hover-provider/__tests__/`
+- `src/link-hover-provider/__tests__/`
+- `src/link-click-handler/__tests__/`
 
 ---
 
