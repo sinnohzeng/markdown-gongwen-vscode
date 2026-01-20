@@ -64,6 +64,14 @@ export const Uri = {
     toString: () => `file://${path}`,
     scheme: 'file',
   }),
+  joinPath: (base: any, ...segments: string[]) => {
+    const basePath = base.toString().replace('file://', '');
+    const joined = [basePath, ...segments].join('/');
+    return {
+      toString: () => `file://${joined}`,
+      scheme: 'file',
+    };
+  },
 };
 
 class MockTextDocument {
@@ -76,6 +84,21 @@ class MockTextDocument {
 
   getText(): string {
     return this.text;
+  }
+  offsetAt(position: { line: number; character: number }): number {
+    // Convert position to offset
+    const lines = this.text.split(/\r\n|\r|\n/);
+    let offset = 0;
+    
+    for (let i = 0; i < position.line && i < lines.length; i++) {
+      offset += lines[i].length + 1; // +1 for newline
+    }
+    
+    if (position.line < lines.length) {
+      offset += Math.min(position.character, lines[position.line].length);
+    }
+    
+    return offset;
   }
   positionAt(offset: number): { line: number; character: number } {
     // Handle CRLF correctly: split on \r\n first, then handle remaining \n and \r
@@ -174,4 +197,46 @@ export const ExtensionContext = class {
 export const ThemeColor = class {
   constructor(public id: string) {}
 };
+
+export const MarkdownString = class {
+  public value: string = '';
+  public isTrusted: boolean = false;
+  public supportHtml: boolean = false;
+
+  constructor(value?: string) {
+    if (value) {
+      this.value = value;
+    }
+  }
+
+  appendText(text: string): void {
+    this.value += text;
+  }
+
+  appendMarkdown(markdown: string): void {
+    this.value += markdown;
+  }
+};
+
+export const Hover = class {
+  constructor(
+    public contents: MarkdownString | string,
+    public range?: any
+  ) {}
+};
+
+export const CancellationToken = class {
+  constructor(public isCancellationRequested: boolean = false) {}
+};
+
+export const commands = {
+  executeCommand: jest.fn(),
+};
+
+export enum TextEditorSelectionChangeKind {
+  Mouse = 1,
+  Keyboard = 2,
+  Command = 3,
+}
+
 
