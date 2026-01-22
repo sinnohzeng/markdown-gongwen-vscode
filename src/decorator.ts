@@ -1,5 +1,6 @@
-import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, DecorationOptions } from 'vscode';
-import { DecorationRange, DecorationType, ScopeRange } from './parser';
+import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, ColorThemeKind, workspace, DecorationOptions } from 'vscode';
+import { createHash } from 'crypto';
+import { DecorationRange, DecorationType, MermaidBlock, ScopeRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { config } from './config';
 import { isDiffLikeUri, isDiffViewVisible } from './diff-context';
@@ -7,6 +8,8 @@ import { MarkdownParseCache } from './markdown-parse-cache';
 import { DecorationTypeRegistry } from './decorator/decoration-type-registry';
 import { filterDecorationsForEditor, ScopeEntry } from './decorator/visibility-model';
 import { handleCheckboxClick } from './decorator/checkbox-toggle';
+import { MermaidDiagramDecorations } from './decorator/mermaid-diagram-decorations';
+import { renderMermaidSvg, svgToDataUri } from './mermaid/mermaid-renderer';
 
 /**
  * Performance and caching constants.
@@ -52,6 +55,8 @@ export class Decorator {
   private skipDecorationsInDiffView = true;
 
   private decorationTypes: DecorationTypeRegistry;
+  private mermaidDecorations = new MermaidDiagramDecorations();
+  private mermaidUpdateToken = 0;
 
   constructor(parseCache: MarkdownParseCache) {
     this.parseCache = parseCache;
@@ -241,6 +246,7 @@ export class Decorator {
     
     // Also clear ghost faint decoration (not in decorationTypeMap)
     this.activeEditor.setDecorations(this.decorationTypes.getGhostFaintDecorationType(), []);
+    this.mermaidDecorations.clear(this.activeEditor);
   }
 
   /**
@@ -272,7 +278,7 @@ export class Decorator {
 
     // Parse document (uses cache if version unchanged)
     const version = document.version;
-    const { decorations, scopes, text } = this.parseDocument(document);
+    const { decorations, scopes, text, mermaidBlocks } = this.parseDocument(document);
 
     // Re-validate version before applying (race condition protection)
     if (document.version !== version) {
@@ -284,6 +290,7 @@ export class Decorator {
 
     // Apply decorations
     this.applyDecorations(filtered);
+    void this.updateMermaidDiagrams(mermaidBlocks, text, document.version);
   }
 
   /**
@@ -333,10 +340,102 @@ export class Decorator {
    * @param {TextDocument} document - The document to parse
    * @returns Parsed decorations and scopes
    */
-  private parseDocument(document: TextDocument): { decorations: DecorationRange[]; scopes: ScopeEntry[]; text: string } {
+  private parseDocument(document: TextDocument): {
+    decorations: DecorationRange[];
+    scopes: ScopeEntry[];
+    text: string;
+    mermaidBlocks: MermaidBlock[];
+  } {
     const entry = this.parseCache.get(document);
     const scopeEntries = this.buildScopeEntries(entry.scopes, entry.text);
-    return { decorations: entry.decorations, scopes: scopeEntries, text: entry.text };
+    return {
+      decorations: entry.decorations,
+      scopes: scopeEntries,
+      text: entry.text,
+      mermaidBlocks: entry.mermaidBlocks,
+    };
+  }
+
+  private async updateMermaidDiagrams(
+    mermaidBlocks: MermaidBlock[],
+    text: string,
+    documentVersion: number
+  ): Promise<void> {
+    if (!this.activeEditor) {
+      return;
+    }
+
+    const editor = this.activeEditor;
+    if (mermaidBlocks.length === 0) {
+      this.mermaidDecorations.clear(editor);
+      return;
+    }
+
+    const token = ++this.mermaidUpdateToken;
+    const theme = window.activeColorTheme.kind === ColorThemeKind.Dark ||
+      window.activeColorTheme.kind === ColorThemeKind.HighContrast
+      ? 'dark'
+      : 'default';
+    const fontFamily = workspace.getConfiguration('editor').get<string>('fontFamily');
+
+    const rangesByKey = new Map<string, Range[]>();
+    const dataUrisByKey = new Map<string, string>();
+
+    for (const block of mermaidBlocks) {
+      if (token !== this.mermaidUpdateToken || editor.document.version !== documentVersion) {
+        return;
+      }
+
+      if (this.isSelectionOrCursorInsideOffsets(block.startPos, block.endPos, text, editor.selections, editor.document)) {
+        continue;
+      }
+
+      const range = this.createRange(block.startPos, block.endPos, text);
+      if (!range) continue;
+
+      const keySource = `${block.source}\n${theme}\n${fontFamily ?? ''}`;
+      const key = createHash('sha256').update(keySource).digest('hex');
+
+      if (!dataUrisByKey.has(key)) {
+        try {
+          const svg = await renderMermaidSvg(block.source, { theme, fontFamily });
+          dataUrisByKey.set(key, svgToDataUri(svg));
+        } catch (error) {
+          console.warn('Mermaid render failed:', error instanceof Error ? error.message : error);
+          continue;
+        }
+      }
+
+      const ranges = rangesByKey.get(key) || [];
+      ranges.push(range);
+      rangesByKey.set(key, ranges);
+    }
+
+    if (token !== this.mermaidUpdateToken || editor.document.version !== documentVersion) {
+      return;
+    }
+
+    this.mermaidDecorations.apply(editor, rangesByKey, dataUrisByKey);
+  }
+
+  private isSelectionOrCursorInsideOffsets(
+    startPos: number,
+    endPos: number,
+    text: string,
+    selections: readonly Range[],
+    document: TextDocument
+  ): boolean {
+    const mappedStart = mapNormalizedToOriginal(startPos, text);
+    const mappedEnd = mapNormalizedToOriginal(endPos, text);
+
+    return selections.some((selection) => {
+      const selectionStart = document.offsetAt(selection.start);
+      const selectionEnd = document.offsetAt(selection.end);
+      if (selectionStart === selectionEnd) {
+        return selectionStart >= mappedStart && selectionStart <= mappedEnd;
+      }
+      return selectionStart <= mappedEnd && selectionEnd >= mappedStart;
+    });
   }
 
   /**

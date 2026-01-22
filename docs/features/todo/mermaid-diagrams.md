@@ -8,11 +8,11 @@ priority: High
 
 ## Overview
 
-Hover preview for rendered Mermaid diagrams in code blocks.
+Inline SVG rendering for Mermaid diagrams in code blocks.
 
 ## Implementation
 
-Detect ` ```mermaid` code blocks, render on hover using hover provider (better than markless inline approach).
+Detect ` ```mermaid` code blocks, render SVG inline using decorations (no hover).
 
 ## Acceptance Criteria
 
@@ -26,7 +26,7 @@ Feature: Mermaid diagram formatting
     And I type     A --> B
     And I type ```
     Then the code block is detected
-    And hover shows rendered diagram
+    And the rendered diagram appears inline
 
   Scenario: Different diagram types
     When I type ```mermaid
@@ -44,6 +44,7 @@ Feature: Mermaid diagram edge cases
     And I type invalid syntax
     And I type ```
     Then the error is handled gracefully
+    And the raw mermaid text remains visible
 
   Scenario: Non-mermaid code block
     When I type ```javascript
@@ -63,17 +64,17 @@ Feature: Reveal Mermaid diagram
     ``` is in my file
     When I select the code block
     Then the raw markdown is shown
+    And the rendered diagram is hidden
     When I deselect
-    Then the code block is detected again
+    Then the rendered diagram appears again
 ```
 
 ## Notes
 
 - High user demand
 - Competitive requirement (markless has it but buggy)
-- Hover approach avoids markless bugs
-- Better performance than inline rendering
-- Simpler and more reliable than inline approach
+- Local rendering required (no CDN)
+- Rendering solution required (Node + JSDOM)
 - Feasibility: Moderate
 - Usefulness: High
 - Risk: Medium (rendering complexity)
@@ -89,4 +90,4 @@ graph TD
 ```
 ````
 
-→ Hover over code block to see rendered diagram
+→ Rendered diagram appears inline (raw markdown hidden when not editing)

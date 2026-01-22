@@ -43,6 +43,25 @@ describe('MarkdownParser - Scope Ranges', () => {
     expect(codeScope).toBeDefined();
   });
 
+  it('captures mermaid code blocks with source text', () => {
+    const markdown = [
+      '```mermaid',
+      'graph TD',
+      '  A --> B',
+      '```',
+    ].join('\n');
+
+    const result = parser.extractDecorationsWithScopes(markdown);
+    expect(result.mermaidBlocks).toHaveLength(1);
+    expect(result.mermaidBlocks[0].source).toContain('graph TD');
+
+    const mermaidSlice = markdown.slice(
+      result.mermaidBlocks[0].startPos,
+      result.mermaidBlocks[0].endPos
+    );
+    expect(mermaidSlice.startsWith('```mermaid')).toBe(true);
+  });
+
   it('emits scopes for frontmatter blocks', () => {
     const markdown = [
       '---',

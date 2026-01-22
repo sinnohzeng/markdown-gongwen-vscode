@@ -8,6 +8,7 @@ import { normalizeAnchorText } from './position-mapping';
 import { config } from './config';
 import { MarkdownParser } from './parser';
 import { MarkdownParseCache } from './markdown-parse-cache';
+import { initMermaidRenderer, disposeMermaidRenderer } from './mermaid/mermaid-renderer';
 
 /**
  * Checks if a recommended extension is installed and optionally shows a notification.
@@ -86,6 +87,9 @@ function checkRecommendedExtensions(context: vscode.ExtensionContext): void {
  * activate(context);
  */
 export function activate(context: vscode.ExtensionContext) {
+  // Initialize mermaid renderer with extension context
+  initMermaidRenderer(context);
+
   const parser = new MarkdownParser();
   const parseCache = new MarkdownParseCache(parser);
   const decorator = new Decorator(parseCache);
@@ -239,5 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
  * deactivate(context);
  */
 export function deactivate(): void {
+  // Dispose mermaid renderer webview
+  disposeMermaidRenderer();
   // VS Code disposes subscriptions automatically on deactivation.
 }

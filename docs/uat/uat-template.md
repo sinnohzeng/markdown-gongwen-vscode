@@ -362,6 +362,10 @@ UAT-CHECK()
 
 # `some code` test **bold**
 UAT-CHECK()
+
+
+# some heading
+UAT-CHECK()
 ---
 
 ## Code Blocks
@@ -452,11 +456,11 @@ UAT-CHECK()
 | Empty Col     |                   | Trailing           |
 UAT-CHECK()
 
-<https://github.com> 
+<https://github.com>
 UAT-CHECK()
-www.example.com 
+www.example.com
 UAT-CHECK()
-user@example.com 
+user@example.com
 UAT-CHECK()
 
 :smile: :+1: :tada: :not-an-emoji: 

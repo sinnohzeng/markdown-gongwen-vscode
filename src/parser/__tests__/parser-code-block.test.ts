@@ -609,5 +609,132 @@ describe('MarkdownParser - Code Blocks', () => {
       expect(boldDecs.length).toBeGreaterThan(0);
     });
   });
+
+  describe('no inline decorations inside code blocks', () => {
+    it('should NOT parse bold inside code blocks', () => {
+      const markdown = '```\n**bold text**\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have bold decorations
+      const boldDecs = result.filter(d => d.type === 'bold' || d.type === 'boldItalic');
+      expect(boldDecs.length).toBe(0);
+      
+      // Should have code block decoration
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
+    });
+
+    it('should NOT parse italic inside code blocks', () => {
+      const markdown = '```\n*italic text*\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have italic decorations
+      const italicDecs = result.filter(d => d.type === 'italic' || d.type === 'boldItalic');
+      expect(italicDecs.length).toBe(0);
+      
+      // Should have code block decoration
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
+    });
+
+    it('should NOT parse strikethrough inside code blocks', () => {
+      const markdown = '```\n~~strikethrough text~~\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have strikethrough decorations
+      const strikethroughDecs = result.filter(d => d.type === 'strikethrough');
+      expect(strikethroughDecs.length).toBe(0);
+      
+      // Should have code block decoration
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
+    });
+
+    it('should NOT parse links inside code blocks', () => {
+      const markdown = '```\n[link text](https://example.com)\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have link decorations
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+      
+      // Should have code block decoration
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
+    });
+
+    it('should NOT parse any inline decorations inside mermaid code blocks', () => {
+      const markdown = '```mermaid\ngraph TD\nA[Start] --> B{Is Markdown beautiful?}\nB -- Yes --> C[More readable!]\nB -- No --> D[Try Mermaid diagrams]\nD --> E[Visualize ideas]\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have any inline formatting decorations
+      const boldDecs = result.filter(d => d.type === 'bold' || d.type === 'boldItalic');
+      const italicDecs = result.filter(d => d.type === 'italic');
+      const strikethroughDecs = result.filter(d => d.type === 'strikethrough');
+      const linkDecs = result.filter(d => d.type === 'link');
+      
+      expect(boldDecs.length).toBe(0);
+      expect(italicDecs.length).toBe(0);
+      expect(strikethroughDecs.length).toBe(0);
+      expect(linkDecs.length).toBe(0);
+      
+      // Should have mermaid block (not codeBlock decoration, as mermaid blocks are handled separately)
+      // But the content should not have inline decorations
+    });
+
+    it('should NOT parse multiple inline decorations inside code blocks', () => {
+      const markdown = '```\n**bold** *italic* ~~strike~~ [link](url)\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have any inline formatting decorations
+      const boldDecs = result.filter(d => d.type === 'bold' || d.type === 'boldItalic');
+      const italicDecs = result.filter(d => d.type === 'italic');
+      const strikethroughDecs = result.filter(d => d.type === 'strikethrough');
+      const linkDecs = result.filter(d => d.type === 'link');
+      
+      expect(boldDecs.length).toBe(0);
+      expect(italicDecs.length).toBe(0);
+      expect(strikethroughDecs.length).toBe(0);
+      expect(linkDecs.length).toBe(0);
+      
+      // Should have code block decoration
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
+    });
+
+    it('should parse inline decorations outside code blocks', () => {
+      const markdown = '```\ncode\n```\n**bold** *italic* [link](url)';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should have inline formatting decorations for text outside code block
+      const boldDecs = result.filter(d => d.type === 'bold' || d.type === 'boldItalic');
+      const italicDecs = result.filter(d => d.type === 'italic');
+      const linkDecs = result.filter(d => d.type === 'link');
+      
+      expect(boldDecs.length).toBeGreaterThan(0);
+      expect(italicDecs.length).toBeGreaterThan(0);
+      expect(linkDecs.length).toBeGreaterThan(0);
+    });
+
+    it('should handle code blocks with language identifier and no inline decorations', () => {
+      const markdown = '```javascript\n**bold** *italic* [link](url)\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have any inline formatting decorations
+      const boldDecs = result.filter(d => d.type === 'bold' || d.type === 'boldItalic');
+      const italicDecs = result.filter(d => d.type === 'italic');
+      const linkDecs = result.filter(d => d.type === 'link');
+      
+      expect(boldDecs.length).toBe(0);
+      expect(italicDecs.length).toBe(0);
+      expect(linkDecs.length).toBe(0);
+      
+      // Should have code block and language decorations
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
+      const languageDec = result.find(d => d.type === 'codeBlockLanguage');
+      expect(languageDec).toBeDefined();
+    });
+  });
 });
 

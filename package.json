@@ -54,6 +54,25 @@
         }
       ]
     },
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "mdInlineRenderer",
+          "title": "Markdown Inline",
+          "icon": "$(markdown)"
+        }
+      ]
+    },
+    "views": {
+      "mdInlineRenderer": [
+        {
+          "type": "webview",
+          "id": "mdInline.mermaidRenderer",
+          "name": "Mermaid Renderer",
+          "visibility": "hidden"
+        }
+      ]
+    },
     "configuration": {
       "title": "Markdown Inline Editor",
       "properties": {

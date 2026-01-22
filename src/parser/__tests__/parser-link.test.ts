@@ -145,6 +145,10 @@ describe('MarkdownParser - Links', () => {
       
       const linkDecs = result.filter(d => d.type === 'link');
       expect(linkDecs.length).toBe(0);
+      
+      // Should have code block decoration instead
+      const codeBlock = result.find(d => d.type === 'codeBlock');
+      expect(codeBlock).toBeDefined();
     });
 
     it('should NOT parse links inside inline code', () => {
@@ -153,6 +157,10 @@ describe('MarkdownParser - Links', () => {
       
       const linkDecs = result.filter(d => d.type === 'link');
       expect(linkDecs.length).toBe(0);
+      
+      // Should have inline code decoration instead
+      const codeDec = result.find(d => d.type === 'code');
+      expect(codeDec).toBeDefined();
     });
 
     it('should NOT parse links inside code blocks with language', () => {
@@ -172,12 +180,29 @@ describe('MarkdownParser - Links', () => {
       expect(linkDecs[0].startPos).toBeGreaterThan(10); // After the code block
     });
 
-    it('should NOT parse links inside mermaid code blocks', () => {
-      const markdown = '```mermaid\ngraph TD\nA[Start] --> B{Is Markdown beautiful?}\n```';
+    it('should handle multiple code blocks with links inside and outside', () => {
+      const markdown = '```\n[link1](url1)\n```\n[link2](url2)\n```\n[link3](url3)\n```';
       const result = parser.extractDecorations(markdown);
       
+      // Should only have ONE link decoration (the one outside code blocks)
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(1);
+      // The link should be "link2"
+      expect(linkDecs[0]).toBeDefined();
+    });
+
+    it('should NOT parse links inside mermaid code blocks', () => {
+      const markdown = '```mermaid\ngraph TD\nA[Start] --> B{Is Markdown beautiful?}\nB -- Yes --> C[More readable!]\nB -- No --> D[Try Mermaid diagrams]\nD --> E[Visualize ideas]\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should NOT have any link decorations inside the mermaid block
+      // Even though "Start" looks like it could be a link, it's inside a code block
       const linkDecs = result.filter(d => d.type === 'link');
       expect(linkDecs.length).toBe(0);
+      
+      // Should have mermaid block (but not codeBlock decoration for mermaid)
+      const parseResult = parser.extractDecorationsWithScopes(markdown);
+      expect(parseResult.mermaidBlocks.length).toBe(1);
     });
   });
 });
