@@ -163,5 +163,32 @@ describe('MarkdownParser - Bold Text', () => {
       expect(boldDec?.endPos).toBe(6);
     });
   });
+
+  describe('bold inside code blocks', () => {
+    it('should NOT parse bold inside fenced code blocks', () => {
+      const markdown = '```\n**bold**\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const boldDecs = result.filter(d => d.type === 'bold');
+      expect(boldDecs.length).toBe(0);
+    });
+
+    it('should NOT parse bold inside inline code', () => {
+      const markdown = '`**bold**`';
+      const result = parser.extractDecorations(markdown);
+      
+      const boldDecs = result.filter(d => d.type === 'bold');
+      expect(boldDecs.length).toBe(0);
+    });
+
+    it('should still parse bold outside code blocks', () => {
+      const markdown = '```\ncode\n```\n**bold**';
+      const result = parser.extractDecorations(markdown);
+      
+      const boldDecs = result.filter(d => d.type === 'bold');
+      expect(boldDecs.length).toBe(1);
+      expect(boldDecs[0].startPos).toBeGreaterThan(10); // After the code block
+    });
+  });
 });
 

@@ -115,5 +115,32 @@ describe('MarkdownParser - Strikethrough Text', () => {
       expect(strikethroughDecorations[0].startPos).toBeGreaterThan(10);
     });
   });
+
+  describe('strikethrough inside code blocks', () => {
+    it('should NOT parse strikethrough inside fenced code blocks', () => {
+      const markdown = '```\n~~strikethrough~~\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const strikethroughDecs = result.filter(d => d.type === 'strikethrough');
+      expect(strikethroughDecs.length).toBe(0);
+    });
+
+    it('should NOT parse strikethrough inside inline code', () => {
+      const markdown = '`~~strikethrough~~`';
+      const result = parser.extractDecorations(markdown);
+      
+      const strikethroughDecs = result.filter(d => d.type === 'strikethrough');
+      expect(strikethroughDecs.length).toBe(0);
+    });
+
+    it('should still parse strikethrough outside code blocks', () => {
+      const markdown = '```\ncode\n```\n~~strikethrough~~';
+      const result = parser.extractDecorations(markdown);
+      
+      const strikethroughDecs = result.filter(d => d.type === 'strikethrough');
+      expect(strikethroughDecs.length).toBe(1);
+      expect(strikethroughDecs[0].startPos).toBeGreaterThan(10); // After the code block
+    });
+  });
 });
 

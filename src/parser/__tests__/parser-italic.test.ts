@@ -127,5 +127,32 @@ describe('MarkdownParser - Italic Text', () => {
       expect(italicDec?.endPos).toBe(5);
     });
   });
+
+  describe('italic inside code blocks', () => {
+    it('should NOT parse italic inside fenced code blocks', () => {
+      const markdown = '```\n*italic*\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const italicDecs = result.filter(d => d.type === 'italic');
+      expect(italicDecs.length).toBe(0);
+    });
+
+    it('should NOT parse italic inside inline code', () => {
+      const markdown = '`*italic*`';
+      const result = parser.extractDecorations(markdown);
+      
+      const italicDecs = result.filter(d => d.type === 'italic');
+      expect(italicDecs.length).toBe(0);
+    });
+
+    it('should still parse italic outside code blocks', () => {
+      const markdown = '```\ncode\n```\n*italic*';
+      const result = parser.extractDecorations(markdown);
+      
+      const italicDecs = result.filter(d => d.type === 'italic');
+      expect(italicDecs.length).toBe(1);
+      expect(italicDecs[0].startPos).toBeGreaterThan(10); // After the code block
+    });
+  });
 });
 

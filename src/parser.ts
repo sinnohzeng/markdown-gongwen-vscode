@@ -179,6 +179,10 @@ export class MarkdownParser {
       // Handle edge cases: empty image alt text that remark doesn't parse as Image node
       this.handleEmptyImageAlt(normalizedText, decorations);
 
+      // Safety net: Remove any markdown formatting decorations that fall within code blocks
+      // Ancestor checks in processors prevent most cases, but this catches edge cases
+      this.filterDecorationsInCodeBlocks(decorations, scopes, normalizedText);
+
       // Sort decorations by start position
       decorations.sort((a, b) => a.startPos - b.startPos);
     } catch (error) {
@@ -236,7 +240,7 @@ export class MarkdownParser {
 
         switch (node.type) {
           case 'heading':
-            this.processHeading(node as Heading, text, decorations, scopes);
+            this.processHeading(node as Heading, text, decorations, scopes, currentAncestors);
             break;
 
           case 'strong':
@@ -248,7 +252,7 @@ export class MarkdownParser {
             break;
 
           case 'delete':
-            this.processStrikethrough(node as Delete, text, decorations, scopes);
+            this.processStrikethrough(node as Delete, text, decorations, scopes, currentAncestors);
             break;
 
           case 'inlineCode':
@@ -260,23 +264,23 @@ export class MarkdownParser {
             break;
 
           case 'link':
-            this.processLink(node as Link, text, decorations, scopes);
+            this.processLink(node as Link, text, decorations, scopes, currentAncestors);
             break;
 
           case 'image':
-            this.processImage(node as Image, text, decorations, scopes);
+            this.processImage(node as Image, text, decorations, scopes, currentAncestors);
             break;
 
           case 'blockquote':
-            this.processBlockquote(node as Blockquote, text, decorations, scopes, processedBlockquotePositions);
+            this.processBlockquote(node as Blockquote, text, decorations, scopes, processedBlockquotePositions, currentAncestors);
             break;
 
           case 'listItem':
-            this.processListItem(node as ListItem, text, decorations, scopes);
+            this.processListItem(node as ListItem, text, decorations, scopes, currentAncestors);
             break;
 
           case 'thematicBreak':
-            this.processThematicBreak(node as ThematicBreak, text, decorations, scopes);
+            this.processThematicBreak(node as ThematicBreak, text, decorations, scopes, currentAncestors);
             break;
         }
       } catch (error) {
@@ -295,6 +299,17 @@ export class MarkdownParser {
     return !!(node.position && 
               node.position.start.offset !== undefined && 
               node.position.end.offset !== undefined);
+  }
+
+  /**
+   * Checks if any ancestor node is a code block (fenced or inline).
+   * Used to skip processing markdown formatting inside code blocks.
+   * 
+   * @param ancestors - Array of ancestor nodes to check
+   * @returns {boolean} True if any ancestor is a code block
+   */
+  private isInCodeBlock(ancestors: Node[]): boolean {
+    return ancestors.some(a => a.type === 'code' || a.type === 'inlineCode');
   }
 
   /**
@@ -363,15 +378,148 @@ export class MarkdownParser {
   }
 
   /**
+   * Filters out markdown formatting decorations that fall within code blocks.
+   * 
+   * This is a safety net: ancestor checks in processors prevent most cases, but this
+   * catches any edge cases where decorations might still be created inside code blocks.
+   * 
+   * Only code block specific decorations are preserved:
+   * - codeBlock, codeBlockLanguage, code, transparent
+   * - hide decorations that are part of fence structure (fence markers, newlines on fence lines)
+   * 
+   * @param decorations - Array of decorations to filter (modified in place)
+   * @param scopes - Array of scope ranges (used to identify code blocks)
+   * @param text - The normalized markdown text (used to identify fence lines)
+   */
+  private filterDecorationsInCodeBlocks(
+    decorations: DecorationRange[],
+    scopes: ScopeRange[],
+    text: string
+  ): void {
+    // Collect code block ranges and pre-compute opening line ends for fenced blocks
+    const codeBlockRanges: Array<{ 
+      start: number; 
+      end: number; 
+      isFenced: boolean;
+      openingLineEnd?: number; // Pre-computed for fenced blocks
+    }> = [];
+    
+    for (const scope of scopes) {
+      if (scope.kind === 'codeBlock') {
+        // Pre-compute opening line end once per fenced code block
+        const openingLineEnd = text.indexOf('\n', scope.startPos);
+        codeBlockRanges.push({
+          start: scope.startPos,
+          end: scope.endPos,
+          isFenced: true,
+          openingLineEnd: openingLineEnd !== -1 ? openingLineEnd + 1 : undefined,
+        });
+      } else if (scope.kind === 'code') {
+        codeBlockRanges.push({
+          start: scope.startPos,
+          end: scope.endPos,
+          isFenced: false,
+        });
+      }
+    }
+    if (codeBlockRanges.length === 0) {
+      return;
+    }
+
+    // Sort ranges by start position for efficient lookup
+    codeBlockRanges.sort((a, b) => a.start - b.start);
+
+    // Find min/max bounds for early exit optimization
+    const minCodeBlockStart = codeBlockRanges[0].start;
+    const maxCodeBlockEnd = Math.max(...codeBlockRanges.map(r => r.end));
+
+    // Decorations that are always allowed inside code blocks
+    const alwaysAllowed = new Set<DecorationType>([
+      'codeBlock',
+      'codeBlockLanguage',
+      'code',
+      'transparent',
+    ]);
+
+    // Remove all other decorations that fall within code blocks
+    for (let i = decorations.length - 1; i >= 0; i--) {
+      const decoration = decorations[i];
+      
+      // Always allowed decorations - fast path
+      if (alwaysAllowed.has(decoration.type)) {
+        continue;
+      }
+
+      // Early exit: decoration is before first code block or after last code block
+      if (decoration.endPos <= minCodeBlockStart || decoration.startPos >= maxCodeBlockEnd) {
+        continue;
+      }
+
+      // Find matching code block range (ranges are sorted, so we can stop early)
+      let matchingRange: typeof codeBlockRanges[0] | undefined;
+      for (const range of codeBlockRanges) {
+        // Early exit if we've passed all possible matches
+        if (decoration.startPos < range.start) {
+          break;
+        }
+        // Check if decoration is inside this range
+        if (decoration.startPos >= range.start && decoration.endPos <= range.end) {
+          matchingRange = range;
+          break;
+        }
+      }
+
+      if (!matchingRange) {
+        continue; // Not in a code block
+      }
+
+      // Special handling for hide decorations: only keep fence structure
+      if (decoration.type === 'hide' && matchingRange.isFenced) {
+        // Fence markers are at boundaries: opening fence starts at range.start, closing fence ends at range.end
+        const isOpeningFence = decoration.startPos === matchingRange.start;
+        const isClosingFence = decoration.endPos === matchingRange.end;
+        
+        // Check if it's on the opening line (using pre-computed value)
+        const isOnOpeningLine = matchingRange.openingLineEnd !== undefined &&
+          decoration.startPos >= matchingRange.start && 
+          decoration.endPos <= matchingRange.openingLineEnd;
+        
+        // Keep hide decorations that are clearly fence structure
+        if (isOpeningFence || isClosingFence || isOnOpeningLine) {
+          continue;
+        }
+        // Remove all other hide decorations inside fenced code blocks
+        decorations.splice(i, 1);
+        continue;
+      }
+
+      // For inline code blocks, remove all hide decorations (they use transparent, not hide)
+      if (decoration.type === 'hide' && !matchingRange.isFenced) {
+        decorations.splice(i, 1);
+        continue;
+      }
+
+      // Remove all other decorations inside code blocks
+      decorations.splice(i, 1);
+    }
+  }
+
+  /**
    * Processes a heading node.
    */
   private processHeading(
     node: Heading,
     text: string,
     decorations: DecorationRange[],
-    scopes: ScopeRange[]
+    scopes: ScopeRange[],
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse headings inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -445,6 +593,11 @@ export class MarkdownParser {
   ): void {
     if (!this.hasValidPosition(node)) return;
 
+    // Don't parse bold inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
+
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
 
@@ -478,6 +631,11 @@ export class MarkdownParser {
     ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse italic inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -519,9 +677,15 @@ export class MarkdownParser {
     node: Delete,
     text: string,
     decorations: DecorationRange[],
-    scopes: ScopeRange[]
+    scopes: ScopeRange[],
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse strikethrough inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -774,9 +938,15 @@ export class MarkdownParser {
     node: Link,
     text: string,
     decorations: DecorationRange[],
-    scopes: ScopeRange[]
+    scopes: ScopeRange[],
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse links inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -858,9 +1028,15 @@ export class MarkdownParser {
     node: Image,
     text: string,
     decorations: DecorationRange[],
-    scopes: ScopeRange[]
+    scopes: ScopeRange[],
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse images inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -964,6 +1140,8 @@ export class MarkdownParser {
    *
    * This method parses only the alt slice (fast path + early exits) and maps the
    * resulting node positions back into the original (normalized) document offsets.
+   * 
+   * Note: This is only called for images that are NOT inside code blocks (checked in processImage).
    */
   private processInlineFormattingInImageAlt(
     text: string,
@@ -1061,7 +1239,13 @@ export class MarkdownParser {
             );
             break;
           case 'delete':
-            this.processStrikethrough(toAbsoluteNode(node as Delete), text, decorations, scopes);
+            this.processStrikethrough(
+              toAbsoluteNode(node as Delete),
+              text,
+              decorations,
+              scopes,
+              toAbsoluteAncestors(currentAncestors)
+            );
             break;
           case 'inlineCode':
             this.processInlineCode(toAbsoluteNode(node as InlineCode), text, decorations, scopes);
@@ -1086,9 +1270,15 @@ export class MarkdownParser {
     text: string,
     decorations: DecorationRange[],
     scopes: ScopeRange[],
-    processedPositions: Set<number>
+    processedPositions: Set<number>,
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse blockquotes inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -1160,9 +1350,15 @@ export class MarkdownParser {
     node: ListItem,
     text: string,
     decorations: DecorationRange[],
-    scopes: ScopeRange[]
+    scopes: ScopeRange[],
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse list items inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
@@ -1312,9 +1508,15 @@ export class MarkdownParser {
     node: ThematicBreak,
     text: string,
     decorations: DecorationRange[],
-    scopes: ScopeRange[]
+    scopes: ScopeRange[],
+    ancestors: Node[]
   ): void {
     if (!this.hasValidPosition(node)) return;
+
+    // Don't parse horizontal rules inside code blocks
+    if (this.isInCodeBlock(ancestors)) {
+      return;
+    }
 
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;

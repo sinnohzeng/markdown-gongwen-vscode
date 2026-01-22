@@ -13,6 +13,14 @@ import { resolveImageTarget, resolveLinkTarget, toCommandUri } from './link-targ
  * 
  * - Links: Click to navigate to URL or anchor
  * - Images: Click to open image file in VS Code's image viewer
+ * 
+ * Note: Links inside code blocks are already filtered out by the parser's
+ * post-processing filter (filterDecorationsInCodeBlocks), so this provider
+ * only receives valid link decorations.
+ * 
+ * However, VS Code's built-in markdown link provider may still detect links using
+ * regex patterns and doesn't respect code blocks. If you see links inside code blocks,
+ * they are likely from VS Code's built-in provider, not this extension.
  */
 export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
   constructor(private parseCache: MarkdownParseCache) {}
@@ -43,6 +51,9 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
     const links: vscode.DocumentLink[] = [];
 
     // Find all link decorations with URLs
+    // Note: Links inside code blocks are already filtered out by the parser's
+    // post-processing filter (filterDecorationsInCodeBlocks), so we don't need
+    // to check scopes here.
     for (const decoration of decorations) {
       if ((decoration.type === 'link' || decoration.type === 'image') && decoration.url) {
         const url = decoration.url;

@@ -137,5 +137,48 @@ describe('MarkdownParser - Links', () => {
       expect(linkDec?.endPos).toBe(5);
     });
   });
+
+  describe('links inside code blocks', () => {
+    it('should NOT parse links inside fenced code blocks', () => {
+      const markdown = '```\n[link](url)\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+
+    it('should NOT parse links inside inline code', () => {
+      const markdown = '`[link](url)`';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+
+    it('should NOT parse links inside code blocks with language', () => {
+      const markdown = '```markdown\n[link](url)\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+
+    it('should still parse links outside code blocks', () => {
+      const markdown = '```\ncode\n```\n[link](url)';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(1);
+      expect(linkDecs[0].startPos).toBeGreaterThan(10); // After the code block
+    });
+
+    it('should NOT parse links inside mermaid code blocks', () => {
+      const markdown = '```mermaid\ngraph TD\nA[Start] --> B{Is Markdown beautiful?}\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+  });
 });
 
