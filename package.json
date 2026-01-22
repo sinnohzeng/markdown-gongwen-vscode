@@ -136,8 +136,10 @@
     "clean": "rimraf dist",
     "compile": "tsc --project tsconfig.build.json",
     "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outfile=dist/extension.js --sourcemap",
+    "bundle:prod": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outfile=dist/extension.js",
     "package": "vsce package --out dist/extension.vsix",
-    "build": "npm run compile && npm run bundle && npm run package",
+    "build": "npm run compile && npm run bundle:prod && npm run package",
+    "build:dev": "npm run compile && npm run bundle && npm run package",
     "validate": "npm run lint:docs && npm test && npm run build",
     "release": "node scripts/release.js",
     "prepublishOnly": "npm run clean && npm run build"

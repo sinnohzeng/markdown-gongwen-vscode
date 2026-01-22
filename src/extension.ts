@@ -3,6 +3,7 @@ import { Decorator } from './decorator';
 import { MarkdownLinkProvider } from './link-provider';
 import { MarkdownImageHoverProvider } from './image-hover-provider';
 import { MarkdownLinkHoverProvider } from './link-hover-provider';
+import { CodeBlockHoverProvider } from './code-block-hover-provider';
 import { LinkClickHandler } from './link-click-handler';
 import { normalizeAnchorText } from './position-mapping';
 import { config } from './config';
@@ -122,6 +123,13 @@ export function activate(context: vscode.ExtensionContext) {
     linkHoverProvider
   );
 
+  // Register hover provider for code block previews (Mermaid, LaTeX, etc.)
+  const codeBlockHoverProvider = new CodeBlockHoverProvider(parseCache);
+  const codeBlockHoverProviderDisposable = vscode.languages.registerHoverProvider(
+    { language: 'markdown', scheme: 'file' },
+    codeBlockHoverProvider
+  );
+
   // Setup single-click link handler (configurable)
   const linkClickHandler = new LinkClickHandler(parseCache);
   const singleClickEnabled = config.links.singleClickOpen();
@@ -224,6 +232,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(linkProviderDisposable);
   context.subscriptions.push(imageHoverProviderDisposable);
   context.subscriptions.push(linkHoverProviderDisposable);
+  context.subscriptions.push(codeBlockHoverProviderDisposable);
   context.subscriptions.push(toggleDecorationsCommand);
   context.subscriptions.push(navigateToAnchorCommand);
   context.subscriptions.push({ dispose: () => decorator.dispose() });

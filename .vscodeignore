@@ -38,6 +38,12 @@ coverage/**
 test-report/**
 *.log
 
+# Source maps (exclude from package)
+*.map
+**/*.map
+dist/**/*.map
+extension/dist/**/*.map
+
 # Test files
 test-*.md
 *.test.ts
