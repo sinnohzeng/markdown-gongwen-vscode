@@ -53,13 +53,12 @@ export class MermaidDiagramDecorations {
     }
 
     // Mermaid themes handle colors internally, so we don't need to invert
-    // But we need to ensure the decoration is styled correctly
+    // Match Markless pattern exactly: transparent text, SVG in before pseudo-element
     const decorationType = window.createTextEditorDecorationType({
       color: 'transparent',
       textDecoration: 'none; display: inline-block; width: 0;',
       before: {
         contentIconPath: Uri.parse(dataUri),
-        // Mermaid's own theme handles dark/light, so no inversion needed
         textDecoration: 'none;',
       },
     });

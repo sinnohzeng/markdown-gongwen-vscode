@@ -393,13 +393,18 @@ export class Decorator {
       const range = this.createRange(block.startPos, block.endPos, text);
       if (!range) continue;
 
-      const keySource = `${block.source}\n${theme}\n${fontFamily ?? ''}`;
+      // Calculate number of lines in the source (like Markless)
+      const numLines = 1 + (block.source.match(/\n/g) || []).length;
+
+      // Include numLines in the cache key to ensure proper sizing
+      const keySource = `${block.source}\n${theme}\n${fontFamily ?? ''}\n${numLines}`;
       const key = createHash('sha256').update(keySource).digest('hex');
 
       if (!dataUrisByKey.has(key)) {
         try {
-          const svg = await renderMermaidSvg(block.source, { theme, fontFamily });
-          dataUrisByKey.set(key, svgToDataUri(svg));
+          const svg = await renderMermaidSvg(block.source, { theme, fontFamily, numLines });
+          const dataUri = svgToDataUri(svg);
+          dataUrisByKey.set(key, dataUri);
         } catch (error) {
           console.warn('Mermaid render failed:', error instanceof Error ? error.message : error);
           continue;

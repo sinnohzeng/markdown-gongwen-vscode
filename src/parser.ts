@@ -1100,6 +1100,44 @@ export class MarkdownParser {
         endPos: closingEnd,
         type: 'hide',
       });
+    } else {
+      // For Mermaid blocks, hide the fence markers so only the SVG shows
+      // Hide the opening fence markers (```mermaid)
+      decorations.push({
+        startPos: fenceStart,
+        endPos: openingFenceEnd,
+        type: 'hide',
+      });
+
+      // Find language identifier (between fence and newline) and hide it
+      const languageStart = openingFenceEnd;
+      const languageEnd = openingLineEnd !== -1 && openingLineEnd < closingFence 
+        ? openingLineEnd 
+        : openingFenceEnd;
+
+      if (languageEnd > languageStart) {
+        decorations.push({
+          startPos: languageStart,
+          endPos: languageEnd,
+          type: 'hide',
+        });
+      }
+
+      // Hide the newline after the language identifier (if present)
+      if (openingLineEnd !== -1 && openingLineEnd < closingFence) {
+        decorations.push({
+          startPos: openingLineEnd,
+          endPos: openingLineEnd + 1,
+          type: 'hide',
+        });
+      }
+
+      // Hide the closing fence line (```)
+      decorations.push({
+        startPos: closingFence,
+        endPos: closingEnd,
+        type: 'hide',
+      });
     }
 
     this.addScope(scopes, fenceStart, closingEnd, 'codeBlock');

@@ -55,7 +55,7 @@
       ]
     },
     "viewsContainers": {
-      "panel": [
+      "activitybar": [
         {
           "id": "mdInlineRenderer",
           "title": "Markdown Inline",
@@ -68,7 +68,7 @@
         {
           "type": "webview",
           "id": "mdInline.mermaidRenderer",
-          "name": "Mermaid Renderer",
+          "name": "",
           "visibility": "hidden"
         }
       ]
@@ -143,6 +143,7 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",
