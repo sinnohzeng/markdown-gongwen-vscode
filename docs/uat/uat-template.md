@@ -310,9 +310,7 @@ UAT-CHECK()
 UAT-CHECK()
 
 > Outer quote with **bold** 
-UAT-CHECK()
 > > Nested quote with *italic* 
-UAT-CHECK()
 > > > Deeply nested quote with `code` 
 UAT-CHECK()
 
@@ -448,10 +446,10 @@ UAT-CHECK()
 |          Some          |  **Row** | `Data` |
 UAT-CHECK()
 
-| Multi<br>Line | Pipe&#124;In Cell | Escaped \| literal | 
-|--------------|-------------------|---------------------| 
-| a<br>b | value\|2 | \| yes \| | 
-| Empty Col | | Trailing | 
+| Multi<br>Line | Pipe&#124;In Cell | Escaped \| literal |
+| ------------- | ----------------- | ------------------ |
+| a<br>b        | value\|2          | \| yes \|          |
+| Empty Col     |                   | Trailing           |
 UAT-CHECK()
 
 <https://github.com> 
