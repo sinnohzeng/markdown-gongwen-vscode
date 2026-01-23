@@ -433,3 +433,23 @@ export function CheckboxCheckedDecorationType() {
     },
   });
 }
+
+/**
+ * Creates a decoration type for mermaid hover indicator.
+ * 
+ * Adds a small visual indicator (⧉) at the start of mermaid code blocks
+ * to signal that hovering will show a larger diagram preview.
+ * The indicator uses a subtle color and cursor pointer to indicate interactivity.
+ * 
+ * @returns {vscode.TextEditorDecorationType} A decoration type for mermaid hover indicator
+ */
+export function MermaidHoverIndicatorDecorationType() {
+  return window.createTextEditorDecorationType({
+    before: {
+      contentText: '⧉ ',
+      color: new ThemeColor('editor.foreground'),
+      fontWeight: 'normal',
+    },
+    opacity: '0.5', // Apply opacity to the entire decoration
+  });
+}

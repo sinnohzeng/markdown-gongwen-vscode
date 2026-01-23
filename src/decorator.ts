@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, ColorThemeKind, workspace, DecorationOptions } from 'vscode';
+=======
+import { Range, Position, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, ColorThemeKind, workspace } from 'vscode';
+>>>>>>> 8c4045b (feat(mermaid): add hover indicator and improve height calculation)
 import { createHash } from 'crypto';
 import { DecorationRange, DecorationType, MermaidBlock, ScopeRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
@@ -10,6 +14,7 @@ import { filterDecorationsForEditor, ScopeEntry } from './decorator/visibility-m
 import { handleCheckboxClick } from './decorator/checkbox-toggle';
 import { MermaidDiagramDecorations } from './decorator/mermaid-diagram-decorations';
 import { renderMermaidSvg, svgToDataUri } from './mermaid/mermaid-renderer';
+import { MermaidHoverIndicatorDecorationType } from './decorations';
 
 /**
  * Performance and caching constants.
@@ -57,6 +62,7 @@ export class Decorator {
   private decorationTypes: DecorationTypeRegistry;
   private mermaidDecorations = new MermaidDiagramDecorations();
   private mermaidUpdateToken = 0;
+  private mermaidHoverIndicatorDecorationType = MermaidHoverIndicatorDecorationType();
 
   constructor(parseCache: MarkdownParseCache) {
     this.parseCache = parseCache;
@@ -247,6 +253,7 @@ export class Decorator {
     // Also clear ghost faint decoration (not in decorationTypeMap)
     this.activeEditor.setDecorations(this.decorationTypes.getGhostFaintDecorationType(), []);
     this.mermaidDecorations.clear(this.activeEditor);
+    this.activeEditor.setDecorations(this.mermaidHoverIndicatorDecorationType, []);
   }
 
   /**
@@ -368,6 +375,7 @@ export class Decorator {
     const editor = this.activeEditor;
     if (mermaidBlocks.length === 0) {
       this.mermaidDecorations.clear(editor);
+      editor.setDecorations(this.mermaidHoverIndicatorDecorationType, []);
       return;
     }
 
@@ -380,6 +388,7 @@ export class Decorator {
 
     const rangesByKey = new Map<string, Range[]>();
     const dataUrisByKey = new Map<string, string>();
+    const indicatorRanges: Range[] = [];
 
     for (const block of mermaidBlocks) {
       if (token !== this.mermaidUpdateToken || editor.document.version !== documentVersion) {
@@ -393,7 +402,27 @@ export class Decorator {
       const range = this.createRange(block.startPos, block.endPos, text);
       if (!range) continue;
 
-      // Calculate number of lines in the source (like Markless)
+      // Add indicator decoration at the start of the mermaid block content
+      // Place it at the beginning of the first line of content (after opening fence line)
+      const blockStart = mapNormalizedToOriginal(block.startPos, text);
+      const originalText = editor.document.getText();
+      
+      // Find the newline after the opening fence line to place indicator at content start
+      const openingFenceLineEnd = originalText.indexOf('\n', blockStart);
+      const contentStart = openingFenceLineEnd !== -1 ? openingFenceLineEnd + 1 : blockStart;
+      
+      const contentStartPos = editor.document.positionAt(contentStart);
+      // Create a small range (1 character) at the start of content for the indicator
+      const line = editor.document.lineAt(contentStartPos.line);
+      const indicatorEndChar = Math.min(contentStartPos.character + 1, line.text.length);
+      const indicatorRange = new Range(
+        contentStartPos,
+        new Position(contentStartPos.line, indicatorEndChar)
+      );
+      indicatorRanges.push(indicatorRange);
+
+      // Calculate number of lines in the source content (excluding fence lines)
+      // This matches the actual diagram content height
       const numLines = 1 + (block.source.match(/\n/g) || []).length;
 
       // Include numLines in the cache key to ensure proper sizing
@@ -421,6 +450,9 @@ export class Decorator {
     }
 
     this.mermaidDecorations.apply(editor, rangesByKey, dataUrisByKey);
+    
+    // Apply hover indicator decorations
+    editor.setDecorations(this.mermaidHoverIndicatorDecorationType, indicatorRanges);
   }
 
   private isSelectionOrCursorInsideOffsets(
@@ -645,8 +677,9 @@ export class Decorator {
       this.idleCallbackHandle = undefined;
     }
     this.pendingUpdateVersion.clear();
-    
+
     this.decorationTypes.dispose();
+    this.mermaidHoverIndicatorDecorationType.dispose();
   }
 
   /**

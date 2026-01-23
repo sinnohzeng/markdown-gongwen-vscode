@@ -206,6 +206,33 @@ function requestSvg(data: { source: string; darkMode: boolean; fontFamily?: stri
 }
 
 /**
+ * Render Mermaid SVG at natural size (without height constraints)
+ * Used to get actual diagram dimensions for hover sizing
+ */
+export async function renderMermaidSvgNatural(
+  source: string,
+  options: { theme: 'default' | 'dark'; fontFamily?: string }
+): Promise<string> {
+  if (!extensionContext) {
+    throw new Error('Mermaid renderer not initialized. Call initMermaidRenderer first.');
+  }
+
+  await webviewLoaded;
+
+  if (!webviewView) {
+    throw new Error('Failed to create mermaid webview');
+  }
+
+  const darkMode = options.theme === 'dark';
+  
+  // Request SVG without processing (get natural dimensions)
+  const svgString = await requestSvg({ source, darkMode, fontFamily: options.fontFamily });
+  
+  // Return raw SVG without height processing
+  return svgString;
+}
+
+/**
  * Process SVG to adjust dimensions based on line count
  * Similar to Markless implementation
  */
@@ -218,12 +245,32 @@ function processSvg(svgString: string, height: number): string {
     return svgString;
   }
 
-  const originalHeight = parseFloat(svgNode.attr('height') || '0');
+  // Get original dimensions from height attribute or viewBox
+  let originalHeight = parseFloat(svgNode.attr('height') || '0');
+  let originalWidth = parseFloat(svgNode.attr('width') || '0');
+  
+  // If height/width not in attributes, try viewBox
+  if ((originalHeight === 0 || originalWidth === 0) && svgNode.attr('viewBox')) {
+    const viewBox = svgNode.attr('viewBox')!.split(/\s+/);
+    if (viewBox.length >= 4) {
+      const viewBoxWidth = parseFloat(viewBox[2]) || 0;
+      const viewBoxHeight = parseFloat(viewBox[3]) || 0;
+      if (originalWidth === 0 && viewBoxWidth > 0) {
+        originalWidth = viewBoxWidth;
+      }
+      if (originalHeight === 0 && viewBoxHeight > 0) {
+        originalHeight = viewBoxHeight;
+      }
+    }
+  }
+  
   const originalMaxWidth = parseFloat(svgNode.css('max-width') || '0');
   
   // Calculate max-width based on desired height and original aspect ratio
-  const maxWidth = originalMaxWidth > 0 && originalHeight > 0
-    ? (originalMaxWidth * height) / originalHeight
+  // Use width if max-width is not available
+  const baseWidth = originalMaxWidth > 0 ? originalMaxWidth : originalWidth;
+  const maxWidth = baseWidth > 0 && originalHeight > 0
+    ? (baseWidth * height) / originalHeight
     : undefined;
 
   // Adjust SVG attributes
@@ -239,6 +286,7 @@ function processSvg(svgString: string, height: number): string {
   
   console.log('[Mermaid Renderer] Processed SVG:', {
     originalHeight,
+    originalWidth,
     newHeight: height,
     maxWidth,
     processedLength: processedSvg.length,
@@ -303,7 +351,20 @@ export async function renderMermaidSvg(
   const darkMode = options.theme === 'dark';
   // Calculate height based on line count (like Markless: (numLines + 2) * lineHeight)
   // Default to 200px if numLines not provided
-  const lineHeight = vscode.workspace.getConfiguration('editor').get<number>('lineHeight', 0) || 20;
+  const editorConfig = vscode.workspace.getConfiguration('editor');
+  let lineHeight = editorConfig.get<number>('lineHeight', 0);
+  
+  // If lineHeight is 0 or invalid, calculate from fontSize (like Markless does)
+  if (lineHeight === 0 || lineHeight < 8) {
+    const fontSize = editorConfig.get<number>('fontSize', 14);
+    // Use platform-appropriate multiplier (Markless uses 1.5 for macOS, 1.35 for others)
+    const multiplier = process.platform === 'darwin' ? 1.5 : 1.35;
+    lineHeight = Math.round(multiplier * fontSize);
+    if (lineHeight < 8) {
+      lineHeight = 8; // Minimum line height
+    }
+  }
+  
   const numLines = options.numLines || 5;
   const height = options.height || ((numLines + 2) * lineHeight);
 

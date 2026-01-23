@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { shouldSkipInDiffView } from './diff-context';
 import { MarkdownParseCache } from './markdown-parse-cache';
-import { renderMermaidSvg, svgToDataUri } from './mermaid/mermaid-renderer';
+import { renderMermaidSvg, renderMermaidSvgNatural, svgToDataUri } from './mermaid/mermaid-renderer';
 import * as cheerio from 'cheerio';
 
 /**
@@ -90,25 +90,22 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
 
       const fontFamily = vscode.workspace.getConfiguration('editor').get<string>('fontFamily');
       
-      // Render without size constraints first to get natural dimensions
-      // Use a generous height to let Mermaid render at its natural size
-      const numLines = 1 + (source.match(/\n/g) || []).length;
-      const svg = await renderMermaidSvg(source, {
+      // Render at natural size first to get actual diagram dimensions
+      const naturalSvg = await renderMermaidSvgNatural(source, {
         theme,
         fontFamily,
-        numLines,
       });
 
-      // Parse SVG to get actual dimensions
-      const $ = cheerio.load(svg, { xmlMode: true });
+      // Parse natural SVG to get actual dimensions
+      const $ = cheerio.load(naturalSvg, { xmlMode: true });
       const svgNode = $('svg').first();
       
       if (svgNode.length === 0) {
         return undefined;
       }
 
-      // Get SVG dimensions
-      // Try to get width/height from attributes, or viewBox, or use defaults
+      // Get SVG dimensions from natural render
+      // Try to get width/height from attributes, or viewBox
       let svgWidth = parseFloat(svgNode.attr('width') || '0');
       let svgHeight = parseFloat(svgNode.attr('height') || '0');
       
@@ -121,44 +118,50 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
         }
       }
 
-      // If still no dimensions, use a reasonable default based on content
+      // If still no dimensions, use a reasonable default
       if (svgWidth === 0 || svgHeight === 0) {
         svgWidth = 800;
         svgHeight = 600;
       }
 
-      // Scale up for hover preview (make it larger but not too large)
-      const scale = config.scaleFactor;
-      let hoverWidth = svgWidth * scale;
-      let hoverHeight = svgHeight * scale;
+      // Use natural dimensions for hover - adapt dialog size to content
+      // For large diagrams, show them large; for small diagrams, show them appropriately sized
+      let hoverWidth = svgWidth;
+      let hoverHeight = svgHeight;
 
-      // Respect max dimensions
-      if (hoverWidth > config.maxWidth) {
+      // Apply a minimum scale to ensure readability for small diagrams
+      const minScale = 1.5;
+      if (hoverWidth < 400 || hoverHeight < 300) {
+        hoverWidth = Math.max(hoverWidth * minScale, 400);
+        hoverHeight = Math.max(hoverHeight * minScale, 300);
+        // Maintain aspect ratio
+        const aspectRatio = svgHeight / svgWidth;
+        if (hoverWidth * aspectRatio > hoverHeight) {
+          hoverHeight = hoverWidth * aspectRatio;
+        } else {
+          hoverWidth = hoverHeight / aspectRatio;
+        }
+      }
+
+      // Respect max dimensions (but allow larger dialogs for large diagrams)
+      // Increase max dimensions to accommodate large diagrams
+      const maxWidth = Math.max(config.maxWidth, 2000);
+      const maxHeight = Math.max(config.maxHeight, 1500);
+      
+      if (hoverWidth > maxWidth) {
         const aspectRatio = hoverHeight / hoverWidth;
-        hoverWidth = config.maxWidth;
+        hoverWidth = maxWidth;
         hoverHeight = hoverWidth * aspectRatio;
       }
-      if (hoverHeight > config.maxHeight) {
+      if (hoverHeight > maxHeight) {
         const aspectRatio = hoverWidth / hoverHeight;
-        hoverHeight = config.maxHeight;
+        hoverHeight = maxHeight;
         hoverWidth = hoverHeight * aspectRatio;
       }
 
-      // Ensure minimum size for readability
-      const minSize = 400;
-      if (hoverWidth < minSize) {
-        const aspectRatio = hoverHeight / hoverWidth;
-        hoverWidth = minSize;
-        hoverHeight = hoverWidth * aspectRatio;
-      }
-      if (hoverHeight < minSize) {
-        const aspectRatio = hoverWidth / hoverHeight;
-        hoverHeight = minSize;
-        hoverWidth = hoverHeight * aspectRatio;
-      }
-
+      // Use the natural SVG for display (it's already at the right size)
       return {
-        dataUri: svgToDataUri(svg),
+        dataUri: svgToDataUri(naturalSvg),
         width: Math.round(hoverWidth),
         height: Math.round(hoverHeight),
       };
@@ -202,8 +205,16 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
       const start = mapNormalizedToOriginal(block.startPos, text);
       const end = mapNormalizedToOriginal(block.endPos, text);
 
-      // Check if hover position is within this code block
-      if (hoverOffset >= start && hoverOffset < end) {
+      // Find the content start (after opening fence line) where the indicator is placed
+      const originalText = document.getText();
+      const openingFenceLineEnd = originalText.indexOf('\n', start);
+      const contentStart = openingFenceLineEnd !== -1 ? openingFenceLineEnd + 1 : start;
+      const indicatorEnd = contentStart + 1; // Indicator is 1 character wide
+
+      // Check if hover position is within the code block OR within the indicator area
+      // This allows hovering over the indicator or anywhere in the block
+      if ((hoverOffset >= contentStart && hoverOffset < indicatorEnd) || 
+          (hoverOffset >= start && hoverOffset < end)) {
         return this.createHoverForCodeBlock(
           block.source,
           'mermaid',
@@ -325,9 +336,13 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
       markdown.supportHtml = true;
       markdown.isTrusted = true; // Data URIs are safe
 
+      // Expand hover range to full line(s) for better UX
+      // This makes it easier to trigger hover and includes the indicator area
+      const startPos = document.positionAt(start);
+      const endPos = document.positionAt(end);
       const hoverRange = new vscode.Range(
-        document.positionAt(start),
-        document.positionAt(end)
+        new vscode.Position(startPos.line, 0),
+        new vscode.Position(endPos.line, Number.MAX_SAFE_INTEGER)
       );
 
       return new vscode.Hover(markdown, hoverRange);
