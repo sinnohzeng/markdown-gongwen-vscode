@@ -14,7 +14,10 @@ type MermaidRenderOptions = {
 let webviewView: vscode.WebviewView | undefined;
 let webviewLoaded: Promise<void>;
 let resolveWebviewLoaded: (() => void) | undefined;
-let resolveSvg: ((svg: string) => void) | undefined;
+// Track pending render requests to handle concurrent renders (hover + decoration)
+// Key: requestId, Value: { resolve, reject }
+const pendingRenders = new Map<string, { resolve: (svg: string) => void; reject: (error: Error) => void }>();
+let renderRequestCounter = 0;
 
 // Memoization cache for decorations
 const decorationCache = new Map<string, Promise<string>>();
@@ -92,6 +95,7 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
         return;
       }
 
+      const requestId = data.requestId;
       const diagramType = getDiagramType(data.source);
       
       console.log('[Mermaid Renderer] Received render request:', {
@@ -130,7 +134,9 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
         // create a hidden container with explicit width to give Mermaid a real layout width.
         let svg;
         let renderContainer;
-        const renderId = 'mermaid-' + Date.now();
+        // Use timestamp + random to ensure unique render IDs (prevents conflicts with concurrent renders)
+        const renderId = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+        
         if (diagramType === 'gantt') {
           renderContainer = document.createElement('div');
           renderContainer.style.position = 'absolute';
@@ -143,10 +149,17 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
         }
 
         try {
-          const result = await mermaid.render(renderId, data.source, renderContainer);
+          // Only pass container parameter if it exists (Mermaid v11 supports optional container)
+          // Passing undefined explicitly might cause issues, so conditionally call render
+          const result = renderContainer
+            ? await mermaid.render(renderId, data.source, renderContainer)
+            : await mermaid.render(renderId, data.source);
           svg = result.svg;
         } finally {
-          renderContainer?.remove();
+          // Always clean up container if it was created
+          if (renderContainer) {
+            renderContainer.remove();
+          }
         }
         
         console.log('[Mermaid Renderer] Render successful:', {
@@ -157,16 +170,16 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
         // Print full SVG to console for debugging
         console.log('[Mermaid Renderer] Full SVG from mermaid.render():', svg);
         
-        // Send SVG string back
-        vscode.postMessage(svg);
+        // Send SVG string back with requestId to match to correct pending render
+        vscode.postMessage({ svg, requestId });
       } catch (error) {
         console.error('[Mermaid Renderer] Render error:', {
           error: error.message || 'Unknown error',
           stack: error.stack,
           sourcePreview: data.source?.substring(0, 200) + (data.source && data.source.length > 200 ? '...' : ''),
         });
-        // Send error message back
-        vscode.postMessage({ error: error.message || 'Unknown error' });
+        // Send error message back with requestId
+        vscode.postMessage({ error: error.message || 'Unknown error', requestId });
       }
     });
     
@@ -226,7 +239,9 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
 
       if (message && message.error) {
         console.error('[Mermaid Renderer] Render failed:', message.error);
-        if (resolveSvg) {
+        const requestId = message.requestId;
+        if (requestId && pendingRenders.has(requestId)) {
+          const { resolve } = pendingRenders.get(requestId)!;
           // Create a proper error SVG - height will be adjusted in getMermaidDecoration
           const isDark = vscode.window.activeColorTheme.kind === ColorThemeKind.Dark ||
             vscode.window.activeColorTheme.kind === ColorThemeKind.HighContrast;
@@ -236,22 +251,44 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
             200, // Default height - will be resized later
             isDark
           );
-          resolveSvg(errorSvg);
-          resolveSvg = undefined;
+          resolve(errorSvg);
+          pendingRenders.delete(requestId);
         }
         return;
       }
 
-      // Assume it's an SVG string
-      if (typeof message === 'string' && resolveSvg) {
+      // Handle SVG response (with requestId) or legacy string format
+      if (message && message.requestId && pendingRenders.has(message.requestId)) {
+        const { resolve } = pendingRenders.get(message.requestId)!;
+        const svg = message.svg || message; // Support both object and string format
         console.log('[Mermaid Renderer] Received SVG:', {
-          svgLength: message.length,
-          svgPreview: message.substring(0, 200) + (message.length > 200 ? '...' : ''),
+          requestId: message.requestId,
+          svgLength: typeof svg === 'string' ? svg.length : 0,
+          svgPreview: typeof svg === 'string' ? (svg.substring(0, 200) + (svg.length > 200 ? '...' : '')) : 'object',
         });
         // Print full SVG to console for debugging
-        console.log('[Mermaid Renderer] Full SVG received from webview:', message);
-        resolveSvg(message);
-        resolveSvg = undefined;
+        if (typeof svg === 'string') {
+          console.log('[Mermaid Renderer] Full SVG received from webview:', svg);
+        }
+        resolve(svg);
+        pendingRenders.delete(message.requestId);
+        return;
+      }
+
+      // Legacy support: string message without requestId (for backwards compatibility)
+      if (typeof message === 'string') {
+        // If there's only one pending render, use it (backwards compatibility)
+        if (pendingRenders.size === 1) {
+          const [requestId, { resolve }] = Array.from(pendingRenders.entries())[0];
+          console.log('[Mermaid Renderer] Received legacy SVG string (no requestId):', {
+            svgLength: message.length,
+            svgPreview: message.substring(0, 200) + (message.length > 200 ? '...' : ''),
+          });
+          resolve(message);
+          pendingRenders.delete(requestId);
+        } else {
+          console.warn('[Mermaid Renderer] Received SVG string but multiple pending renders, cannot match');
+        }
       }
     }, null, []);
   }
@@ -300,20 +337,25 @@ function requestSvg(data: { source: string; darkMode: boolean; fontFamily?: stri
     throw new Error('Webview not available');
   }
 
+  // Generate unique request ID for this render
+  const requestId = `req-${Date.now()}-${++renderRequestCounter}`;
+
   // Create promise BEFORE posting message (like Markless pattern)
-  // This ensures resolveSvg is set before the webview might respond
+  // Track pending renders in a Map to handle concurrent requests
   return new Promise<string>((resolve, reject) => {
     if (!webviewView) {
       reject(new Error('Webview not available'));
       return;
     }
     
-    resolveSvg = resolve;
+    // Store resolve/reject in Map with requestId
+    pendingRenders.set(requestId, { resolve, reject });
 
     try {
-      webviewView.webview.postMessage(data);
+      // Include requestId in message so webview can send it back
+      webviewView.webview.postMessage({ ...data, requestId });
     } catch (error) {
-      resolveSvg = undefined;
+      pendingRenders.delete(requestId);
       reject(error);
     }
   });
@@ -846,7 +888,7 @@ function escapeHtml(text: string): string {
 export function disposeMermaidRenderer(): void {
   // WebviewView is disposed automatically when the extension is deactivated
   decorationCache.clear();
+  pendingRenders.clear();
   webviewView = undefined;
-  resolveSvg = undefined;
   resolveWebviewLoaded = undefined;
 }
