@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { shouldSkipInDiffView } from './diff-context';
 import { MarkdownParseCache } from './markdown-parse-cache';
-import { renderMermaidSvg, renderMermaidSvgNatural, svgToDataUri } from './mermaid/mermaid-renderer';
+import { renderMermaidSvg, renderMermaidSvgNatural, svgToDataUri, createErrorSvg } from './mermaid/mermaid-renderer';
 import * as cheerio from 'cheerio';
 
 /**
@@ -167,7 +167,21 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
       };
     } catch (error) {
       console.warn('[Code Block Hover] Mermaid render failed:', error instanceof Error ? error.message : error);
-      return undefined;
+      // Create error SVG to display in hover instead of returning undefined
+      const errorMessage = error instanceof Error ? error.message : 'Rendering failed';
+      const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
+        vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast;
+      const errorSvg = createErrorSvg(
+        errorMessage,
+        config.maxWidth,
+        Math.min(config.maxHeight, 300),
+        isDark
+      );
+      return {
+        dataUri: svgToDataUri(errorSvg),
+        width: config.maxWidth,
+        height: Math.min(config.maxHeight, 300),
+      };
     }
   }
 

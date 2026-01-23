@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ColorThemeKind } from 'vscode';
 import * as cheerio from 'cheerio';
 
 type MermaidRenderOptions = {
@@ -124,7 +125,16 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
       if (message && message.error) {
         console.error('[Mermaid Renderer] Render failed:', message.error);
         if (resolveSvg) {
-          resolveSvg(`<svg><text>Error: ${message.error}</text></svg>`);
+          // Create a proper error SVG - height will be adjusted in getMermaidDecoration
+          const isDark = vscode.window.activeColorTheme.kind === ColorThemeKind.Dark ||
+            vscode.window.activeColorTheme.kind === ColorThemeKind.HighContrast;
+          const errorSvg = createErrorSvg(
+            message.error,
+            400, // Default width - will be resized later
+            200, // Default height - will be resized later
+            isDark
+          );
+          resolveSvg(errorSvg);
           resolveSvg = undefined;
         }
         return;
@@ -233,6 +243,75 @@ export async function renderMermaidSvgNatural(
 }
 
 /**
+ * Create an error SVG to display when Mermaid rendering fails
+ * @param errorMessage - The error message to display
+ * @param width - Width of the error SVG
+ * @param height - Height of the error SVG
+ * @param isDark - Whether to use dark theme colors
+ * @returns SVG string with error message
+ */
+export function createErrorSvg(errorMessage: string, width: number, height: number, isDark: boolean): string {
+  const bgColor = isDark ? '#2d2d2d' : '#f5f5f5';
+  const textColor = isDark ? '#ff6b6b' : '#d32f2f';
+  const borderColor = isDark ? '#ff6b6b' : '#d32f2f';
+  const secondaryTextColor = isDark ? '#cccccc' : '#666666';
+  
+  // Truncate error message if too long
+  const maxMessageLength = 80;
+  const displayMessage = errorMessage.length > maxMessageLength 
+    ? errorMessage.substring(0, maxMessageLength) + '...'
+    : errorMessage;
+  
+  // Split long messages into multiple lines
+  const words = displayMessage.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  const maxLineLength = 50;
+  
+  for (const word of words) {
+    if ((currentLine + ' ' + word).length > maxLineLength && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = currentLine ? currentLine + ' ' + word : word;
+    }
+  }
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  const lineHeight = 20;
+  const padding = 20;
+  const iconSize = 40;
+  const textY = padding + iconSize + 15;
+  const textLines = lines.map((line, i) => 
+    `<tspan x="${padding + iconSize + 15}" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
+  ).join('');
+  
+  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${width}" height="${height}" fill="${bgColor}" stroke="${borderColor}" stroke-width="2" rx="4"/>
+  <circle cx="${padding + iconSize / 2}" cy="${padding + iconSize / 2}" r="${iconSize / 2}" fill="${borderColor}" opacity="0.2"/>
+  <text x="${padding + iconSize / 2}" y="${padding + iconSize / 2 + 5}" font-family="Arial, sans-serif" font-size="24" fill="${borderColor}" text-anchor="middle" font-weight="bold">⚠</text>
+  <text x="${padding + iconSize + 15}" y="${textY}" font-family="Arial, sans-serif" font-size="14" fill="${textColor}" font-weight="bold">Mermaid Rendering Error</text>
+  <text x="${padding + iconSize + 15}" y="${textY + lineHeight}" font-family="Arial, sans-serif" font-size="12" fill="${secondaryTextColor}">
+    ${textLines}
+  </text>
+</svg>`;
+}
+
+/**
+ * Escape XML special characters for use in SVG text
+ */
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/**
  * Process SVG to adjust dimensions based on line count
  * Similar to Markless implementation
  */
@@ -329,10 +408,39 @@ const getMermaidDecoration = memoizeMermaidDecoration(async (
   });
 
   const svgString = await requestSvg({ source, darkMode, fontFamily });
+  
+  // Check if this is an error SVG (contains "Mermaid Rendering Error")
+  if (svgString.includes('Mermaid Rendering Error')) {
+    // Recreate error SVG with proper dimensions
+    const errorSvg = createErrorSvg(
+      extractErrorMessage(svgString) || 'Rendering failed',
+      Math.max(400, height * 2), // Width based on height
+      height,
+      darkMode
+    );
+    return errorSvg;
+  }
+  
   const processedSvg = processSvg(svgString, height);
   
   return processedSvg;
 });
+
+/**
+ * Extract error message from error SVG
+ */
+function extractErrorMessage(errorSvg: string): string | null {
+  const match = errorSvg.match(/<tspan[^>]*>([^<]+)<\/tspan>/g);
+  if (match && match.length > 0) {
+    // Get the first tspan content (skip the title line)
+    const messageLines = match.slice(1).map(line => {
+      const contentMatch = line.match(/>([^<]+)</);
+      return contentMatch ? contentMatch[1] : '';
+    });
+    return messageLines.join(' ').trim() || null;
+  }
+  return null;
+}
 
 export async function renderMermaidSvg(
   source: string,
