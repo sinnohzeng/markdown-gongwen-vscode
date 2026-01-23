@@ -34,4 +34,11 @@ export const config = {
         .get<number>('decorations.codeBlockLanguageOpacity', 0.3);
     },
   },
+  emojis: {
+    enabled(): boolean {
+      return vscode.workspace
+        .getConfiguration(SECTION)
+        .get<boolean>('emojis.enabled', true);
+    },
+  },
 } as const;

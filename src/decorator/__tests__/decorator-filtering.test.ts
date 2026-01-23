@@ -133,6 +133,18 @@ describe('Decorator filtering behavior', () => {
     expect(filtered.has('blockquote')).toBe(false);
   });
 
+  it('reveals raw emoji shortcode when cursor is inside emoji scope', () => {
+    const text = ':smile:';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 7, type: 'emoji', emoji: '😄' },
+    ];
+
+    const selection = new Selection(new Position(0, 2), new Position(0, 2));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 7]], selection);
+
+    expect(filtered.has('emoji')).toBe(false);
+  });
+
   it('keeps list item decoration on active line when cursor is not on marker', () => {
     const text = '- item';
     const decorations: DecorationRange[] = [

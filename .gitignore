@@ -130,3 +130,6 @@ examples/
 
 # Cursor IDE files
 .cursor/
+
+# MacOS files
+.DS_Store

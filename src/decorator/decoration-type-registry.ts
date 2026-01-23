@@ -28,6 +28,7 @@ import {
   CheckboxCheckedDecorationType,
   FrontmatterDecorationType,
   FrontmatterDelimiterDecorationType,
+  EmojiDecorationType,
 } from '../decorations';
 import type { DecorationType } from '../parser';
 
@@ -66,6 +67,7 @@ export class DecorationTypeRegistry {
   private checkboxCheckedDecorationType!: TextEditorDecorationType;
   private frontmatterDecorationType!: TextEditorDecorationType;
   private frontmatterDelimiterDecorationType!: TextEditorDecorationType;
+  private emojiDecorationType!: TextEditorDecorationType;
 
   private decorationTypeMap = new Map<DecorationType, TextEditorDecorationType>();
 
@@ -98,6 +100,7 @@ export class DecorationTypeRegistry {
     this.checkboxCheckedDecorationType = CheckboxCheckedDecorationType();
     this.frontmatterDecorationType = FrontmatterDecorationType();
     this.frontmatterDelimiterDecorationType = FrontmatterDelimiterDecorationType(this.options.getFrontmatterDelimiterOpacity());
+    this.emojiDecorationType = EmojiDecorationType();
 
     this.decorationTypeMap = new Map<DecorationType, TextEditorDecorationType>([
       ['hide', this.hideDecorationType],
@@ -126,6 +129,7 @@ export class DecorationTypeRegistry {
       ['checkboxChecked', this.checkboxCheckedDecorationType],
       ['frontmatter', this.frontmatterDecorationType],
       ['frontmatterDelimiter', this.frontmatterDelimiterDecorationType],
+      ['emoji', this.emojiDecorationType],
       // Keep this last so it is applied after backgrounds.
       ['selectionOverlay', this.selectionOverlayDecorationType],
     ]);

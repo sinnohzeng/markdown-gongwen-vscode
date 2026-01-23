@@ -220,6 +220,21 @@ export function FrontmatterDelimiterDecorationType(opacity: number = 0.3) {
 }
 
 /**
+ * Creates a decoration type for emoji shortcodes.
+ *
+ * Hides the original shortcode and allows per-range emoji rendering
+ * via {@link vscode.DecorationOptions.renderOptions}.
+ */
+export function EmojiDecorationType() {
+  return window.createTextEditorDecorationType({
+    textDecoration: 'none; display: none;',
+    before: {
+      contentText: '',
+    },
+  });
+}
+
+/**
  * Creates a decoration type for heading styling.
  * 
  * @returns {vscode.TextEditorDecorationType} A decoration type for headings
