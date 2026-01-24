@@ -7,6 +7,12 @@ This document outlines the steps to generate and publish a new release for the p
 To create a new release automatically, run:
 
 ```bash
+npm run release
+```
+
+Or directly:
+
+```bash
 node scripts/release.js
 ```
 
@@ -26,17 +32,7 @@ After running the script, push the changes:
 git push origin main --follow-tags
 ```
 
-## Alternative: Makefile-based Release
-
-The project also includes a Makefile-based release process that requires manual version specification:
-
-```bash
-make release-prep              # Validate and check git status
-make release VERSION=1.10.0    # Interactive release (updates version, prompts for CHANGELOG)
-make release-commit VERSION=1.10.0  # Commit and tag (after CHANGELOG is updated)
-```
-
-The automated script (`node scripts/release.js`) is recommended as it:
+The automated script (`npm run release` or `node scripts/release.js`) is recommended as it:
 - Automatically determines the correct version from commits
 - Generates the changelog automatically
 - Reduces manual work and potential errors
