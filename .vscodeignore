@@ -10,6 +10,8 @@ tsconfig.build.json
 jest.config.js
 jest.setup.js
 *.map
+**/*.map
+dist/**/*.map
 *.tsbuildinfo
 
 # Documentation (not needed in extension)
@@ -52,3 +54,4 @@ dist/test-report/**
 Makefile
 eslint.config.mjs
 scripts/**
+cliff.toml
