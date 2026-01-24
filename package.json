@@ -92,6 +92,12 @@
           "default": false,
           "description": "Open links and images with single click",
           "markdownDescription": "Single-click to open links and image links (no Ctrl+Click needed). May interfere with text selection."
+        },
+        "markdownInlineEditor.emojis.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Render emoji shortcodes (e.g., :smile:)",
+          "markdownDescription": "Render emoji shortcodes (e.g., :smile:) inline in Markdown documents."
         }
       }
     }

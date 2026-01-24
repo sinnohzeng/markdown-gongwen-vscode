@@ -1,4 +1,4 @@
-import { Range, type Position, type TextEditor } from 'vscode';
+import { Range, type DecorationOptions, type Position, type TextEditor } from 'vscode';
 import type { DecorationRange, DecorationType } from '../parser';
 import { isMarkerDecorationType } from './decoration-categories';
 
@@ -9,6 +9,7 @@ export type ScopeEntry = {
 };
 
 type RangeFactory = (startPos: number, endPos: number, originalText: string) => Range | null;
+type FilteredDecoration = Range | DecorationOptions;
 
 export function filterDecorationsForEditor(
   editor: TextEditor,
@@ -16,7 +17,7 @@ export function filterDecorationsForEditor(
   scopes: ScopeEntry[],
   originalText: string,
   rangeFactory: RangeFactory
-): Map<DecorationType, Range[]> {
+): Map<DecorationType, FilteredDecoration[]> {
   const selectedRanges: Range[] = [];
   const cursorPositions: Position[] = [];
   const activeLines = new Set<number>(); // Lines with selections or cursors
@@ -61,7 +62,7 @@ export function filterDecorationsForEditor(
     }
   }
 
-  const filtered = new Map<DecorationType, Range[]>();
+  const filtered = new Map<DecorationType, FilteredDecoration[]>();
   const ghostFaintRanges: Range[] = [];
   const selectionOverlayRanges: Range[] = [];
 
@@ -133,6 +134,28 @@ export function filterDecorationsForEditor(
       const ranges = filtered.get(decoration.type) || [];
       ranges.push(range);
       filtered.set(decoration.type, ranges);
+      continue;
+    }
+
+    if (decoration.type === 'emoji') {
+      const intersectsRaw = rangeIntersectsAny(range, rawRanges);
+      if (intersectsRaw) {
+        // Raw state: show actual shortcode
+        continue;
+      }
+
+      if (decoration.emoji) {
+        const ranges = filtered.get(decoration.type) || [];
+        ranges.push({
+          range,
+          renderOptions: {
+            before: {
+              contentText: decoration.emoji,
+            },
+          },
+        });
+        filtered.set(decoration.type, ranges);
+      }
       continue;
     }
 

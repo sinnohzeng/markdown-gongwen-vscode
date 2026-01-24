@@ -1,4 +1,4 @@
-import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind } from 'vscode';
+import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, DecorationOptions } from 'vscode';
 import { DecorationRange, DecorationType, ScopeRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { config } from './config';
@@ -369,13 +369,13 @@ export class Decorator {
    * @private
    * @param {DecorationRange[]} decorations - Decorations to filter
    * @param {string} originalText - Original document text (for offset adjustment)
-   * @returns {Map<DecorationType, Range[]>} Filtered decorations grouped by type
+   * @returns {Map<DecorationType, Array<Range | DecorationOptions>>} Filtered decorations grouped by type
    */
   private filterDecorations(
     decorations: DecorationRange[],
     scopes: ScopeEntry[],
     originalText: string
-  ): Map<DecorationType, Range[]> {
+  ): Map<DecorationType, Array<Range | DecorationOptions>> {
     if (!this.activeEditor) {
       return new Map();
     }
@@ -393,19 +393,30 @@ export class Decorator {
    * Applies filtered decorations to the editor.
    * 
    * @private
-   * @param {Map<DecorationType, Range[]>} filteredDecorations - Decorations grouped by type
+   * @param {Map<DecorationType, Array<Range | DecorationOptions>>} filteredDecorations - Decorations grouped by type
    */
-  private applyDecorations(filteredDecorations: Map<DecorationType, Range[]>) {
+  private applyDecorations(filteredDecorations: Map<DecorationType, Array<Range | DecorationOptions>>) {
     if (!this.activeEditor) {
       return;
     }
 
     // Apply all decorations by iterating through the type map
     for (const [type, decorationType] of this.decorationTypes.getMap().entries()) {
-      this.activeEditor.setDecorations(decorationType, filteredDecorations.get(type) || []);
+      if (type === 'emoji') {
+        if (!config.emojis.enabled()) {
+          this.activeEditor.setDecorations(decorationType, []);
+          continue;
+        }
+        const emojiRanges = filteredDecorations.get(type) as DecorationOptions[] | undefined;
+        this.activeEditor.setDecorations(decorationType, emojiRanges || []);
+        continue;
+      }
+
+      const ranges = filteredDecorations.get(type) as Range[] | undefined;
+      this.activeEditor.setDecorations(decorationType, ranges || []);
     }
 
-    const ghostFaintRanges = filteredDecorations.get('ghostFaint') || [];
+    const ghostFaintRanges = (filteredDecorations.get('ghostFaint') as Range[] | undefined) || [];
     this.activeEditor.setDecorations(this.decorationTypes.getGhostFaintDecorationType(), ghostFaintRanges);
   }
 
