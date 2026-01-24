@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { Range, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, ColorThemeKind, workspace, DecorationOptions } from 'vscode';
-=======
-import { Range, Position, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, ColorThemeKind, workspace } from 'vscode';
->>>>>>> 8c4045b (feat(mermaid): add hover indicator and improve height calculation)
+import { Range, Position, TextEditor, TextDocument, TextDocumentChangeEvent, window, TextEditorSelectionChangeKind, ColorThemeKind, workspace, DecorationOptions } from 'vscode';
 import { createHash } from 'crypto';
 import { DecorationRange, DecorationType, MermaidBlock, ScopeRange } from './parser';
 import { mapNormalizedToOriginal } from './position-mapping';
@@ -437,7 +433,19 @@ export class Decorator {
         } catch (error) {
           console.warn('Mermaid render failed:', error instanceof Error ? error.message : error);
           // Create error SVG to display instead of silently failing
-          const errorMessage = error instanceof Error ? error.message : 'Rendering failed';
+          // Extract meaningful error message
+          let errorMessage = 'Rendering failed';
+          if (error instanceof Error) {
+            errorMessage = error.message || error.toString() || 'Rendering failed';
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          } else {
+            errorMessage = String(error) || 'Rendering failed';
+          }
+          // Ensure we have a non-empty error message
+          if (!errorMessage || errorMessage.trim().length === 0) {
+            errorMessage = 'Unknown rendering error occurred';
+          }
           const errorSvg = createErrorSvg(
             errorMessage,
             Math.max(400, numLines * 20), // Width based on numLines

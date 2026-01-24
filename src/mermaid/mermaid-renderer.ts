@@ -112,8 +112,16 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
         // Send SVG string back with requestId to match to correct pending render
         vscode.postMessage({ svg, requestId });
       } catch (error) {
-        // Send error message back with requestId
-        vscode.postMessage({ error: error.message || 'Unknown error', requestId });
+        // Send detailed error information back with requestId
+        const errorInfo = {
+          message: error?.message || 'Unknown error',
+          name: error?.name || 'Error',
+          stack: error?.stack || '',
+          toString: error?.toString?.() || String(error)
+        };
+        // Include full error details - prioritize message, fallback to toString
+        const errorMessage = errorInfo.message || errorInfo.toString || 'Unknown error occurred';
+        vscode.postMessage({ error: errorMessage, requestId });
       }
     });
     
@@ -397,44 +405,52 @@ export function createErrorSvg(errorMessage: string, width: number, height: numb
   const borderColor = isDark ? '#ff6b6b' : '#d32f2f';
   const secondaryTextColor = isDark ? '#cccccc' : '#666666';
   
-  // Truncate error message if too long
-  const maxMessageLength = 80;
-  const displayMessage = errorMessage.length > maxMessageLength 
-    ? errorMessage.substring(0, maxMessageLength) + '...'
-    : errorMessage;
-  
-  // Split long messages into multiple lines
-  const words = displayMessage.split(' ');
+  // Use the full error message - don't truncate aggressively
+  // Split into lines that fit within the SVG width
+  const maxLineLength = Math.floor((width - 80) / 7); // Approximate chars per line based on font size
+  const words = errorMessage.split(/\s+/);
   const lines: string[] = [];
   let currentLine = '';
-  const maxLineLength = 50;
   
   for (const word of words) {
-    if ((currentLine + ' ' + word).length > maxLineLength && currentLine.length > 0) {
+    const testLine = currentLine ? currentLine + ' ' + word : word;
+    if (testLine.length > maxLineLength && currentLine.length > 0) {
       lines.push(currentLine);
       currentLine = word;
     } else {
-      currentLine = currentLine ? currentLine + ' ' + word : word;
+      currentLine = testLine;
     }
   }
   if (currentLine) {
     lines.push(currentLine);
   }
   
-  const lineHeight = 20;
+  // Limit to reasonable number of lines to fit in height
+  const maxLines = Math.floor((height - 100) / 18); // 18px line height
+  const displayLines = lines.slice(0, maxLines);
+  if (lines.length > maxLines) {
+    displayLines.push('... (error message truncated)');
+  }
+  
+  const lineHeight = 18;
   const padding = 20;
   const iconSize = 40;
-  const textY = padding + iconSize + 15;
-  const textLines = lines.map((line, i) => 
-    `<tspan x="${padding + iconSize + 15}" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
+  const titleY = padding + iconSize + 15;
+  const messageStartY = titleY + 25;
+  
+  const textLines = displayLines.map((line, i) => 
+    `<tspan x="${padding}" dy="${i === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
   ).join('');
   
-  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-  <rect width="${width}" height="${height}" fill="${bgColor}" stroke="${borderColor}" stroke-width="2" rx="4"/>
+  // Calculate actual height needed based on content
+  const contentHeight = Math.max(height, padding * 2 + iconSize + 25 + (displayLines.length * lineHeight));
+  
+  return `<svg width="${width}" height="${contentHeight}" xmlns="http://www.w3.org/2000/svg">
+  <rect width="${width}" height="${contentHeight}" fill="${bgColor}" stroke="${borderColor}" stroke-width="2" rx="4"/>
   <circle cx="${padding + iconSize / 2}" cy="${padding + iconSize / 2}" r="${iconSize / 2}" fill="${borderColor}" opacity="0.2"/>
   <text x="${padding + iconSize / 2}" y="${padding + iconSize / 2 + 5}" font-family="Arial, sans-serif" font-size="24" fill="${borderColor}" text-anchor="middle" font-weight="bold">⚠</text>
-  <text x="${padding + iconSize + 15}" y="${textY}" font-family="Arial, sans-serif" font-size="14" fill="${textColor}" font-weight="bold">Mermaid Rendering Error</text>
-  <text x="${padding + iconSize + 15}" y="${textY + lineHeight}" font-family="Arial, sans-serif" font-size="12" fill="${secondaryTextColor}">
+  <text x="${padding + iconSize + 15}" y="${titleY}" font-family="Arial, sans-serif" font-size="14" fill="${textColor}" font-weight="bold">Mermaid Rendering Error</text>
+  <text x="${padding}" y="${messageStartY}" font-family="monospace, Arial, sans-serif" font-size="11" fill="${secondaryTextColor}">
     ${textLines}
   </text>
 </svg>`;
