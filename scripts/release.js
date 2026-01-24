@@ -55,7 +55,8 @@ try {
   // Check if git-cliff is available
   log("🔍 Checking git-cliff availability...");
   try {
-    run("npx git-cliff --version", { stdio: "ignore" });
+    // Try npx first (will use local node_modules/.bin if available)
+    run("npx --yes git-cliff --version", { stdio: "pipe" });
   } catch (err) {
     throw new Error(
       "git-cliff is not available. Run 'npm install' to install dev dependencies, or install globally with: npm install -g git-cliff",
