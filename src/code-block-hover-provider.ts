@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { mapNormalizedToOriginal } from './position-mapping';
 import { shouldSkipInDiffView } from './diff-context';
 import { MarkdownParseCache } from './markdown-parse-cache';
-import { renderMermaidSvgNatural, svgToDataUri, createErrorSvg } from './mermaid/mermaid-renderer';
+import { renderMermaidSvgNatural, createErrorSvg } from './mermaid/mermaid-renderer';
 import * as cheerio from 'cheerio';
 
 /**
@@ -30,7 +30,8 @@ const DEFAULT_HOVER_CONFIG: CodeBlockHoverConfig = {
  * Result of a code block hover handler
  */
 interface CodeBlockHoverResult {
-  dataUri: string;
+  dataUri?: string;
+  html?: string;
   width: number;
   height: number;
 }
@@ -40,13 +41,46 @@ interface CodeBlockHoverResult {
  * @param source - The source code from the code block
  * @param language - The language identifier (e.g., 'mermaid', 'latex')
  * @param config - Hover configuration
+ * @param cancellationToken - Optional cancellation token for hover requests
  * @returns Promise resolving to hover result with data URI and dimensions, or undefined if not supported
  */
 type CodeBlockHoverHandler = (
   source: string,
   language: string,
-  config: CodeBlockHoverConfig
+  config: CodeBlockHoverConfig,
+  cancellationToken?: vscode.CancellationToken
 ) => Promise<CodeBlockHoverResult | undefined>;
+
+/**
+ * Ensure SVG has explicit width and height attributes for proper display
+ * Some Mermaid diagrams (especially state diagrams) may have percentage-based
+ * or missing dimensions that need to be set explicitly
+ */
+function ensureSvgDimensions(svgString: string, width: number, height: number): string {
+  const $ = cheerio.load(svgString, { xmlMode: true });
+  const svgNode = $('svg').first();
+  
+  if (svgNode.length === 0) {
+    return svgString;
+  }
+  
+  // Set explicit pixel-based dimensions
+  svgNode.attr('width', `${width}px`);
+  svgNode.attr('height', `${height}px`);
+  
+  // Ensure viewBox exists if it doesn't, using the calculated dimensions
+  if (!svgNode.attr('viewBox')) {
+    svgNode.attr('viewBox', `0 0 ${width} ${height}`);
+  }
+  
+  // Remove any percentage-based width that might interfere
+  const currentWidth = svgNode.attr('width');
+  if (currentWidth && currentWidth.includes('%')) {
+    svgNode.attr('width', `${width}px`);
+  }
+  
+  return svgNode.toString();
+}
 
 /**
  * Generic hover provider for code blocks with special rendering (Mermaid, LaTeX, etc.)
@@ -80,8 +114,9 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
   private async handleMermaidHover(
     source: string,
     language: string,
-    config: CodeBlockHoverConfig
-  ): Promise<{ dataUri: string; width: number; height: number } | undefined> {
+    config: CodeBlockHoverConfig,
+    cancellationToken?: vscode.CancellationToken
+  ): Promise<CodeBlockHoverResult | undefined> {
     try {
       const theme = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark ||
         vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrast
@@ -91,10 +126,11 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
       const fontFamily = vscode.workspace.getConfiguration('editor').get<string>('fontFamily');
       
       // Render at natural size first to get actual diagram dimensions
+      // Pass cancellation token for shorter timeout (5 seconds) to match VS Code hover timeout
       const naturalSvg = await renderMermaidSvgNatural(source, {
         theme,
         fontFamily,
-      });
+      }, cancellationToken);
 
       // Parse natural SVG to get actual dimensions
       const $ = cheerio.load(naturalSvg, { xmlMode: true });
@@ -106,22 +142,64 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
 
       // Get SVG dimensions from natural render
       // Try to get width/height from attributes, or viewBox
-      let svgWidth = parseFloat(svgNode.attr('width') || '0');
-      let svgHeight = parseFloat(svgNode.attr('height') || '0');
+      const widthAttr = svgNode.attr('width') || '0';
+      const heightAttr = svgNode.attr('height') || '0';
       
-      // If no explicit width/height, try viewBox
+      // Handle percentage-based dimensions (Mermaid often uses width="100%")
+      let svgWidth = widthAttr === '100%' ? 0 : parseFloat(widthAttr) || 0;
+      let svgHeight = parseFloat(heightAttr) || 0;
+      
+      // If no explicit width/height, try viewBox (most reliable source)
       if ((svgWidth === 0 || svgHeight === 0) && svgNode.attr('viewBox')) {
         const viewBox = svgNode.attr('viewBox')!.split(/\s+/);
         if (viewBox.length >= 4) {
-          svgWidth = parseFloat(viewBox[2]) || svgWidth;
-          svgHeight = parseFloat(viewBox[3]) || svgHeight;
+          const viewBoxWidth = parseFloat(viewBox[2]) || 0;
+          const viewBoxHeight = parseFloat(viewBox[3]) || 0;
+          if (svgWidth === 0 && viewBoxWidth > 0) {
+            svgWidth = viewBoxWidth;
+          }
+          if (svgHeight === 0 && viewBoxHeight > 0) {
+            svgHeight = viewBoxHeight;
+          }
         }
       }
 
-      // If still no dimensions, use a reasonable default
+      // If still no dimensions, try to get from SVG content bounds
+      // This is a fallback for diagrams that don't set explicit dimensions
       if (svgWidth === 0 || svgHeight === 0) {
-        svgWidth = 800;
-        svgHeight = 600;
+        // Try to find the actual content bounds by looking for the main group
+        const mainGroup = svgNode.find('g').first();
+        if (mainGroup.length > 0) {
+          // For state diagrams and other diagrams, the main group might have bounds
+          // If viewBox exists, use it as the most reliable source
+          const viewBox = svgNode.attr('viewBox');
+          if (viewBox) {
+            const viewBoxParts = viewBox.split(/\s+/);
+            if (viewBoxParts.length >= 4) {
+              const viewBoxWidth = parseFloat(viewBoxParts[2]) || 0;
+              const viewBoxHeight = parseFloat(viewBoxParts[3]) || 0;
+              if (svgWidth === 0 && viewBoxWidth > 0) {
+                svgWidth = viewBoxWidth;
+              }
+              if (svgHeight === 0 && viewBoxHeight > 0) {
+                svgHeight = viewBoxHeight;
+              }
+            }
+          }
+        }
+      }
+
+      // Final fallback: use reasonable defaults based on diagram type
+      if (svgWidth === 0 || svgHeight === 0) {
+        // For state diagrams, they're often more compact, so use smaller defaults
+        const isStateDiagram = source.trim().toLowerCase().startsWith('statediagram');
+        if (isStateDiagram) {
+          svgWidth = svgWidth === 0 ? 600 : svgWidth;
+          svgHeight = svgHeight === 0 ? 400 : svgHeight;
+        } else {
+          svgWidth = svgWidth === 0 ? 800 : svgWidth;
+          svgHeight = svgHeight === 0 ? 600 : svgHeight;
+        }
       }
 
       // Use natural dimensions for hover - adapt dialog size to content
@@ -159,9 +237,12 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
         hoverWidth = hoverHeight * aspectRatio;
       }
 
-      // Use the natural SVG for display (it's already at the right size)
+      // Ensure SVG has explicit dimensions for proper display in hover
+      // Some diagrams (like state diagrams) may have percentage-based or missing dimensions
+      const processedSvg = ensureSvgDimensions(naturalSvg, hoverWidth, hoverHeight);
+      
       return {
-        dataUri: svgToDataUri(naturalSvg),
+        html: processedSvg,
         width: Math.round(hoverWidth),
         height: Math.round(hoverHeight),
       };
@@ -178,7 +259,7 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
         isDark
       );
       return {
-        dataUri: svgToDataUri(errorSvg),
+        html: ensureSvgDimensions(errorSvg, config.maxWidth, Math.min(config.maxHeight, 300)),
         width: config.maxWidth,
         height: Math.min(config.maxHeight, 300),
       };
@@ -336,19 +417,30 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
     }
 
     try {
-      const result = await handler(source, language, this.hoverConfig);
+      const result = await handler(source, language, this.hoverConfig, token);
       if (!result || token.isCancellationRequested) {
         return undefined;
       }
 
       // Create hover with explicit large size (override any SVG max-width constraints)
-      const escapedUri = escapeHtmlAttribute(result.dataUri);
-      const markdown = new vscode.MarkdownString(
-        `<img src="${escapedUri}" width="${result.width}" height="${result.height}" style="width: ${result.width}px; height: ${result.height}px; max-width: ${result.width}px; max-height: ${result.height}px;" />`
-      );
-      markdown.appendMarkdown(`\n\n*${language} diagram preview*`);
+      // Note: supportHtml and isTrusted must be set before adding HTML content
+      const markdown = new vscode.MarkdownString();
       markdown.supportHtml = true;
-      markdown.isTrusted = true; // Data URIs are safe
+      markdown.isTrusted = true; // SVGs are safe
+      
+      if (result.html) {
+        // Embed SVG directly to avoid data URI truncation in hover
+        markdown.appendMarkdown(result.html);
+      } else if (result.dataUri) {
+        // Only escape quotes in data URI (data URI is already encoded, don't escape &, <, >)
+        const escapedUri = escapeHtmlAttribute(result.dataUri);
+        markdown.appendMarkdown(
+          `<img src="${escapedUri}" width="${result.width}" height="${result.height}" style="width: ${result.width}px; height: ${result.height}px; max-width: ${result.width}px; max-height: ${result.height}px;" />`
+        );
+      } else {
+        return undefined;
+      }
+      markdown.appendMarkdown(`\n\n*${language} diagram preview*`);
 
       // Expand hover range to full line(s) for better UX
       // This makes it easier to trigger hover and includes the indicator area
@@ -369,8 +461,5 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
 
 function escapeHtmlAttribute(value: string): string {
   return value
-    .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
 }

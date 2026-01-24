@@ -1,9 +1,6 @@
 import * as vscode from 'vscode';
 import { ColorThemeKind } from 'vscode';
 import * as cheerio from 'cheerio';
-import * as fs from 'fs';
-import * as path from 'path';
-import { createHash } from 'crypto';
 
 type MermaidRenderOptions = {
   theme: 'default' | 'dark';
@@ -15,15 +12,24 @@ let webviewView: vscode.WebviewView | undefined;
 let webviewLoaded: Promise<void>;
 let resolveWebviewLoaded: (() => void) | undefined;
 // Track pending render requests to handle concurrent renders (hover + decoration)
-// Key: requestId, Value: { resolve, reject }
-const pendingRenders = new Map<string, { resolve: (svg: string) => void; reject: (error: Error) => void }>();
+// Key: requestId, Value: { resolve, reject, timeoutId }
+const pendingRenders = new Map<string, { 
+  resolve: (svg: string) => void; 
+  reject: (error: Error) => void;
+  timeoutId: NodeJS.Timeout;
+}>();
 let renderRequestCounter = 0;
 
 // Memoization cache for decorations
 const decorationCache = new Map<string, Promise<string>>();
 
-// Store most recent layout metrics for gantt verification (included in saved HTML)
-let lastGanttLayoutMetrics: any = null;
+// Store disposables for cleanup
+let messageHandlerDisposable: vscode.Disposable | undefined;
+let initTimeoutId: NodeJS.Timeout | undefined;
+
+// Request timeout (30 seconds)
+const REQUEST_TIMEOUT_MS = 30000;
+
 
 function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): string {
   // Use local Mermaid bundle (no internet required)
@@ -51,75 +57,18 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
       return firstNonEmptyLine.split(/\\s+/)[0] || 'unknown';
     }
 
-    function measureLayout() {
-      // We log multiple metrics because different ones can be 0 depending on visibility/layout.
-      const bodyRect = document.body ? document.body.getBoundingClientRect() : null;
-      const docElRect = document.documentElement ? document.documentElement.getBoundingClientRect() : null;
-
-      // Create an offscreen container with explicit width to test whether layout width is available.
-      const probe = document.createElement('div');
-      probe.id = 'mdInline-mermaid-width-probe';
-      probe.style.position = 'absolute';
-      probe.style.left = '-10000px';
-      probe.style.top = '0';
-      probe.style.width = '2000px';
-      probe.style.height = '1px';
-      probe.style.visibility = 'hidden';
-      document.body?.appendChild(probe);
-      const probeRect = probe.getBoundingClientRect();
-      probe.remove();
-
-      return {
-        visibilityState: document.visibilityState,
-        hidden: document.hidden,
-        windowInnerWidth: window.innerWidth,
-        windowInnerHeight: window.innerHeight,
-        documentElementClientWidth: document.documentElement?.clientWidth ?? null,
-        documentElementClientHeight: document.documentElement?.clientHeight ?? null,
-        bodyClientWidth: document.body?.clientWidth ?? null,
-        bodyClientHeight: document.body?.clientHeight ?? null,
-        bodyRectWidth: bodyRect ? bodyRect.width : null,
-        bodyRectHeight: bodyRect ? bodyRect.height : null,
-        documentElementRectWidth: docElRect ? docElRect.width : null,
-        documentElementRectHeight: docElRect ? docElRect.height : null,
-        probeRectWidth: probeRect.width,
-        probeRectHeight: probeRect.height,
-      };
-    }
     
     window.addEventListener('message', async (event) => {
       const data = event.data;
       
       if (!data || !data.source) {
-        console.warn('[Mermaid Renderer] Invalid message received:', data);
         return;
       }
 
       const requestId = data.requestId;
       const diagramType = getDiagramType(data.source);
       
-      console.log('[Mermaid Renderer] Received render request:', {
-        sourceLength: data.source?.length || 0,
-        sourcePreview: data.source?.substring(0, 100) + (data.source && data.source.length > 100 ? '...' : ''),
-        diagramType,
-        darkMode: data.darkMode,
-        fontFamily: data.fontFamily,
-      });
-      
       try {
-        // Verification log: gantt rendering depends on available layout width.
-        // If the webview is effectively "layout-hidden" the width can be 0, producing broken gantt SVGs.
-        if (diagramType === 'gantt') {
-          const layout = measureLayout();
-          console.log('[Mermaid Renderer] Gantt layout metrics (pre-render):', layout);
-          vscode.postMessage({
-            debug: {
-              kind: 'gantt-layout-pre-render',
-              layout,
-            },
-          });
-        }
-
         // Initialize Mermaid with theme and font settings
         mermaid.initialize({
           theme: data.darkMode ? 'dark' : 'default',
@@ -127,8 +76,6 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
           startOnLoad: false,
           securityLevel: 'strict',
         });
-        
-        console.log('[Mermaid Renderer] Starting render...');
         // Render the diagram - Mermaid v11 returns { svg } from render()
         // Gantt depends on parentElement.offsetWidth; when webview layout width is 0,
         // create a hidden container with explicit width to give Mermaid a real layout width.
@@ -162,29 +109,15 @@ function getWebviewContent(webview: vscode.Webview, extensionUri: vscode.Uri): s
           }
         }
         
-        console.log('[Mermaid Renderer] Render successful:', {
-          svgLength: svg.length,
-          svgPreview: svg.substring(0, 200) + (svg.length > 200 ? '...' : ''),
-        });
-        
-        // Print full SVG to console for debugging
-        console.log('[Mermaid Renderer] Full SVG from mermaid.render():', svg);
-        
         // Send SVG string back with requestId to match to correct pending render
         vscode.postMessage({ svg, requestId });
       } catch (error) {
-        console.error('[Mermaid Renderer] Render error:', {
-          error: error.message || 'Unknown error',
-          stack: error.stack,
-          sourcePreview: data.source?.substring(0, 200) + (data.source && data.source.length > 200 ? '...' : ''),
-        });
         // Send error message back with requestId
         vscode.postMessage({ error: error.message || 'Unknown error', requestId });
       }
     });
     
     // Signal ready after mermaid is loaded
-    console.log('[Mermaid Renderer] Webview ready, Mermaid loaded');
     vscode.postMessage({ ready: true });
   </script>
 </body>
@@ -195,11 +128,12 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'mdInline.mermaidRenderer';
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
-    console.log('[Mermaid Renderer] Resolving webview view');
     if (!extensionContext) {
-      console.error('[Mermaid Renderer] Extension context not available');
       return;
     }
+    
+    // Dispose previous message handler if exists (prevent memory leak on webview recreation)
+    messageHandlerDisposable?.dispose();
     
     // Configure webview to allow access to local assets
     webviewView.webview.options = {
@@ -218,30 +152,19 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
     // Don't wait for "ready" message - the webview is ready when it's created
     resolveWebviewLoaded?.();
 
-    // Handle messages from the webview
-    webviewView.webview.onDidReceiveMessage((message) => {
+    // Handle messages from the webview - store disposable for cleanup
+    messageHandlerDisposable = webviewView.webview.onDidReceiveMessage((message) => {
       // Ignore "ready" messages - we don't need them anymore
       if (message && message.ready) {
-        console.log('[Mermaid Renderer] Webview signaled ready (ignored, already resolved)');
-        return;
-      }
-
-      // Debug/verification messages from the webview (do not resolve the render promise)
-      if (message && typeof message === 'object' && message.debug) {
-        console.log('[Mermaid Renderer] Webview debug:', message.debug);
-        
-        // Store layout metrics for gantt charts (for verification in saved HTML)
-        if (message.debug.kind === 'gantt-layout-pre-render' && message.debug.layout) {
-          lastGanttLayoutMetrics = message.debug.layout;
-        }
         return;
       }
 
       if (message && message.error) {
-        console.error('[Mermaid Renderer] Render failed:', message.error);
         const requestId = message.requestId;
         if (requestId && pendingRenders.has(requestId)) {
-          const { resolve } = pendingRenders.get(requestId)!;
+          const { resolve, timeoutId } = pendingRenders.get(requestId)!;
+          // Clear timeout since we're handling the error
+          clearTimeout(timeoutId);
           // Create a proper error SVG - height will be adjusted in getMermaidDecoration
           const isDark = vscode.window.activeColorTheme.kind === ColorThemeKind.Dark ||
             vscode.window.activeColorTheme.kind === ColorThemeKind.HighContrast;
@@ -259,17 +182,10 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
 
       // Handle SVG response (with requestId) or legacy string format
       if (message && message.requestId && pendingRenders.has(message.requestId)) {
-        const { resolve } = pendingRenders.get(message.requestId)!;
+        const { resolve, timeoutId } = pendingRenders.get(message.requestId)!;
+        // Clear timeout since we received the response
+        clearTimeout(timeoutId);
         const svg = message.svg || message; // Support both object and string format
-        console.log('[Mermaid Renderer] Received SVG:', {
-          requestId: message.requestId,
-          svgLength: typeof svg === 'string' ? svg.length : 0,
-          svgPreview: typeof svg === 'string' ? (svg.substring(0, 200) + (svg.length > 200 ? '...' : '')) : 'object',
-        });
-        // Print full SVG to console for debugging
-        if (typeof svg === 'string') {
-          console.log('[Mermaid Renderer] Full SVG received from webview:', svg);
-        }
         resolve(svg);
         pendingRenders.delete(message.requestId);
         return;
@@ -279,15 +195,10 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
       if (typeof message === 'string') {
         // If there's only one pending render, use it (backwards compatibility)
         if (pendingRenders.size === 1) {
-          const [requestId, { resolve }] = Array.from(pendingRenders.entries())[0];
-          console.log('[Mermaid Renderer] Received legacy SVG string (no requestId):', {
-            svgLength: message.length,
-            svgPreview: message.substring(0, 200) + (message.length > 200 ? '...' : ''),
-          });
+          const [requestId, { resolve, timeoutId }] = Array.from(pendingRenders.entries())[0];
+          clearTimeout(timeoutId);
           resolve(message);
           pendingRenders.delete(requestId);
-        } else {
-          console.warn('[Mermaid Renderer] Received SVG string but multiple pending renders, cannot match');
         }
       }
     }, null, []);
@@ -301,7 +212,6 @@ function setWebviewView(view: vscode.WebviewView): void {
 let extensionContext: vscode.ExtensionContext | undefined;
 
 export function initMermaidRenderer(context: vscode.ExtensionContext): void {
-  console.log('[Mermaid Renderer] Initializing Mermaid renderer');
   extensionContext = context;
 
   // Initialize the webview loaded promise
@@ -324,15 +234,29 @@ export function initMermaidRenderer(context: vscode.ExtensionContext): void {
   vscode.commands.executeCommand('mdInline.mermaidRenderer.focus')
     .then(() => {
       // Switch back to explorer after a brief moment
-      setTimeout(() => {
+      // Store timeout ID for cleanup
+      initTimeoutId = setTimeout(() => {
         vscode.commands.executeCommand('workbench.view.explorer');
+        initTimeoutId = undefined;
       }, 100);
     });
-  
-  console.log('[Mermaid Renderer] Webview view provider registered');
 }
 
 function requestSvg(data: { source: string; darkMode: boolean; fontFamily?: string }): Promise<string> {
+  return requestSvgWithTimeout(data, REQUEST_TIMEOUT_MS);
+}
+
+/**
+ * Request SVG with configurable timeout and optional cancellation token
+ * @param data - Render request data
+ * @param timeoutMs - Timeout in milliseconds
+ * @param cancellationToken - Optional cancellation token (for hover requests)
+ */
+function requestSvgWithTimeout(
+  data: { source: string; darkMode: boolean; fontFamily?: string },
+  timeoutMs: number,
+  cancellationToken?: vscode.CancellationToken
+): Promise<string> {
   if (!webviewView) {
     throw new Error('Webview not available');
   }
@@ -348,13 +272,62 @@ function requestSvg(data: { source: string; darkMode: boolean; fontFamily?: stri
       return;
     }
     
-    // Store resolve/reject in Map with requestId
-    pendingRenders.set(requestId, { resolve, reject });
+    // Check cancellation token before starting
+    if (cancellationToken?.isCancellationRequested) {
+      reject(new vscode.CancellationError());
+      return;
+    }
+    
+    // Set up cancellation listener if token provided
+    let cancellationListener: vscode.Disposable | undefined;
+    if (cancellationToken) {
+      cancellationListener = cancellationToken.onCancellationRequested(() => {
+        if (pendingRenders.has(requestId)) {
+          const { timeoutId } = pendingRenders.get(requestId)!;
+          clearTimeout(timeoutId);
+          pendingRenders.delete(requestId);
+          cancellationListener?.dispose();
+          reject(new vscode.CancellationError());
+        }
+      });
+    }
+    
+    // Set up timeout to prevent promise leaks from failed requests
+    const timeoutId = setTimeout(() => {
+      if (pendingRenders.has(requestId)) {
+        pendingRenders.delete(requestId);
+        cancellationListener?.dispose();
+        reject(new Error('Mermaid render request timed out'));
+      }
+    }, timeoutMs);
+    
+    // Wrap resolve/reject to clear timeout and cancellation listener
+    const wrappedResolve = (value: string) => {
+      clearTimeout(timeoutId);
+      cancellationListener?.dispose();
+      resolve(value);
+    };
+    
+    const wrappedReject = (error: Error) => {
+      clearTimeout(timeoutId);
+      cancellationListener?.dispose();
+      reject(error);
+    };
+    
+    // Store resolve/reject with timeout ID in Map
+    pendingRenders.set(requestId, { 
+      resolve: wrappedResolve, 
+      reject: wrappedReject,
+      timeoutId 
+    });
 
     try {
       // Include requestId in message so webview can send it back
       webviewView.webview.postMessage({ ...data, requestId });
     } catch (error) {
+      // Clean up on error
+      clearTimeout(timeoutId);
+      cancellationListener?.dispose();
       pendingRenders.delete(requestId);
       reject(error);
     }
@@ -364,10 +337,14 @@ function requestSvg(data: { source: string; darkMode: boolean; fontFamily?: stri
 /**
  * Render Mermaid SVG at natural size (without height constraints)
  * Used to get actual diagram dimensions for hover sizing
+ * @param source - Mermaid diagram source code
+ * @param options - Rendering options including theme and fontFamily
+ * @param cancellationToken - Optional cancellation token for hover requests (shorter timeout)
  */
 export async function renderMermaidSvgNatural(
   source: string,
-  options: { theme: 'default' | 'dark'; fontFamily?: string }
+  options: { theme: 'default' | 'dark'; fontFamily?: string },
+  cancellationToken?: vscode.CancellationToken
 ): Promise<string> {
   if (!extensionContext) {
     throw new Error('Mermaid renderer not initialized. Call initMermaidRenderer first.');
@@ -381,11 +358,26 @@ export async function renderMermaidSvgNatural(
 
   const darkMode = options.theme === 'dark';
   
-  // Request SVG without processing (get natural dimensions)
-  const svgString = await requestSvg({ source, darkMode, fontFamily: options.fontFamily });
+  // Check cancellation before starting expensive operation
+  if (cancellationToken?.isCancellationRequested) {
+    throw new vscode.CancellationError();
+  }
   
-  // Print full SVG to console for debugging
-  console.log('[Mermaid Renderer] Full SVG from renderMermaidSvgNatural:', svgString);
+  // Use shorter timeout for hover requests (5 seconds) to match VS Code's hover timeout
+  // Regular requests use the default 30-second timeout
+  const timeoutMs = cancellationToken ? 5000 : REQUEST_TIMEOUT_MS;
+  
+  // Request SVG without processing (get natural dimensions)
+  const svgString = await requestSvgWithTimeout(
+    { source, darkMode, fontFamily: options.fontFamily },
+    timeoutMs,
+    cancellationToken
+  );
+  
+  // Check cancellation again after await (in case it was cancelled during the request)
+  if (cancellationToken?.isCancellationRequested) {
+    throw new vscode.CancellationError();
+  }
   
   // Return raw SVG without height processing
   return svgString;
@@ -469,7 +461,6 @@ function processSvg(svgString: string, height: number): string {
   const svgNode = $('svg').first();
   
   if (svgNode.length === 0) {
-    console.warn('[Mermaid Renderer] No SVG element found in rendered output');
     return svgString;
   }
 
@@ -531,12 +522,6 @@ function processSvg(svgString: string, height: number): string {
         // Remove percentage-based width and set explicit pixel value
         svgNode.attr('width', `${fixedWidth}`);
         
-        console.log('[Mermaid Renderer] Fixed invalid viewBox:', {
-          original: currentViewBox,
-          fixed: fixedViewBox,
-          preservedOrigin: `${viewBoxMinX}, ${viewBoxMinY}`,
-          fixedWidth,
-        });
       }
     }
   }
@@ -582,7 +567,6 @@ function processSvg(svgString: string, height: number): string {
     if (!aspectRatio) {
       aspectRatio = calculatedWidth / height;
     }
-    console.warn('[Mermaid Renderer] Invalid dimensions, using fallback width:', calculatedWidth);
   }
 
   // Set explicit width and height attributes to maintain aspect ratio
@@ -604,19 +588,6 @@ function processSvg(svgString: string, height: number): string {
   // Extract only the SVG element, not the full HTML document
   // Use toString() to get the SVG element with its attributes (like Markless)
   const processedSvg = svgNode.toString();
-  
-  console.log('[Mermaid Renderer] Processed SVG:', {
-    originalHeight,
-    originalWidth,
-    viewBox: svgNode.attr('viewBox') || 'none',
-    aspectRatio: aspectRatio ? aspectRatio.toFixed(2) : 'N/A',
-    calculatedWidth,
-    newHeight: height,
-    processedLength: processedSvg.length,
-  });
-  
-  // Print full processed SVG to console for debugging
-  console.log('[Mermaid Renderer] Full processed SVG:', processedSvg);
 
   return processedSvg;
 }
@@ -624,17 +595,17 @@ function processSvg(svgString: string, height: number): string {
 /**
  * Memoized function to get Mermaid decoration
  * Caches based on source, theme, fontFamily, and height
+ * Uses the global decorationCache to avoid creating unbounded caches
  */
 function memoizeMermaidDecoration(
   func: (source: string, darkMode: boolean, height: number, fontFamily?: string) => Promise<string>
 ): (source: string, darkMode: boolean, height: number, fontFamily?: string) => Promise<string> {
-  const cache = new Map<string, Promise<string>>();
   return (source: string, darkMode: boolean, height: number, fontFamily?: string): Promise<string> => {
     const key = `${source}|${darkMode}|${height}|${fontFamily ?? ''}`;
-    if (!cache.has(key)) {
-      cache.set(key, func(source, darkMode, height, fontFamily));
+    if (!decorationCache.has(key)) {
+      decorationCache.set(key, func(source, darkMode, height, fontFamily));
     }
-    return cache.get(key)!;
+    return decorationCache.get(key)!;
   };
 }
 
@@ -645,14 +616,6 @@ const getMermaidDecoration = memoizeMermaidDecoration(async (
   fontFamily?: string
 ): Promise<string> => {
   await webviewLoaded;
-  
-  console.log('[Mermaid Renderer] Requesting SVG render:', {
-    sourceLength: source.length,
-    sourcePreview: source.substring(0, 100) + (source.length > 100 ? '...' : ''),
-    darkMode,
-    height,
-    fontFamily,
-  });
 
   const svgString = await requestSvg({ source, darkMode, fontFamily });
   
@@ -665,14 +628,10 @@ const getMermaidDecoration = memoizeMermaidDecoration(async (
       height,
       darkMode
     );
-    console.log('[Mermaid Renderer] Full error SVG:', errorSvg);
     return errorSvg;
   }
   
   const processedSvg = processSvg(svgString, height);
-  
-  // Print final SVG that will be returned
-  console.log('[Mermaid Renderer] Final SVG returned from getMermaidDecoration:', processedSvg);
   
   return processedSvg;
 });
@@ -727,168 +686,40 @@ export async function renderMermaidSvg(
   const numLines = options.numLines || 5;
   const height = options.height || ((numLines + 2) * lineHeight);
 
-  console.log('[Mermaid Renderer] Rendering Mermaid diagram:', {
-    sourceLength: source.length,
-    theme: options.theme,
-    fontFamily: options.fontFamily,
-    numLines,
-    height,
-    lineHeight,
-  });
-
   return getMermaidDecoration(source, darkMode, height, options.fontFamily);
 }
 
 export function svgToDataUri(svg: string): string {
-  const base64 = Buffer.from(svg).toString('base64');
-  return `data:image/svg+xml;base64,${base64}`;
+  // Use URL encoding instead of base64 for SVG data URIs
+  // URL encoding is typically shorter for SVG content and avoids truncation issues
+  // in VS Code's MarkdownString which may have size limits
+  const encoded = encodeURIComponent(svg);
+  return `data:image/svg+xml;charset=utf-8,${encoded}`;
 }
 
-/**
- * Save SVG to an HTML file for verification (only for gantt charts)
- * @param svg - The SVG string to save
- * @param source - The original mermaid source code
- * @param theme - The theme used ('default' or 'dark')
- */
-export function saveSvgToHtml(svg: string, source: string, theme: 'default' | 'dark'): void {
-  // Only save HTML files for gantt charts
-  const trimmedSource = source.trim();
-  if (!trimmedSource.toLowerCase().startsWith('gantt')) {
-    return;
-  }
-  try {
-    if (!extensionContext) {
-      console.warn('[Mermaid Renderer] Cannot save HTML: extension context not available');
-      return;
-    }
-
-    // Get workspace folder
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (!workspaceFolders || workspaceFolders.length === 0) {
-      console.warn('[Mermaid Renderer] Cannot save HTML: no workspace folder');
-      return;
-    }
-
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-    const outputDir = path.join(workspaceRoot, 'docs', 'uat', 'mermaid');
-    
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-
-    // Generate a unique filename based on source hash
-    const sourceHash = createHash('sha256').update(source).digest('hex').substring(0, 8);
-    const timestamp = Date.now();
-    const filename = `mermaid-${sourceHash}-${timestamp}.html`;
-    const filePath = path.join(outputDir, filename);
-
-    // Create HTML content
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mermaid Chart - ${sourceHash}</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: ${theme === 'dark' ? '#1e1e1e' : '#ffffff'};
-      color: ${theme === 'dark' ? '#cccccc' : '#333333'};
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .source-code {
-      margin-bottom: 20px;
-      padding: 15px;
-      background-color: ${theme === 'dark' ? '#2d2d2d' : '#f5f5f5'};
-      border-radius: 4px;
-      border: 1px solid ${theme === 'dark' ? '#444' : '#ddd'};
-    }
-    .source-code h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .source-code pre {
-      margin: 0;
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .svg-container {
-      text-align: center;
-      padding: 20px;
-      background-color: ${theme === 'dark' ? '#252526' : '#ffffff'};
-      border-radius: 4px;
-      border: 1px solid ${theme === 'dark' ? '#444' : '#ddd'};
-    }
-    .svg-container svg {
-      max-width: 100%;
-      height: auto;
-    }
-    .info {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: ${theme === 'dark' ? '#2d2d2d' : '#f5f5f5'};
-      border-radius: 4px;
-      font-size: 12px;
-      color: ${theme === 'dark' ? '#999' : '#666'};
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Mermaid Chart Rendering</h1>
-    
-    <div class="source-code">
-      <h3>Source Code:</h3>
-      <pre>${escapeHtml(source)}</pre>
-    </div>
-    
-    <div class="svg-container">
-      ${svg}
-    </div>
-    
-    <div class="info">
-      <strong>Theme:</strong> ${theme}<br>
-      <strong>Generated:</strong> ${new Date().toISOString()}<br>
-      <strong>Hash:</strong> ${sourceHash}${lastGanttLayoutMetrics ? `<br><br><strong>Layout Metrics (Pre-Render):</strong><br><pre style="font-size: 11px; overflow-x: auto; white-space: pre-wrap;">${escapeHtml(JSON.stringify(lastGanttLayoutMetrics, null, 2))}</pre>` : ''}
-    </div>
-  </div>
-</body>
-</html>`;
-
-    // Write file
-    fs.writeFileSync(filePath, htmlContent, 'utf8');
-    console.log(`[Mermaid Renderer] Saved HTML to: ${filePath}`);
-  } catch (error) {
-    console.error('[Mermaid Renderer] Failed to save HTML:', error instanceof Error ? error.message : error);
-  }
-}
-
-/**
- * Escape HTML special characters
- */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
 
 export function disposeMermaidRenderer(): void {
-  // WebviewView is disposed automatically when the extension is deactivated
-  decorationCache.clear();
+  // Clear timeout if still pending
+  if (initTimeoutId) {
+    clearTimeout(initTimeoutId);
+    initTimeoutId = undefined;
+  }
+  
+  // Clear all pending render timeouts and reject promises
+  for (const [requestId, { reject, timeoutId }] of pendingRenders.entries()) {
+    clearTimeout(timeoutId);
+    reject(new Error('Mermaid renderer disposed'));
+  }
   pendingRenders.clear();
+  
+  // Dispose message handler subscription
+  messageHandlerDisposable?.dispose();
+  messageHandlerDisposable = undefined;
+  
+  // Clear decoration cache
+  decorationCache.clear();
+  
+  // Clear webview reference
   webviewView = undefined;
   resolveWebviewLoaded = undefined;
 }

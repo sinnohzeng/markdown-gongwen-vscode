@@ -501,6 +501,116 @@ Mermaid : a4, after a3, 15d
 ``` 
 UAT-CHECK()
 
+```mermaid
+flowchart TD
+    A[Start] --> B[Flowchart Example]
+    B --> C[Flow End]
+```
+UAT-CHECK()
+
+```mermaid
+sequenceDiagram
+    participant Alice
+    participant Bob
+    Alice->>Bob: Hi Bob!
+    Bob-->>Alice: Hi Alice!
+```
+UAT-CHECK()
+
+```mermaid
+classDiagram
+    Animal <|-- Duck
+    Animal <|-- Fish
+    Animal <|-- Zebra
+    Animal : +int age
+    Animal : +String gender
+    Animal: +isMammal()
+    Animal: +mate()
+```
+UAT-CHECK()
+
+```mermaid
+stateDiagram
+    [*] --> S1
+    S1 --> S2
+    S2 --> [*]
+    S1 : This is a state
+    S2 : Another state
+```
+UAT-CHECK()
+
+```mermaid
+erDiagram
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+    CUSTOMER }|..|{ DELIVERY_ADDRESS : uses
+```
+UAT-CHECK()
+
+```mermaid
+gantt
+    title Gantt Diagram Example
+    dateFormat  YYYY-MM-DD
+    section Section
+    Task1           :done,    des1, 2022-01-06,2022-01-08
+    Task2           :active,  des2, 2022-01-09, 3d
+    Task3           :         des3, after des2, 5d
+```
+UAT-CHECK()
+
+```mermaid
+pie
+    title Pie Chart Example
+    "Cats" : 35
+    "Dogs" : 25
+    "Rats" : 15
+```
+UAT-CHECK()
+
+```mermaid
+journey
+    title My Working Day
+    section Go to Work
+      Make Coffee: 5: Me
+      Dress Up: 3: Me
+    section Work
+      Code: 5: Me,Colleague
+      Review code: 2: Me
+```
+UAT-CHECK()
+
+```mermaid
+requirementDiagram
+    requirement req1 {
+      id: 1
+      text: The system shall be secure
+    }
+    requirement req2 {
+      id: 2
+      text: The system shall be fast
+    }
+    req1 - priority:high -> req2
+
+
+```
+UAT-CHECK()
+
+```mermaid
+gitGraph
+    commit id:"Initial commit"
+    commit id:"Added Readme"
+    branch develop
+    checkout develop
+    commit id:"Develop feature"
+    checkout main
+    merge develop
+
+
+    
+```
+UAT-CHECK()
+
+
 ~~~js
 console.log("Tilde fence, GFM");
 ~~~ 

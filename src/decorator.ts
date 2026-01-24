@@ -13,7 +13,7 @@ import { DecorationTypeRegistry } from './decorator/decoration-type-registry';
 import { filterDecorationsForEditor, ScopeEntry } from './decorator/visibility-model';
 import { handleCheckboxClick } from './decorator/checkbox-toggle';
 import { MermaidDiagramDecorations } from './decorator/mermaid-diagram-decorations';
-import { renderMermaidSvg, svgToDataUri, createErrorSvg, saveSvgToHtml } from './mermaid/mermaid-renderer';
+import { renderMermaidSvg, svgToDataUri, createErrorSvg } from './mermaid/mermaid-renderer';
 import { MermaidHoverIndicatorDecorationType } from './decorations';
 
 /**
@@ -434,9 +434,6 @@ export class Decorator {
           const svg = await renderMermaidSvg(block.source, { theme, fontFamily, numLines });
           const dataUri = svgToDataUri(svg);
           dataUrisByKey.set(key, dataUri);
-          
-          // Save SVG to HTML file for verification
-          saveSvgToHtml(svg, block.source, theme);
         } catch (error) {
           console.warn('Mermaid render failed:', error instanceof Error ? error.message : error);
           // Create error SVG to display instead of silently failing
@@ -449,9 +446,6 @@ export class Decorator {
           );
           const errorDataUri = svgToDataUri(errorSvg);
           dataUrisByKey.set(key, errorDataUri);
-          
-          // Save error SVG to HTML file for verification
-          saveSvgToHtml(errorSvg, block.source, theme);
         }
       }
 
