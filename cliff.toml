@@ -9,11 +9,16 @@ repo = "markdown-inline-editor-vscode"
 # A Tera template to be rendered as the changelog's footer.
 # See https://keats.github.io/tera/docs/#introduction
 header = """
-# Changelog - [markdown-inline-editor-vscode]($REPO)\n
-All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 """
 # A Tera template to be rendered for each release in the changelog.
 # See https://keats.github.io/tera/docs/#introduction
+# Format follows Keep a Changelog: https://keepachangelog.com/en/1.0.0/
 body = """
 
 {% if version %}\
@@ -23,22 +28,21 @@ body = """
         ## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
     {% endif %}\
 {% else %}\
-    ## [unreleased]
+    ## [Unreleased]
 {% endif %}\
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | striptags | trim | upper_first }}
     {% for commit in commits
     | filter(attribute="scope")
     | sort(attribute="scope") %}
-        - **({{commit.scope}})**{% if commit.breaking %} [**breaking**]{% endif %} \
-            {{ commit.message }} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})) - [{{ commit.author.name }}]($GH/{{ commit.author.name }})
+        - {% if commit.scope %}**({{commit.scope}})** {% endif %}{% if commit.breaking %}[**breaking**] {% endif %}\
+            {{ commit.message }}{% if commit.id %} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})){% endif %}
     {%- endfor -%}
     {% raw %}\n{% endraw %}\
     {%- for commit in commits %}
-        {%- if commit.scope -%}
-        {% else -%}
-            - {% if commit.breaking %} [**breaking**]{% endif %}\
-                {{ commit.message }} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})) - [{{ commit.author.name }}]($GH/{{ commit.author.name }})
+        {%- if not commit.scope -%}
+            - {% if commit.breaking %}[**breaking**] {% endif %}\
+                {{ commit.message }}{% if commit.id %} - ([{{ commit.id | truncate(length=7, end="") }}]($REPO/commit/{{ commit.id }})){% endif %}
         {% endif -%}
     {% endfor -%}
 {% endfor %}
@@ -67,19 +71,19 @@ commit_preprocessors = [
     { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/${2}))" },
 ]
 # An array of regex based parsers for extracting data from the commit message.
-# Assigns commits to groups.
-# Optionally sets the commit's scope and can decide to exclude commits from further processing.
+# Assigns commits to groups following Keep a Changelog format:
+# Added, Changed, Fixed, Removed, Deprecated, Security
 commit_parsers = [
-    { message = "^feat", group = "Features" },
-    { message = "^fix", group = "Bug Fixes" },
-    { message = "^docs?", group = "Documentation" },
-    { message = "^perf", group = "Performance" },
-    { message = "^refactor", group = "Refactoring" },
-    { message = "^style", group = "Style" },
-    { message = "^revert", group = "Revert" },
-    { message = "^test", group = "Tests" },
+    { message = "^feat", group = "Added" },
+    { message = "^fix", group = "Fixed" },
+    { message = "^docs?", group = "Changed" },
+    { message = "^perf", group = "Changed" },
+    { message = "^refactor", group = "Changed" },
+    { message = "^style", group = "Changed" },
+    { message = "^revert", group = "Changed" },
+    { message = "^test", group = "Changed" },
     { message = "^chore\\(release\\)", skip = true },
-    { message = "^chore", group = "Miscellaneous Chores" },
+    { message = "^chore", group = "Changed" },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = false
