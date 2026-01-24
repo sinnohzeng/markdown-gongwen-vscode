@@ -3,19 +3,28 @@ const { execSync } = require("child_process");
 
 /**
  * Release helper script for markdown-inline-editor-vscode.
+ * - Runs validation checks (lint:docs, test, build)
  * - Gets next version with git-cliff
  * - Generates CHANGELOG.md
  * - Bumps package.json version
- * - Commits changes
+ * - Commits changes and creates git tag
  * - Prints push/undo instructions
  */
 
 function run(cmd, opts = {}) {
-  return execSync(cmd, { stdio: "pipe", encoding: "utf8", ...opts }).trim();
+  try {
+    return execSync(cmd, { stdio: "pipe", encoding: "utf8", ...opts }).trim();
+  } catch (err) {
+    throw new Error(`Command failed: ${cmd}\n${err.message}`);
+  }
 }
 
 function log(msg) {
   console.log(`\x1b[36m${msg}\x1b[0m`);
+}
+
+function error(msg) {
+  console.error(`\x1b[31m${msg}\x1b[0m`);
 }
 
 try {
@@ -32,18 +41,56 @@ try {
       "Your working tree is not clean. Please commit or stash your changes before running this script.",
     );
   }
-  log("🔍 Determining next version with git-cliff...");
-  const nextVersion = run("npx git-cliff --bumped-version");
-  log(`Next version: ${nextVersion}`);
 
+  // Run validation checks
+  log("🔍 Running validation checks...");
+  log("  📝 Validating feature file structure...");
+  run("npm run lint:docs");
+  log("  🧪 Running tests...");
+  run("npm test");
+  log("  🔨 Building extension...");
+  run("npm run build");
+  log("✅ All validation checks passed");
+
+  // Check if git-cliff is available
+  log("🔍 Checking git-cliff availability...");
+  try {
+    run("npx git-cliff --version", { stdio: "ignore" });
+  } catch (err) {
+    throw new Error(
+      "git-cliff is not available. Install it with: npm install -g git-cliff",
+    );
+  }
+
+  // Determine next version
+  log("🔍 Determining next version with git-cliff...");
+  let nextVersion = run("npx git-cliff --bumped-version");
+  if (!nextVersion) {
+    throw new Error(
+      "Failed to determine next version. Ensure you have conventional commits since the last tag.",
+    );
+  }
+  // Remove 'v' prefix if present for consistency
+  nextVersion = nextVersion.replace(/^v/, "");
+  const tagVersion = `v${nextVersion}`;
+  log(`Next version: ${nextVersion} (tag: ${tagVersion})`);
+
+  // Generate CHANGELOG
   log("📝 Generating CHANGELOG.md...");
-  run(`npx git-cliff -o CHANGELOG.md --tag ${nextVersion}`);
+  run(`npx git-cliff -o CHANGELOG.md --tag ${tagVersion}`);
+
+  // Update package.json version
   log("🔢 Bumping package.json version...");
   run(`npm version ${nextVersion} --no-git-tag-version`);
 
+  // Commit changes
   log("✅ Committing changes...");
   run("git add CHANGELOG.md package.json package-lock.json");
-  run(`git commit -m "chore(release): ${nextVersion}"`);
+  run(`git commit -m "chore(release): ${tagVersion}"`);
+
+  // Create git tag
+  log("🏷️  Creating git tag...");
+  run(`git tag ${tagVersion}`);
 
   log("🎉 Release prep complete!");
   console.log("\nNext steps:");
@@ -51,10 +98,13 @@ try {
     `  1. Push changes including the new tag:\n     git push origin main --follow-tags`,
   );
   console.log(
-    "  2. If you need to undo, run:\n     git reset --hard HEAD~1\n     git tag -d v" +
-      nextVersion,
+    `  2. If you need to undo, run:\n     git reset --hard HEAD~1\n     git tag -d ${tagVersion}`,
   );
 } catch (err) {
-  console.error("\x1b[31mRelease failed:\x1b[0m", err.message);
+  error("Release failed:");
+  error(err.message);
+  if (err.stack && process.env.DEBUG) {
+    console.error(err.stack);
+  }
   process.exit(1);
 }
