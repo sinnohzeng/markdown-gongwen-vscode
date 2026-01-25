@@ -16,16 +16,22 @@ on:
 
 jobs:
   ci:
+    # CI runs on all pushes (branches and tags) and pull requests
+    # This ensures releases only happen if all tests pass
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
       matrix:
         node-version: [lts/*, current]
+      fail-fast: false  # Continue running other matrix jobs even if one fails
     env:
       CI: true
     steps:
-      - name: Checkout ${{ github.sha }}
+      - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # For tag pushes, checkout the tag; for branches/PRs, checkout the commit
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v6
@@ -90,7 +96,9 @@ jobs:
   # The "cd-vsce" job runs only when a tag starting with "v" is pushed (i.e., a version tag), because of the conditional below:
   cd-vsce:
     # Only runs when the push references a tag that starts with "v" (for example: refs/tags/v1.2.3) or on workflow_dispatch
+    # Requires ci job to pass first to ensure code quality
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -128,7 +136,9 @@ jobs:
   # The "cd-ovsx" job runs only when a tag starting with "v" is pushed (i.e., a version tag), because of the conditional below:
   cd-ovsx:
     # Only runs when the push references a tag that starts with "v" (for example: refs/tags/v1.2.3) or on workflow_dispatch
+    # Requires ci job to pass first to ensure code quality
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -166,7 +176,9 @@ jobs:
   # The "cd-release" job creates a GitHub Release and uploads the extension as an asset
   cd-release:
     # Only runs when the push references a tag that starts with "v" (for example: refs/tags/v1.2.3) or on workflow_dispatch
+    # Requires ci job to pass first to ensure code quality
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
