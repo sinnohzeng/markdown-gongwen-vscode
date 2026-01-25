@@ -3,6 +3,7 @@ import { mapNormalizedToOriginal } from './position-mapping';
 import { shouldSkipInDiffView } from './diff-context';
 import { MarkdownParseCache } from './markdown-parse-cache';
 import { renderMermaidSvgNatural, createErrorSvg, svgToDataUri } from './mermaid/mermaid-renderer';
+import { svgToDataUriBase64 } from './mermaid/svg-processor';
 import * as cheerio from 'cheerio';
 
 /**
@@ -221,10 +222,11 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
         }
       }
 
-      // Respect max dimensions (but allow larger dialogs for large diagrams)
-      // Increase max dimensions to accommodate large diagrams
-      const maxWidth = Math.max(config.maxWidth, 2000);
-      const maxHeight = Math.max(config.maxHeight, 1500);
+      // Cap hover dimensions even more aggressively to reduce SVG size
+      // Smaller dimensions = smaller SVG = smaller data URI = less likely to truncate
+      // Further reduced from 1200px to 1000px for better size reduction
+      const maxWidth = Math.min(config.maxWidth, 1000); // Cap at 1000px (reduced from 1200px)
+      const maxHeight = Math.min(config.maxHeight, 750); // Cap at 750px (reduced from 900px)
       
       if (hoverWidth > maxWidth) {
         const aspectRatio = hoverHeight / hoverWidth;
@@ -441,23 +443,65 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
       markdown.isTrusted = true; // SVGs are safe
       
       if (result.html) {
-        // Convert SVG to data URI for reliable rendering in VS Code hover
-        // VS Code hover rendering works better with data URI images than raw SVG HTML
-        const dataUri = svgToDataUri(result.html);
-        const escapedUri = escapeHtmlAttribute(dataUri);
-        markdown.appendMarkdown(
-          `<img src="${escapedUri}" width="${result.width}" height="${result.height}" style="width: ${result.width}px; height: ${result.height}px; max-width: ${result.width}px; max-height: ${result.height}px;" />`
-        );
+        // Try multiple encoding strategies to avoid VS Code hover size limits
+        // Strategy: URL encoding (smaller) -> Base64 (different handling) -> fallback message
+        const svgSize = result.html.length;
+        const MAX_DATA_URI_SIZE = 80 * 1024; // 80KB threshold
+        
+        let imageSrc: string | undefined;
+        
+        // First try URL-encoded data URI (typically smaller for SVG)
+        const urlEncodedUri = svgToDataUri(result.html);
+        const urlEncodedSize = urlEncodedUri.length;
+        
+        if (urlEncodedSize <= MAX_DATA_URI_SIZE) {
+          // URL encoding fits - use it
+          imageSrc = urlEncodedUri;
+        } else {
+          // URL encoding too large - try Base64 (might be handled differently by VS Code)
+          const base64Uri = svgToDataUriBase64(result.html);
+          const base64Size = base64Uri.length;
+          
+          if (base64Size <= MAX_DATA_URI_SIZE) {
+            // Base64 fits - use it
+            imageSrc = base64Uri;
+          } else {
+            // Both encodings too large - show helpful, informative message
+            const sizeKB = Math.round(svgSize / 1024);
+            const dataUriKB = Math.round(Math.max(urlEncodedSize, base64Size) / 1024);
+            
+            markdown.appendMarkdown(
+              `## 📊 Mermaid Diagram Preview\n\n` +
+              `**Size:** ${sizeKB}KB (data URI: ${dataUriKB}KB)  \n` +
+              `**Dimensions:** ${result.width}px × ${result.height}px\n\n` +
+              `---\n\n` +
+              `⚠️ **Cannot display in hover**\n\n` +
+              `This diagram exceeds VS Code's hover content size limits (~80KB). This is a limitation of VS Code's hover rendering system, not the diagram itself.\n\n` +
+              `✅ **The diagram renders correctly inline in the editor** - you can see it above in the document.\n\n` +
+              `💡 **Tip:** For very large diagrams, consider breaking them into smaller, more focused diagrams for better readability.`
+            );
+            // Don't add preview label for error message
+            imageSrc = undefined;
+          }
+        }
+        
+        if (imageSrc) {
+          const escapedUri = escapeHtmlAttribute(imageSrc);
+          markdown.appendMarkdown(
+            `<img src="${escapedUri}" width="${result.width}" height="${result.height}" style="width: ${result.width}px; height: ${result.height}px; max-width: ${result.width}px; max-height: ${result.height}px;" />`
+          );
+          markdown.appendMarkdown(`\n\n*${language} diagram preview*`);
+        }
       } else if (result.dataUri) {
         // Only escape quotes in data URI (data URI is already encoded, don't escape &, <, >)
         const escapedUri = escapeHtmlAttribute(result.dataUri);
         markdown.appendMarkdown(
           `<img src="${escapedUri}" width="${result.width}" height="${result.height}" style="width: ${result.width}px; height: ${result.height}px; max-width: ${result.width}px; max-height: ${result.height}px;" />`
         );
+        markdown.appendMarkdown(`\n\n*${language} diagram preview*`);
       } else {
         return undefined;
       }
-      markdown.appendMarkdown(`\n\n*${language} diagram preview*`);
 
       // Expand hover range to full line(s) for better UX
       // This makes it easier to trigger hover and includes the indicator area
@@ -477,6 +521,5 @@ export class CodeBlockHoverProvider implements vscode.HoverProvider {
 }
 
 function escapeHtmlAttribute(value: string): string {
-  return value
-    .replace(/"/g, '&quot;')
+  return value.replace(/"/g, '&quot;');
 }
