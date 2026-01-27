@@ -97,3 +97,23 @@ Feature: Reveal original markdown
 - <code>#123</code> → visually styled as an issue reference
 - <code>@org/team</code> → visually styled mention (same style as @username)
 - <code>@user/repo#456</code> → visually styled as a reference to issue/pr in <code>user/repo</code>
+
+## Implementation
+
+When calculating table column widths, account for the rendered width of formatted text instead of using raw markdown width. This requires:
+
+**Width Calculation:**
+- Measure rendered text width for cells containing markup (bold, code, italic, etc.)
+- Use VS Code's text measurement API or calculate based on character widths
+- Account for font metrics and styling differences
+- Preserve alignment indicators (`:---`, `:---:`, `---:`) while adjusting column spacing
+
+**Table Processing:**
+- Detect table cells with inline formatting during parsing
+- Calculate actual rendered width for each cell
+- Adjust column spacing to maintain alignment
+- Handle mixed cells (some with markup, some without)
+
+**Edge Cases:**
+- Multiple formatting types in one cell (e.g., `**bold** and `code`)
+- Nested formatting
