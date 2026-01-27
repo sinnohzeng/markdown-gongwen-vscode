@@ -355,3 +355,12 @@ Special thanks to these projects, which inspired or enabled this extension:
 
 [ci-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml/badge.svg
 [ci]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml
+
+
+
+
+test
+[1.14.0-overview.webm](https://github.com/user-attachments/assets/8bad925d-1538-4105-b5b5-c8db493f9734)
+
+
+
