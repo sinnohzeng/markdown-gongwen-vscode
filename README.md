@@ -21,7 +21,7 @@
 ## Demo
 
 <p align="center" style="max-width:66%; margin-left:auto; margin-right:auto;">
-  <img src="assets/autoplay-demo.gif" alt="Markdown Inline Editor Demo" width="100%"><br>
+  <img src="assets/autoplay-demo.gif" alt="Markdown Inline Editor Demo" width="100%" loading="eager"><br>
   <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
     <em>Figure: Interactive demo—see formatting applied inline, reveal raw Markdown with a click, and watch the extension adapt instantly to color theme changes.</em>
   </span>
