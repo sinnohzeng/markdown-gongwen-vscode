@@ -205,5 +205,206 @@ describe('MarkdownParser - Links', () => {
       expect(parseResult.mermaidBlocks.length).toBe(1);
     });
   });
+
+  describe('autolinks (angle bracket syntax)', () => {
+    it('should hide angle brackets and style URL autolink', () => {
+      const markdown = '<http://example.com>';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should hide < and >
+      expect(result.some(d => d.type === 'hide' && d.startPos === 0)).toBe(true); // <
+      expect(result.some(d => d.type === 'hide' && d.startPos === 19)).toBe(true); // >
+      
+      // Should style URL as link
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.startPos).toBe(1);
+      expect(linkDec?.endPos).toBe(19);
+      expect(linkDec?.url).toBe('http://example.com');
+    });
+
+    it('should handle HTTPS URL autolink', () => {
+      const markdown = '<https://github.com/user/repo>';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('https://github.com/user/repo');
+    });
+
+    it('should handle URL autolink with query parameters', () => {
+      const markdown = '<https://example.com/path?query=value>';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('https://example.com/path?query=value');
+      // Should hide both angle brackets
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(2);
+    });
+
+    it('should handle email autolink with mailto prefix', () => {
+      const markdown = '<user@example.com>';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('mailto:user@example.com');
+      expect(linkDec?.startPos).toBe(1);
+      expect(linkDec?.endPos).toBe(17); // 17 = end of "user@example.com" (exclusive)
+    });
+
+    it('should handle email autolink with plus addressing', () => {
+      const markdown = '<user+tag@example.com>';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('mailto:user+tag@example.com');
+    });
+
+    it('should handle autolink in paragraph text', () => {
+      const markdown = 'Visit <https://example.com> for info';
+      const result = parser.extractDecorations(markdown);
+      
+      // Should only hide the autolink brackets, not other text
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('https://example.com');
+      // Should have exactly 2 hide decorations (the angle brackets)
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(2);
+    });
+
+    it('should handle multiple autolinks in same line', () => {
+      const markdown = 'Contact <user@example.com> or <https://example.com>';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(2);
+      
+      // First link: email
+      expect(linkDecs[0].url).toBe('mailto:user@example.com');
+      // Second link: URL
+      expect(linkDecs[1].url).toBe('https://example.com');
+      
+      // Should have 4 hide decorations (2 angle brackets per autolink)
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(4);
+    });
+
+    it('should handle autolink adjacent to text', () => {
+      const markdown = 'URL:<https://example.com>text';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('https://example.com');
+      // Only the autolink should be styled as link, not adjacent text
+      expect(linkDec?.startPos).toBeGreaterThan(4); // After "URL:"
+      expect(linkDec?.endPos).toBeLessThan(25); // Before "text"
+    });
+
+    it('should NOT parse autolinks inside code blocks', () => {
+      const markdown = '```\n<https://example.com>\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+
+    it('should NOT parse autolinks inside inline code', () => {
+      const markdown = '`<https://example.com>`';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+  });
+
+  describe('bare links (without angle brackets)', () => {
+    it('should style bare email as link without hiding anything', () => {
+      const markdown = 'user@example.com';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('mailto:user@example.com');
+      expect(linkDec?.startPos).toBe(0);
+      expect(linkDec?.endPos).toBe(16);
+      
+      // Should NOT have hide decorations (no brackets to hide)
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(0);
+    });
+
+    it('should style bare URL as link without hiding anything', () => {
+      const markdown = 'https://example.com';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('https://example.com');
+      
+      // Should NOT have hide decorations
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(0);
+    });
+
+    it('should handle bare email with plus addressing', () => {
+      const markdown = 'user+tag@example.com';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('mailto:user+tag@example.com');
+    });
+
+    it('should handle bare link in paragraph text', () => {
+      const markdown = 'Visit https://example.com for info';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDec = result.find(d => d.type === 'link');
+      expect(linkDec).toBeDefined();
+      expect(linkDec?.url).toBe('https://example.com');
+      // Should NOT have hide decorations
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(0);
+    });
+
+    it('should handle multiple bare links in same line', () => {
+      const markdown = 'Contact user@example.com or https://example.com';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(2);
+      
+      // First link: email
+      expect(linkDecs[0].url).toBe('mailto:user@example.com');
+      // Second link: URL
+      expect(linkDecs[1].url).toBe('https://example.com');
+      
+      // Should NOT have hide decorations
+      const hideDecs = result.filter(d => d.type === 'hide');
+      expect(hideDecs.length).toBe(0);
+    });
+
+    it('should NOT parse bare links inside code blocks', () => {
+      const markdown = '```\nhttps://example.com\n```';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+
+    it('should NOT parse bare links inside inline code', () => {
+      const markdown = '`https://example.com`';
+      const result = parser.extractDecorations(markdown);
+      
+      const linkDecs = result.filter(d => d.type === 'link');
+      expect(linkDecs.length).toBe(0);
+    });
+  });
 });
 

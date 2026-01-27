@@ -1189,6 +1189,73 @@ export class MarkdownParser {
     const start = node.position!.start.offset!;
     const end = node.position!.end.offset!;
 
+    // Detect autolinks and bare links using AST structure: link text equals the URL
+    // (or URL without mailto: prefix for email autolinks)
+    const firstChild = node.children?.[0];
+    const linkText = (firstChild && firstChild.type === "text") ? firstChild.value : "";
+    const url = node.url || "";
+    const urlWithoutMailto = url.replace(/^mailto:/, "");
+    const isAutolinkOrBareLink = linkText === url || linkText === urlWithoutMailto;
+
+    if (isAutolinkOrBareLink) {
+      // Check if it's an autolink (has angle brackets) or bare link (no brackets)
+      const hasAngleBrackets = text[start] === '<' && text[end - 1] === '>';
+
+      if (hasAngleBrackets) {
+        // Process autolink - use text child position for accurate content range
+        const textChild = firstChild && firstChild.type === "text" ? firstChild : null;
+        const contentStart = textChild?.position?.start.offset ?? (start + 1);
+        const contentEnd = textChild?.position?.end.offset ?? (end - 1);
+
+        // Hide opening angle bracket
+        decorations.push({
+          startPos: start,
+          endPos: start + 1,
+          type: "hide",
+        });
+
+        // Add link decoration for content (between angle brackets)
+        if (contentStart < contentEnd) {
+          decorations.push({
+            startPos: contentStart,
+            endPos: contentEnd,
+            type: "link",
+            url: url, // Use URL from AST (remark-gfm already handles mailto: for emails)
+          });
+        }
+
+        // Hide closing angle bracket
+        decorations.push({
+          startPos: end - 1,
+          endPos: end,
+          type: "hide",
+        });
+
+        // Add scope for reveal-on-select behavior
+        this.addScope(scopes, start, end, "link");
+      } else {
+        // Process bare link (no angle brackets) - just apply link decoration
+        const textChild = firstChild && firstChild.type === "text" ? firstChild : null;
+        const contentStart = textChild?.position?.start.offset ?? start;
+        const contentEnd = textChild?.position?.end.offset ?? end;
+
+        // Add link decoration for the URL/email text
+        if (contentStart < contentEnd) {
+          decorations.push({
+            startPos: contentStart,
+            endPos: contentEnd,
+            type: "link",
+            url: url, // Use URL from AST (remark-gfm already handles mailto: for emails)
+          });
+        }
+
+        // Add scope for reveal-on-select behavior
+        this.addScope(scopes, start, end, "link");
+      }
+      return;
+    }
+
+    // Regular bracket-style link: [text](url)
     // Find opening bracket [
     const bracketStart = text.indexOf("[", start);
     if (bracketStart === -1) return;

@@ -151,7 +151,7 @@ All settings are under the `Markdown Inline Editor` section in VS Code Settings 
 
 ### High Priority
 * [ ] **Tables** • [Details](docs/features/todo/tables.md) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
-* [ ] **Autolinks** • [Details](docs/features/todo/autolinks.md) • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
+* [x] **Autolinks** • [Details](docs/features/done/autolinks.md) • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
 * [x] **Mermaid Diagrams** • [Details](docs/features/done/mermaid-diagrams.md) • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
 * [ ] **LaTeX/Math** • [Details](docs/features/todo/latex-math.md) • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 

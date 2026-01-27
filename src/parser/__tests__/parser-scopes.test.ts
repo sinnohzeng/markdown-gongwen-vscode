@@ -27,6 +27,24 @@ describe('MarkdownParser - Scope Ranges', () => {
     expect(scopeTexts).toContain('![alt](image.png)');
   });
 
+  it('emits scopes for autolinks', () => {
+    const markdown = '<https://example.com> <user@example.com>';
+    const result = parser.extractDecorationsWithScopes(markdown);
+    const scopeTexts = result.scopes.map((scope) => markdown.slice(scope.startPos, scope.endPos));
+
+    expect(scopeTexts).toContain('<https://example.com>');
+    expect(scopeTexts).toContain('<user@example.com>');
+  });
+
+  it('emits scopes for bare links', () => {
+    const markdown = 'https://example.com user@example.com';
+    const result = parser.extractDecorationsWithScopes(markdown);
+    const scopeTexts = result.scopes.map((scope) => markdown.slice(scope.startPos, scope.endPos));
+
+    expect(scopeTexts).toContain('https://example.com');
+    expect(scopeTexts).toContain('user@example.com');
+  });
+
   it('emits scopes for code blocks', () => {
     const markdown = [
       '```ts',

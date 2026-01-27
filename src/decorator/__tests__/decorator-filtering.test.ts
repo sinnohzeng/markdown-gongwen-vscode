@@ -444,6 +444,78 @@ describe('Decorator filtering behavior', () => {
     expect(filtered.get('image')?.length).toBe(1);
   });
 
+  it('reveals autolink in raw state when cursor is inside the autolink', () => {
+    const text = '<https://example.com>';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 1, type: 'hide' }, // opening <
+      { startPos: 1, endPos: 19, type: 'link', url: 'https://example.com' }, // link content
+      { startPos: 19, endPos: 20, type: 'hide' }, // closing >
+    ];
+
+    // Test with cursor inside the autolink
+    const selection = new Selection(new Position(0, 10), new Position(0, 10));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 20]], selection);
+
+    // All hide decorations should be skipped (raw state - show <url>)
+    expect(filtered.has('hide')).toBe(false);
+    // Link decoration should still be applied (semantic styling)
+    expect(filtered.get('link')?.length).toBe(1);
+  });
+
+  it('reveals autolink in raw state when cursor is at the start boundary', () => {
+    const text = '<https://example.com>';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 1, type: 'hide' }, // opening <
+      { startPos: 1, endPos: 19, type: 'link', url: 'https://example.com' }, // link content
+      { startPos: 19, endPos: 20, type: 'hide' }, // closing >
+    ];
+
+    // Test with cursor at the start of the autolink
+    const selection = new Selection(new Position(0, 0), new Position(0, 0));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 20]], selection);
+
+    // All hide decorations should be skipped (raw state - show <url>)
+    expect(filtered.has('hide')).toBe(false);
+    // Link decoration should still be applied (semantic styling)
+    expect(filtered.get('link')?.length).toBe(1);
+  });
+
+  it('reveals autolink in raw state when selection covers the entire autolink', () => {
+    const text = '<https://example.com>';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 1, type: 'hide' }, // opening <
+      { startPos: 1, endPos: 19, type: 'link', url: 'https://example.com' }, // link content
+      { startPos: 19, endPos: 20, type: 'hide' }, // closing >
+    ];
+
+    // Test with selection covering the entire autolink
+    const selection = new Selection(new Position(0, 0), new Position(0, 20));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 20]], selection);
+
+    // All hide decorations should be skipped (raw state - show <url>)
+    expect(filtered.has('hide')).toBe(false);
+    // Link decoration should still be applied (semantic styling)
+    expect(filtered.get('link')?.length).toBe(1);
+  });
+
+  it('reveals email autolink in raw state when cursor is inside', () => {
+    const text = '<user@example.com>';
+    const decorations: DecorationRange[] = [
+      { startPos: 0, endPos: 1, type: 'hide' }, // opening <
+      { startPos: 1, endPos: 16, type: 'link', url: 'mailto:user@example.com' }, // link content
+      { startPos: 16, endPos: 17, type: 'hide' }, // closing >
+    ];
+
+    // Test with cursor inside the email autolink
+    const selection = new Selection(new Position(0, 8), new Position(0, 8));
+    const filtered = filterDecorationsForSelection(text, decorations, [[0, 17]], selection);
+
+    // All hide decorations should be skipped (raw state - show <email>)
+    expect(filtered.has('hide')).toBe(false);
+    // Link decoration should still be applied (semantic styling)
+    expect(filtered.get('link')?.length).toBe(1);
+  });
+
   it('ghosts non-selected markers on the active line when selection is outside the construct', () => {
     const text = '**Bold** text';
     const decorations: DecorationRange[] = [
