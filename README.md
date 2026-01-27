@@ -29,15 +29,19 @@
 
 ## Video Demos
 
-<p align="center" style="max-width:100%; margin-left:auto; margin-right:auto;">
-  <video src="assets/demo-1.webm" controls width="46%" style="margin: 0 1%; max-width:100%; height:auto; border-radius:4px;"></video>
-  <video src="assets/demo-2.webm" controls width="46%" style="margin: 0 1%; max-width:100%; height:auto; border-radius:4px;"></video>
-  <video src="assets/demo-3.webm" controls width="46%" style="margin: 0 1%; max-width:100%; height:auto; border-radius:4px;"></video>
-</p>
+<table align="center" style="width:100%; border:none;">
+  <tr>
+    <td align="center" style="width:50%; padding:0 1%;">
+      <video src="https://github.com/user-attachments/assets/9898d617-acbb-4e81-944b-623d545a29ce" controls style="width:100%; max-width:100%; height:auto; border-radius:4px;"></video>
+    </td>
+    <td align="center" style="width:50%; padding:0 1%;">
+      <video src="https://github.com/user-attachments/assets/c9025dd2-c2ca-44e5-a501-c9638a5e60cc" controls style="width:100%; max-width:100%; height:auto; border-radius:4px;"></video>
+    </td>
+  </tr>
+</table>
 <p align="center">
-  <em style="font-size:90%; color:#888;">Left: [Video 1 description]</em> • 
-  <em style="font-size:90%; color:#888;">Middle: [Video 2 description]</em> • 
-  <em style="font-size:90%; color:#888;">Right: [Video 3 description]</em>
+  <em style="font-size:90%; color:#888;">Left: Mermaid inline rendering from code blocks</em> • 
+  <em style="font-size:90%; color:#888;">Right: Checkbox interaction and syntax shadowing</em><br>
 </p>
 
 ## Get Started: Install the Extension
