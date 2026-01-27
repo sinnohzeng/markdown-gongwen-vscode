@@ -21,28 +21,23 @@
 ## Demo
 
 <p align="center" style="max-width:95%; margin-left:auto; margin-right:auto;">
-  <img src="assets/demo.gif" alt="Markdown Inline Editor Demo" width="95%"><br>
+  <img src="assets/autoplay-demo.gif" alt="Markdown Inline Editor Demo" width="95%"><br>
   <span style="display:block; font-size:90%; color:#888; margin-top:8px;">
     <em>Figure: Interactive demo—see formatting applied inline, reveal raw Markdown with a click, and watch the extension adapt instantly to color theme changes.</em>
   </span>
 </p>
 
-<p align="center">
-  <img src="assets/example-ui.png" alt="Markdown Inline Editor - formatted view" width="47%">
-  <img src="assets/example-ui-selected-line.png" alt="Raw Markdown revealed on selection" width="47%">
-</p>
-<p align="center">
-  <em style="font-size:90%; color:#888;">Left: Markdown as rendered—formatting is shown inline, raw syntax markers are hidden for clarity.</em><br>
-  <em style="font-size:90%; color:#888;">Right: Selecting a line reveals the original Markdown syntax for direct editing.</em>
-</p>
+## Video Demos
 
-<p align="center">
-  <img src="assets/syntax-shadowing.png" alt="Shadow syntax markers" width="47%">
-  <img src="assets/code-blocks.png" alt="Code blocks and YAML frontmatter rendering" width="47%">
+<p align="center" style="max-width:100%; margin-left:auto; margin-right:auto;">
+  <video src="assets/demo-1.webm" controls width="30%" style="margin: 0 1%; max-width:100%; height:auto; border-radius:4px;"></video>
+  <video src="assets/demo-2.webm" controls width="30%" style="margin: 0 1%; max-width:100%; height:auto; border-radius:4px;"></video>
+  <video src="assets/demo-3.webm" controls width="30%" style="margin: 0 1%; max-width:100%; height:auto; border-radius:4px;"></video>
 </p>
 <p align="center">
-  <em style="font-size:90%; color:#888;">Left: Faint shadow syntax markers visible in ghost state for edit cues.</em><br>
-  <em style="font-size:90%; color:#888;">Right: Code blocks and frontmatter are cleanly rendered with hidden raw markers when not editing.</em>
+  <em style="font-size:90%; color:#888;">Left: [Video 1 description]</em> • 
+  <em style="font-size:90%; color:#888;">Middle: [Video 2 description]</em> • 
+  <em style="font-size:90%; color:#888;">Right: [Video 3 description]</em>
 </p>
 
 ## Get Started: Install the Extension
