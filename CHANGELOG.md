@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.14.0..v1.14.1) - 2026-01-27
+
+### Changed
+
+- **(readme)** add video demos section and update demo gif - ([a03743f](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/a03743f719fbc3e7b97d1195f39b0328e9d13061))
+- **(readme)** adjust demo layout sizing - ([a836307](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/a83630729a50af0d00c548c35d4826e4a7a3548a))
+- **(readme)** add loading attribute to demo GIF for improved performance - ([2529f9a](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/2529f9af1c10bc5d639cba1e1f5101c8a295dcfd))
+- **(readme)** update demo GIF layout for better visibility - ([0c0a7f2](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/0c0a7f25a414690482889518a89eab689933570e))
+- **(readme)** improve marketing and user experience - ([4fa6b18](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/4fa6b1811dbf306a9f0903bf9592e56da6dae4e8))
+- clean up assets and update feature docs - ([c088b9d](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/c088b9dba9d3797b2a8453feebe8b03120edd082))
+- update autoplay demo gif - ([580d527](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/580d5276db3f946fd81591639c4946ce8439d0ca))
+
+### Fixed
+
+- restore accidentally deleted icon.png - ([21f565f](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/21f565fb457ad0154ec4416f3cf98d422afc2d22))
+- update icon.png - ([0d9d040](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/0d9d040d80fa6c5af603ae3d2577a60d48001398))
+
 ## [1.14.0](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.13.3..v1.14.0) - 2026-01-27
 
 ### Added
