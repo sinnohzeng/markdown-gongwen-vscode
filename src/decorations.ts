@@ -428,7 +428,7 @@ export function CheckboxCheckedDecorationType() {
   return window.createTextEditorDecorationType({
     textDecoration: 'none; display: none;', // Hide the original [x]
     before: {
-      contentText: '🗹',
+      contentText: '☑',
       color: new ThemeColor('editor.foreground'),
     },
   });
