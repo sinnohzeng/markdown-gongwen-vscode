@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.2](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.15.1..v1.15.2) - 2026-02-01
+
+### Fixed
+
+- **(mermaid)** ensure webview is created in VS Code and set view container title - ([98f8c75](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/98f8c7542c66a1ba8375ff05ec650dda9f2b1032))
+
 ## [1.15.1](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.15.0..v1.15.1) - 2026-01-28
 
 ### Changed
