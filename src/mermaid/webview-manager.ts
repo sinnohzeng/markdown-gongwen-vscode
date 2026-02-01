@@ -47,17 +47,50 @@ export class MermaidWebviewManager {
     );
 
     // Open the mermaid view briefly to initialize it, then switch back
-    // This is needed because the webview won't be created until it's visible
-    // We immediately switch away to minimize visibility of the activity bar button
-    vscode.commands.executeCommand('workbench.view.extension.mdInlineRenderer')
-      .then(() => {
-        // Switch back to explorer immediately after webview is created
-        // Store timeout ID for cleanup
-        this.initTimeoutId = setTimeout(() => {
-          vscode.commands.executeCommand('workbench.view.explorer');
-          this.initTimeoutId = undefined;
-        }, 50);
-      });
+    // Focus the view so VS Code calls resolveWebviewView() (hidden views are not resolved by opening the container only)
+    void this.ensureWebviewThenSwitchBack();
+  }
+
+  /**
+   * Focus the Mermaid view to trigger webview creation, wait for it (or 5s), then switch back to Explorer.
+   */
+  private ensureWebviewThenSwitchBack(): void {
+    const WEBVIEW_READY_TIMEOUT_MS = 5000;
+    const SWITCH_BACK_DELAY_MS = 100;
+
+    vscode.commands
+      .executeCommand('mdInline.mermaidRenderer.focus')
+      .then(
+        () => {
+          // Wait for webview to be ready or timeout, then switch back
+          Promise.race([
+            this.webviewLoaded,
+            new Promise<void>((_, reject) =>
+              setTimeout(() => reject(new Error('timeout')), WEBVIEW_READY_TIMEOUT_MS)
+            ),
+          ])
+            .then(() => {
+              this.initTimeoutId = setTimeout(() => {
+                vscode.commands.executeCommand('workbench.view.explorer');
+                this.initTimeoutId = undefined;
+              }, SWITCH_BACK_DELAY_MS);
+            })
+            .catch((err: unknown) => {
+              if (err instanceof Error && err.message === 'timeout') {
+                console.warn('Mermaid: Webview not ready after opening view');
+              }
+              this.initTimeoutId = setTimeout(() => {
+                vscode.commands.executeCommand('workbench.view.explorer');
+                this.initTimeoutId = undefined;
+              }, SWITCH_BACK_DELAY_MS);
+            });
+        },
+        (err: unknown) => {
+          if (err !== undefined) {
+            console.warn('Mermaid: Failed to focus view', err);
+          }
+        }
+      );
   }
 
   /**

@@ -13,6 +13,17 @@ let webviewManager: MermaidWebviewManager | undefined;
 // Bounded LRU to prevent unbounded memory growth for large/edited documents.
 const decorationCache = new LRUCache<string, Promise<string>>(MERMAID_CONSTANTS.DECORATION_CACHE_MAX_ENTRIES);
 
+// Log "waiting for webview" at most once per session to avoid spam when webview is never created
+let hasLoggedWaitingForWebview = false;
+
+async function waitForWebviewOnceLogged(manager: MermaidWebviewManager): Promise<void> {
+  if (!hasLoggedWaitingForWebview) {
+    hasLoggedWaitingForWebview = true;
+    console.warn('Mermaid: waiting for webview');
+  }
+  await manager.waitForWebview();
+}
+
 /**
  * Initialize the Mermaid renderer with extension context
  */
@@ -42,7 +53,7 @@ export async function renderMermaidSvgNatural(
     throw new Error('Mermaid renderer not initialized. Call initMermaidRenderer first.');
   }
 
-  await webviewManager.waitForWebview();
+  await waitForWebviewOnceLogged(webviewManager);
 
   const darkMode = options.theme === 'dark';
   
@@ -106,7 +117,7 @@ const getMermaidDecoration = memoizeMermaidDecoration(async (
     throw new Error('Mermaid renderer not initialized. Call initMermaidRenderer first.');
   }
 
-  await webviewManager.waitForWebview();
+  await waitForWebviewOnceLogged(webviewManager);
 
   const svgString = await webviewManager.requestSvg(
     { source, darkMode, fontFamily },
@@ -143,7 +154,7 @@ export async function renderMermaidSvg(
     throw new Error('Mermaid renderer not initialized. Call initMermaidRenderer first.');
   }
 
-  await webviewManager.waitForWebview();
+  await waitForWebviewOnceLogged(webviewManager);
 
   const darkMode = options.theme === 'dark';
   // Calculate height based on line count (like Markless: (numLines + 2) * lineHeight)

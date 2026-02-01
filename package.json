@@ -58,7 +58,7 @@
       "activitybar": [
         {
           "id": "mdInlineRenderer",
-          "title": "",
+          "title": "Markdown Inline Editor",
           "icon": "assets/activityBar.svg"
         }
       ]
