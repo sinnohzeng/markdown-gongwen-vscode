@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.1](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.16.0..v1.16.1) - 2026-02-11
+
+### Fixed
+
+- state audit - ([a21c093](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/a21c0938b6349affb503312fa5d9db3dfd960fc2))
+
 ## [1.16.0](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.15.3..v1.16.0) - 2026-02-11
 
 ### Added
