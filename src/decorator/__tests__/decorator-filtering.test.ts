@@ -96,15 +96,13 @@ describe('Decorator filtering behavior', () => {
   it('reveals raw checkbox when cursor is inside the checkbox', () => {
     const text = '- [ ] task';
     const decorations: DecorationRange[] = [
-      { startPos: 0, endPos: 2, type: 'listItem' },
-      { startPos: 2, endPos: 5, type: 'checkboxUnchecked' },
+      { startPos: 0, endPos: 5, type: 'checkboxUnchecked' },
     ];
 
     const selection = new Selection(new Position(0, 3), new Position(0, 3));
     const filtered = filterDecorationsForSelection(text, decorations, [], selection);
 
     expect(filtered.has('checkboxUnchecked')).toBe(false);
-    expect(filtered.get('listItem')?.length).toBe(1);
     expect(filtered.has('ghostFaint')).toBe(false);
   });
 

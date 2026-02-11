@@ -1827,25 +1827,17 @@ export class MarkdownParser {
     const checkboxEnd = checkboxStart + 3; // [ ], [x], or [X] (space after is not part of checkbox)
     const isChecked = checkChar === "x" || checkChar === "X";
 
-    // Only apply listItem decoration (bullet point) for unordered lists
-    // Ordered lists should keep their numbers visible
-    if (!isOrderedList) {
-      decorations.push({
-        startPos: markerStart,
-        endPos: checkboxStart,
-        type: "listItem",
-      });
-    } else {
-      // For ordered lists with checkboxes, apply color decoration to the numbers
+    // For ordered lists with checkboxes, apply color decoration to the numbers
+    if (isOrderedList) {
       decorations.push({
         startPos: markerStart,
         endPos: markerEnd,
         type: "orderedListItem",
       });
     }
-
+    // For unordered lists: no listItem (bullet); single checkbox decoration covers marker + checkbox
     decorations.push({
-      startPos: checkboxStart,
+      startPos: isOrderedList ? checkboxStart : markerStart,
       endPos: checkboxEnd,
       type: isChecked ? "checkboxChecked" : "checkboxUnchecked",
     });

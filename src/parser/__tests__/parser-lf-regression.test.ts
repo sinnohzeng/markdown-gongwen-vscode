@@ -12,8 +12,9 @@ describe('MarkdownParser - LF Regression Tests (ensure CRLF fixes don\'t break L
       const markdown = '- [ ] Item 1\n- [ ] Item 2';
       const result = parser.extractDecorations(markdown);
 
-      const listItems = result.filter(d => d.type === 'listItem');
-      expect(listItems.length).toBeGreaterThanOrEqual(2);
+      // Task list lines use checkbox decorations only (no listItem)
+      const checkboxes = result.filter(d => d.type === 'checkboxUnchecked' || d.type === 'checkboxChecked');
+      expect(checkboxes.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should parse bullet points with LF line endings', () => {

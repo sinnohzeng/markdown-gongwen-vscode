@@ -30,9 +30,9 @@ describe('MarkdownParser - CRLF Line Endings', () => {
       const markdown = createCRLFText('- [ ] Item 1\n- [ ] Item 2');
       const result = parser.extractDecorations(markdown);
 
-      // Should find list item decorations
-      const listItems = result.filter(d => d.type === 'listItem');
-      expect(listItems.length).toBeGreaterThanOrEqual(2);
+      // Task list lines use checkbox decorations only (no listItem)
+      const checkboxes = result.filter(d => d.type === 'checkboxUnchecked' || d.type === 'checkboxChecked');
+      expect(checkboxes.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should have correct positions for task lists with CRLF', () => {
@@ -130,9 +130,11 @@ describe('MarkdownParser - CRLF Line Endings', () => {
       expect(result.some(d => d.type === 'heading2')).toBe(true);
       expect(result.some(d => d.type === 'heading3')).toBe(true);
 
-      // Should find list items
+      // Task list lines (- [ ]) use checkbox decorations; bullet lines (- Item) use listItem
       const listItems = result.filter(d => d.type === 'listItem');
-      expect(listItems.length).toBeGreaterThanOrEqual(4);
+      const checkboxes = result.filter(d => d.type === 'checkboxUnchecked' || d.type === 'checkboxChecked');
+      expect(listItems.length).toBeGreaterThanOrEqual(2);
+      expect(checkboxes.length).toBeGreaterThanOrEqual(2);
 
       // Verify all positions are valid
       result.forEach(dec => {

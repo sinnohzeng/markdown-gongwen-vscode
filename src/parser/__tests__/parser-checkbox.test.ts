@@ -12,16 +12,10 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '- [ ] Task item';
       const result = parser.extractDecorations(markdown);
 
-      // Should have listItem decoration for the dash and space
+      // No listItem when checkbox is present; single checkbox covers marker + "[ ]"
+      expect(result.filter(d => d.type === 'listItem').length).toBe(0);
       expect(result).toContainEqual({
         startPos: 0,
-        endPos: 2,
-        type: 'listItem'
-      });
-
-      // Should have checkboxUnchecked decoration for [ ] only (not trailing space)
-      expect(result).toContainEqual({
-        startPos: 2,
         endPos: 5,
         type: 'checkboxUnchecked'
       });
@@ -31,16 +25,24 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '* [ ] Task item';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
-      expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(true);
+      expect(result.filter(d => d.type === 'listItem').length).toBe(0);
+      expect(result).toContainEqual({
+        startPos: 0,
+        endPos: 5,
+        type: 'checkboxUnchecked'
+      });
     });
 
     it('should detect unchecked checkbox with plus marker', () => {
       const markdown = '+ [ ] Task item';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
-      expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(true);
+      expect(result.filter(d => d.type === 'listItem').length).toBe(0);
+      expect(result).toContainEqual({
+        startPos: 0,
+        endPos: 5,
+        type: 'checkboxUnchecked'
+      });
     });
   });
 
@@ -49,16 +51,9 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '- [x] Completed task';
       const result = parser.extractDecorations(markdown);
 
-      // Should have listItem decoration for the dash and space
+      expect(result.filter(d => d.type === 'listItem').length).toBe(0);
       expect(result).toContainEqual({
         startPos: 0,
-        endPos: 2,
-        type: 'listItem'
-      });
-
-      // Should have checkboxChecked decoration for [x] only (not trailing space)
-      expect(result).toContainEqual({
-        startPos: 2,
         endPos: 5,
         type: 'checkboxChecked'
       });
@@ -68,8 +63,12 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '- [X] Completed task';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
-      expect(result.some(d => d.type === 'checkboxChecked')).toBe(true);
+      expect(result.filter(d => d.type === 'listItem').length).toBe(0);
+      expect(result).toContainEqual({
+        startPos: 0,
+        endPos: 5,
+        type: 'checkboxChecked'
+      });
     });
   });
 
@@ -91,8 +90,12 @@ describe('MarkdownParser - Checkbox/Task List', () => {
       const markdown = '  - [ ] Indented task';
       const result = parser.extractDecorations(markdown);
 
-      expect(result.some(d => d.type === 'listItem')).toBe(true);
-      expect(result.some(d => d.type === 'checkboxUnchecked')).toBe(true);
+      expect(result.filter(d => d.type === 'listItem').length).toBe(0);
+      expect(result).toContainEqual({
+        startPos: 2,
+        endPos: 7,
+        type: 'checkboxUnchecked'
+      });
     });
   });
 
