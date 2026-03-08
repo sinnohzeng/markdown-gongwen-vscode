@@ -1,6 +1,6 @@
 ---
-status: TODO
-updateDate: 2024-12-19
+status: Done (003)
+updateDate: 2026-03-08
 priority: High
 ---
 
@@ -8,7 +8,7 @@ priority: High
 
 ## Overview
 
-Hover preview for rendered LaTeX/math formulas using inline and block math syntax.
+Inline and block LaTeX math rendering in the editor. Implemented in **003-inline-latex-equations**: `$...$` (inline) and `$$...$$` (block) are detected, rendered with KaTeX to SVG, and displayed inline via decorations. Raw LaTeX is revealed when the cursor or selection is inside a math region. Toggle via `markdownInlineEditor.math.enabled`.
 
 ## Implementation
 
@@ -79,16 +79,10 @@ Feature: Reveal math
 
 ## Notes
 
-- Essential for academic/technical users
-- Competitive requirement (markless has it but buggy)
-- Hover approach avoids markless bugs
-- Better performance than inline rendering
-- Simpler and more reliable than inline approach
-- Feasibility: Moderate
-- Usefulness: High
-- Risk: Medium (rendering complexity)
-- Effort: 2-3 weeks
-- Math rendering solution required (to be determined)
+- Implemented in specs/003-inline-latex-equations (2026-03-08).
+- **Known issue (US5)**: Theme-appropriate font color for rendered math (dark theme → light text, light theme → dark text) is broken; to be fixed in a follow-up.
+- Essential for academic/technical users.
+- Uses MathJax for rendering; no line-count limit (FR-007).
 
 ## Examples
 
