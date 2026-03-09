@@ -160,7 +160,7 @@ function getAllMarkdownFiles(dir) {
     if (entry.isDirectory()) {
       // Recursively get files from subdirectories
       files.push(...getAllMarkdownFiles(fullPath));
-    } else if (entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'AGENTS.md') {
+    } else if (entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'AGENTS.md' && entry.name !== 'todo.md') {
       files.push(fullPath);
     }
   }
