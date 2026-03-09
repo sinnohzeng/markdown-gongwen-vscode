@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+coverage/
+assets/
+examples/
+test-report/
+*.min.js
