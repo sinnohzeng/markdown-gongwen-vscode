@@ -60,12 +60,15 @@ export interface MermaidBlock {
 /**
  * One detected math span (inline $...$ or block $$...$$).
  * Positions are in normalized document text (LF line endings).
+ * For fence-derived regions: startPos/endPos span the whole fenced block; source is body only; numLines is body line count for height.
  */
 export interface MathRegion {
   startPos: number;
   endPos: number;
   source: string;
   displayMode: boolean;
+  /** Body line count for fence-derived display math; used for height = (numLines + 2) × line height. Omitted for delimiter math. */
+  numLines?: number;
 }
 
 /**

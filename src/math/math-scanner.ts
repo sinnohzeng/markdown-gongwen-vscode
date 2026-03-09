@@ -6,6 +6,17 @@
 
 import type { MathRegion } from '../parser';
 
+type FencedCodeBlock = {
+  startPos: number;
+  endPos: number;
+  contentStartPos: number;
+  contentEndPos: number;
+  languageToken: string;
+  isMathFence: boolean;
+};
+
+const MATH_FENCE_LANGUAGES = new Set(['math', 'latex', 'tex']);
+
 /**
  * Scans text for math regions. Block math ($$...$$) is tried first; then inline ($...$).
  * Escaped \$ does not start/end; empty or whitespace-only content is not treated as math.
@@ -16,11 +27,22 @@ import type { MathRegion } from '../parser';
  * @returns MathRegion[] in document order, non-overlapping
  */
 export function scanMathRegions(text: string): MathRegion[] {
+  const fencedBlocks = scanFencedCodeBlocks(text);
   const regions: MathRegion[] = [];
   let i = 0;
   const n = text.length;
+  let fenceIndex = 0;
 
   while (i < n) {
+    while (fenceIndex < fencedBlocks.length && fencedBlocks[fenceIndex].endPos <= i) {
+      fenceIndex++;
+    }
+    const activeFence = fencedBlocks[fenceIndex];
+    if (activeFence && i >= activeFence.startPos && i < activeFence.endPos) {
+      i = activeFence.endPos;
+      continue;
+    }
+
     // Try block first ($$...$$)
     if (text[i] === '$' && i + 1 < n && text[i + 1] === '$') {
       if (isEscaped(text, i)) {
@@ -51,6 +73,28 @@ export function scanMathRegions(text: string): MathRegion[] {
     i++;
   }
 
+  for (const fence of fencedBlocks) {
+    if (!fence.isMathFence) {
+      continue;
+    }
+    if (fence.contentEndPos <= fence.contentStartPos) {
+      continue;
+    }
+    const source = text.slice(fence.contentStartPos, fence.contentEndPos);
+    if (source.trim().length === 0) {
+      continue;
+    }
+    const numLines = countLines(source);
+    regions.push({
+      startPos: fence.startPos,
+      endPos: fence.endPos,
+      source,
+      displayMode: true,
+      numLines,
+    });
+  }
+
+  regions.sort((a, b) => a.startPos - b.startPos);
   return regions;
 }
 
@@ -124,4 +168,120 @@ function tryMatchInline(text: string, start: number): MathRegion | null {
     };
   }
   return null;
+}
+
+function scanFencedCodeBlocks(text: string): FencedCodeBlock[] {
+  const blocks: FencedCodeBlock[] = [];
+  let lineStart = 0;
+
+  let openFence:
+    | {
+        markerChar: '`' | '~';
+        markerLength: number;
+        startPos: number;
+        contentStartPos: number;
+        languageToken: string;
+      }
+    | undefined;
+
+  while (lineStart <= text.length) {
+    const lineBreak = text.indexOf('\n', lineStart);
+    const lineEnd = lineBreak === -1 ? text.length : lineBreak;
+    const lineWithNoNewline = text.slice(lineStart, lineEnd);
+    const lineEndWithNewline = lineBreak === -1 ? lineEnd : lineBreak + 1;
+
+    if (!openFence) {
+      const openingFence = parseOpeningFence(lineWithNoNewline);
+      if (openingFence) {
+        openFence = {
+          markerChar: openingFence.markerChar,
+          markerLength: openingFence.markerLength,
+          startPos: lineStart,
+          contentStartPos: lineEndWithNewline,
+          languageToken: openingFence.languageToken,
+        };
+      }
+    } else {
+      const closingFence = parseClosingFence(lineWithNoNewline);
+      if (
+        closingFence &&
+        closingFence.markerChar === openFence.markerChar &&
+        closingFence.markerLength >= openFence.markerLength
+      ) {
+        blocks.push({
+          startPos: openFence.startPos,
+          endPos: lineEndWithNewline,
+          contentStartPos: openFence.contentStartPos,
+          contentEndPos: lineStart,
+          languageToken: openFence.languageToken,
+          isMathFence: MATH_FENCE_LANGUAGES.has(openFence.languageToken),
+        });
+        openFence = undefined;
+      }
+    }
+
+    if (lineBreak === -1) {
+      break;
+    }
+    lineStart = lineBreak + 1;
+  }
+
+  return blocks;
+}
+
+function parseOpeningFence(
+  line: string
+): { markerChar: '`' | '~'; markerLength: number; languageToken: string } | null {
+  const match = line.match(/^[ ]{0,3}(`{3,}|~{3,})(.*)$/);
+  if (!match) {
+    return null;
+  }
+  const marker = match[1];
+  const markerChar = marker[0] as '`' | '~';
+  const infoString = match[2] ?? '';
+  return {
+    markerChar,
+    markerLength: marker.length,
+    languageToken: normalizeFenceLanguageToken(infoString),
+  };
+}
+
+function parseClosingFence(
+  line: string
+): { markerChar: '`' | '~'; markerLength: number } | null {
+  const match = line.match(/^[ ]{0,3}(`{3,}|~{3,})[ \t]*$/);
+  if (!match) {
+    return null;
+  }
+  const marker = match[1];
+  return {
+    markerChar: marker[0] as '`' | '~',
+    markerLength: marker.length,
+  };
+}
+
+function normalizeFenceLanguageToken(infoString: string): string {
+  const trimmed = infoString.trim().toLowerCase();
+  if (!trimmed) {
+    return '';
+  }
+  const [token] = trimmed.split(/\s+/, 1);
+  return token ?? '';
+}
+
+/**
+ * Count body lines from fence source text.
+ * The body slice can include a trailing newline before the closing fence;
+ * that trailing newline must not add an extra body line.
+ */
+function countLines(text: string): number {
+  if (text.length === 0) return 1;
+  let n = 1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '\n') n++;
+  }
+  if (text.endsWith('\n')) {
+    n--;
+  }
+  return n;
 }
