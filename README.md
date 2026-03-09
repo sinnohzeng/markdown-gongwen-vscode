@@ -4,13 +4,22 @@
 
 [![CI/CD Status][ci-img]][ci] [![VS Code Marketplace][marketplace-img]][marketplace] [![OpenVSX][openvsx-img]][openvsx] [![License: MIT][license-img]][license]
 
-**Typora-like Markdown editing in VS Code.** See formatting inline (bold, italic, code, links, images, lists…) while Markdown markers stay out of your way — and reappear instantly when you edit.
+**Typora-like Markdown editing in VS Code.** Write in a clean, WYSIWYG-style view with context-aware syntax shadowing, inline Mermaid and LaTeX math rendering, hover previews, and clickable task lists.
 
 Your files stay 100% standard Markdown. This extension uses editor decorations — it never rewrites your document.
 
 - **Install:** [VS Code Marketplace][marketplace] • [OpenVSX][openvsx] • [Download VSIX][releases]
-- **Quick links:** [Get started](#get-started) • [Customize](#customize-optional) • [Features](#supported-features) • [FAQ][faq]
+- **Jump to:** [Why people install it](#why-people-install-it) • [Demo](#demo) • [Get started](#get-started) • [3-state syntax shadowing](#3-state-syntax-shadowing) • [Customize](#customize-optional) • [Supported features](#supported-features) • [FAQ][faq]
 - **Project:** [Repository][repo] • [Changelog][changelog] • [Issues][issues] • [Roadmap](#roadmap)
+
+## Why people install it
+
+- **No preview pane needed:** headings, emphasis, links, images, lists, code, math, and Mermaid render inline where you write.
+- **Rendered -> Ghost -> Raw syntax shadowing:** Markdown markers stay out of the way until you need them, then fade in on the active line or fully reveal for precise edits.
+- **Inline Mermaid and LaTeX math:** render `` ```mermaid `` diagrams, `$...$`, `$$...$$`, and `` ```math `` blocks directly in the editor.
+- **Interactive Markdown:** click task list checkboxes to toggle them, hover links to see targets, and hover images to preview them.
+- **Safe for real workflows:** files remain plain Markdown, and diffs stay raw by default for Git, merge editor, and Copilot inline review contexts.
+- **Theme-aware, configurable, and fast:** matches your VS Code theme, lets you tune colors/opacity/behavior, and uses a shared parse cache to avoid lag during normal editing.
 
 ## Demo
 
@@ -19,32 +28,6 @@ Your files stay 100% standard Markdown. This extension uses editor decorations �
 </p>
 
 *Tip: move the cursor onto a line to see faint “ghost” markers; click/select to reveal raw Markdown for precise edits.*
-
-## Key features
-
-- **3-state syntax shadowing**: Rendered → Ghost → Raw (context-aware visibility)
-- **Distraction-free reading**: hides `**`, `~~`, backticks, links/images syntax, and more
-- **Editing stays predictable**: only the construct you’re working on reveals its raw Markdown
-- **Clickable links** (including autolinks like `<https://example.com>` and bare links like `user@example.com`)
-- **Hover previews**: links show targets, images show previews
-- **Mermaid diagrams**: renders fenced `mermaid` code blocks as inline SVG with hover preview (offline + theme-aware)
-- **LaTeX/Math**: renders `$...$`, `$$...$$`, and ` ```math ` blocks inline in the editor
-- **Theme-aware**: matches your VS Code theme automatically
-- **Configurable**: tune ghost opacity, diff behavior, emoji rendering, and link click behavior
-- **Task lists**: click checkboxes to toggle
-- **Diff-friendly by default**: shows raw Markdown in diffs (Git, merge editor, Copilot inline diffs) unless you opt in
-- **Fast**: shared parse cache; designed to avoid lag on selection changes
-- **Optional**: emoji shortcodes (`:smile:`)
-
-## Why inline (instead of a preview pane)?
-
-VS Code’s Markdown preview is great for reading. Markdown Inline Editor is for *writing*: it keeps you in the editor, reduces syntax noise, and reveals raw Markdown only where you’re editing.
-
-## More demos (videos)
-
-- **Start here:** [Watch the feature][demo-overview]
-- **Mermaid:** [Watch inline Mermaid rendering][demo-mermaid]
-- **Task lists:** [Watch checkbox toggling + syntax shadowing][demo-checkbox]
 
 ## Get started
 
@@ -62,6 +45,16 @@ VS Code’s Markdown preview is great for reading. Markdown Inline Editor is for
 
 If decorations aren’t showing, see the [FAQ][faq].
 
+## Why inline (instead of a preview pane)?
+
+VS Code’s Markdown preview is great for reading. Markdown Inline Editor is for *writing*: it keeps you in the editor, reduces syntax noise, and reveals raw Markdown only where you’re editing.
+
+## Feature videos
+
+- **Start here:** [Watch the feature][demo-overview]
+- **Mermaid:** [Watch inline Mermaid rendering][demo-mermaid]
+- **Task lists:** [Watch checkbox toggling + syntax shadowing][demo-checkbox]
+
 ## Commands
 
 - **Toggle Markdown Decorations** (`mdInline.toggleDecorations`): Enable/disable inline Markdown rendering.
@@ -71,7 +64,7 @@ If decorations aren’t showing, see the [FAQ][faq].
 - **[Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)**: Shortcuts, auto-formatting, table of contents, preview, and more.
 - **[Mermaid Chart](https://marketplace.visualstudio.com/items?itemName=MermaidChart.vscode-mermaid-chart)**: Mermaid authoring tools and preview.
 
-## Syntax shadowing: 3-state model
+## 3-state syntax shadowing
 
 The extension uses an intelligent **3-state syntax shadowing system** that adapts syntax visibility based on your editing context:
 
