@@ -89,7 +89,7 @@ These are areas where layered behavior adds complexity:
 ## Notes on Feature Coverage
 
 The implemented feature set above reflects code-level behavior and tests. Any
-feature listed under `docs/features/todo/` is not included here unless it is
+feature listed under `docs/features/todo.md` is not included here unless it is
 explicitly present in parsing/decorating logic or tests.
 
 ## Recommendations: Complexity Reduction (Syntax Shadowing M2 Complete)

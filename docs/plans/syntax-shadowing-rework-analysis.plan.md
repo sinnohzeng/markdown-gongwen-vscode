@@ -163,7 +163,7 @@ private processInlineCode(
 
 ## Reality check / critique of the draft doc
 
-- **Status mismatch**: the draft claims HTML tags are “DONE”, but [docs/features/todo/html-tags.md](../features/todo/html-tags.md) is `status: TODO`, and `src/parser.ts` doesn’t currently process `html` nodes.
+- **Status mismatch**: the draft claims HTML tags are “DONE”, but there is no implemented HTML-tag feature doc and `src/parser.ts` doesn’t currently process `html` nodes (see [Issue #29](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/29)).
 - **“Ghost” ideas need a feasibility pass**: VS Code supports many CSS-like strings in `textDecoration`, but not everything behaves like a browser; effects like `letter-spacing`/negative spacing need validation.
 - **Overlap/merge constraints are real**: nested constructs (e.g. bold inside links) can create competing decoration intents; the plan needs explicit layering rules.
 
@@ -232,7 +232,7 @@ Core concept: **Rendered hides the real syntax**, and **Ghost shows cues**, not 
 
 **Goal:** Address layout-sensitive contexts (especially tables).
 
-- **C1. Context-sensitive hiding:** In table rows/cells, prefer “transparent” (layout-stable) hiding for marker characters to preserve alignment expectations, aligned with the risk described in [docs/features/todo/table-column-alignment.md](../features/todo/table-column-alignment.md).
+- **C1. Context-sensitive hiding:** In table rows/cells, prefer “transparent” (layout-stable) hiding for marker characters to preserve alignment expectations, aligned with the risk described in [docs/features/todo.md](../features/todo.md#table-column-alignment-with-markup).
 - **C2. User-facing setting:** “Stable layout mode” as an opt-in for users who prioritize alignment over compact rendering.
 
 **Tradeoffs:**

@@ -136,13 +136,10 @@
 
 ## 7. Minor Gaps / Recommendations
 
-### 7.1 docs/features/todo/latex-math.md
+### 7.1 docs/features/done/latex-math.md
 
-- **Status**: Updated to “Done (003)” and references 003.
-- **Issue**: Some text still says “KaTeX” and “hover”:
-  - Overview: “rendered with KaTeX” → implementation uses MathJax.
-  - Examples: “Hover to see rendered formula” → implementation is inline rendering, not hover.
-- **Recommendation**: Replace “KaTeX” with “MathJax” and change “Hover to see rendered formula” to “Rendered inline in the editor” (or equivalent) so the doc matches 003 behavior.
+- **Status**: DONE; feature doc matches the implementation (MathJax SVG, inline rendering, reveal-on-select).
+- **Note**: If we add hover-only enhancements in the future, keep the doc explicit that rendering is inline first, with hover as optional UX.
 
 ### 7.2 package.json description
 
@@ -153,4 +150,4 @@
 
 ## 8. Conclusion
 
-The 003 specs (spec.md, contracts, data-model.md, plan.md, research.md) are **aligned** with the implementation. All functional requirements, contract rules, and data model choices are implemented and tested. The only follow-up suggested is a small wording update in `docs/features/todo/latex-math.md` to replace KaTeX/hover references with MathJax and inline rendering.
+The 003 specs (spec.md, contracts, data-model.md, plan.md, research.md) are **aligned** with the implementation. All functional requirements, contract rules, and data model choices are implemented and tested.

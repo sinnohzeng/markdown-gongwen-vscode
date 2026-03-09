@@ -3,7 +3,7 @@ name: mermaid-inline-svg
 overview: Add inline Mermaid diagram rendering for fenced ` ```mermaid ` blocks by generating SVG locally (Node + JSDOM + npm `mermaid`) and displaying it via editor decorations, while preserving the existing Raw-on-selection behavior (no hover UI).
 todos:
   - id: spec-update
-    content: Rewrite `docs/features/todo/mermaid-diagrams.md` for inline SVG (no hover) + raw reveal acceptance criteria.
+    content: Rewrite `docs/features/done/mermaid-diagrams.md` for inline SVG (no hover) + raw reveal acceptance criteria.
     status: completed
   - id: parser-mermaid-blocks
     content: Extend `MarkdownParser` parse output to include `mermaidBlocks` extracted from fenced `code` nodes with `lang=mermaid` and thread through cache/decorator.
@@ -46,7 +46,7 @@ We’ll use **dynamic decoration types per SVG** (cached + disposed), because it
 
 ### 1) Update the feature spec
 
-- Update [`docs/features/todo/mermaid-diagrams.md`](docs/features/todo/mermaid-diagrams.md):
+- Update [`docs/features/done/mermaid-diagrams.md`](docs/features/done/mermaid-diagrams.md):
 - Change **Overview/Implementation** from hover preview → **inline SVG replacement**.
 - Update acceptance criteria to reflect: “SVG is shown inline; raw markdown is revealed on select”.
 

@@ -169,7 +169,7 @@ As a user viewing rendered equations in the editor, I see the math in a font col
 - **Constitution** (`.specify/memory/constitution.md`): Implementation must follow existing performance rules (parse cache, no full-doc parse on every change), position mapping, and test coverage; no line-count hacks.
 - **AGENTS.md**: New logic should live in appropriate modules; use markdown parse cache; add tests under `__tests__/`.
 - **Markless deep dive** (`docs/competitors/markless_deep_dive.md`): Describes the target UX and pitfalls to avoid (e.g. issue #22: multi-line math and large files).
-- **Existing feature stub** (`docs/features/todo/latex-math.md`): This spec replaces “hover preview only” with “inline rendering like Markless/Obsidian” for the same syntax; hover can be a later enhancement.
+- **Feature doc** (`docs/features/done/latex-math.md`): Implemented inline and block math rendering in the editor (MathJax SVG). Hover can still be a later enhancement.
 
 ---
 

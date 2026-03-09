@@ -110,7 +110,7 @@
 **Purpose**: Setting wiring, docs, validation
 
 - [X] T017 Ensure math.enabled is read when building decorations in src/decorator.ts so when disabled no math decorations are applied (if not already done in T010)
-- [X] T018 [P] Update docs/features/todo/latex-math.md status and/or README to reflect inline LaTeX rendering (003)
+- [X] T018 [P] Update docs/features/done/latex-math.md and/or README to reflect inline LaTeX rendering (003)
 - [X] T019a [P] Sanity-check math in a large document: create or use an existing test with a document of >500 lines containing math; assert math regions are detected and decorations applied (FR-007 / constitution IV).
 - [X] T019 Run npm run validate (lint:docs, test, build) and fix any issues; ensure no regression in existing tests
 

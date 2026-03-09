@@ -28,6 +28,7 @@ Your files stay 100% standard Markdown. This extension uses editor decorations �
 - **Clickable links** (including autolinks like `<https://example.com>` and bare links like `user@example.com`)
 - **Hover previews**: links show targets, images show previews
 - **Mermaid diagrams**: renders fenced `mermaid` code blocks as inline SVG with hover preview (offline + theme-aware)
+- **LaTeX/Math**: renders `$...$`, `$$...$$`, and ` ```math ` blocks inline in the editor
 - **Theme-aware**: matches your VS Code theme automatically
 - **Configurable**: tune ghost opacity, diff behavior, emoji rendering, and link click behavior
 - **Task lists**: click checkboxes to toggle
@@ -126,6 +127,7 @@ The extension supports the following Markdown (and common GitHub-flavored) featu
 - [x] **YAML Frontmatter** • [Details][feat-yaml-frontmatter] • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
 - [x] **Emoji Support** (`:smile:`) • [Details][feat-emoji-support] • [Issue #30](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/30)
 - [x] **Mermaid Diagrams** (`` ```mermaid ``) • [Details][feat-mermaid-diagrams] • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
+- [x] **LaTeX/Math** (`$...$`, `$$...$$`, ` ```math `) • [Details][feat-latex-math] • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 
 ### Configuration
 - [x] **Show Raw Markdown in Diffs** • [Details][feat-show-raw-markdown-in-diffs] • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
@@ -166,11 +168,11 @@ Want to help? Pick an item below and open a PR (or add feedback in the linked is
 
 ### High priority
 - [ ] **Tables** • [Spec][todo-tables] • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
-- [ ] **LaTeX/Math** • [Spec][todo-latex-math] • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 
 ### Medium priority
 - [ ] **Per-file toggle state** • [Spec][todo-per-file-toggle-state] • [Issue #28](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/28)
 - [ ] **Column alignment in tables with markup** • [Spec][todo-table-column-alignment] • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
+- [ ] **Default decorator rendering** – open files with decorations on/off by default • [Spec][todo-default-decorator-rendering]
 - [ ] **Image UX improvements** • [Spec][todo-image-ux-improvements]
 - [ ] **Highlighting support** • [Spec][todo-highlighting-support]
 
@@ -337,7 +339,6 @@ See [`CONTRIBUTING.md`][contributing] for full contribution guidelines and [`AGE
 ### Known Limitations
 
 - **Tables** – Table syntax hiding is not implemented yet • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
-- **Math formulas** – KaTeX/MathJax support is planned • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
 - **Ordered list auto-numbering** – Planned (numbers remain visible today) • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
 - **H1 heading clipping** – Text can go out of window when H1 is on first line • [#4](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/4)
 - **Very large files** – Files over ~1MB may parse more slowly (see [FAQ][faq])
@@ -404,6 +405,7 @@ Special thanks to these projects, which inspired or enabled this extension:
 [feat-inline-code]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/inline-code.md
 [feat-italic]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/italic.md
 [feat-links]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/links.md
+[feat-latex-math]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/latex-math.md
 [feat-mermaid-diagrams]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/mermaid-diagrams.md
 [feat-show-raw-markdown-in-diffs]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/show-raw-markdown-in-diffs.md
 [feat-customizable-syntax-colors]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/customizable-syntax-colors.md
@@ -412,12 +414,12 @@ Special thanks to these projects, which inspired or enabled this extension:
 [feat-unordered-lists]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/unordered-lists.md
 [feat-yaml-frontmatter]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/yaml-frontmatter.md
 
-[todo-default-feature-activation]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/default-feature-activation.md
-[todo-highlighting-support]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/highlighting-support.md
-[todo-image-ux-improvements]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/image-ux-improvements.md
-[todo-latex-math]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/latex-math.md
-[todo-mentions-references]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/mentions-references.md
-[todo-ordered-list-auto-numbering]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/ordered-list-auto-numbering.md
-[todo-per-file-toggle-state]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/per-file-toggle-state.md
-[todo-table-column-alignment]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/table-column-alignment.md
-[todo-tables]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo/tables.md
+[todo-default-decorator-rendering]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#default-decorator-rendering
+[todo-default-feature-activation]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#default-feature-activation
+[todo-highlighting-support]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#highlighting-support
+[todo-image-ux-improvements]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#image-ux-improvements
+[todo-mentions-references]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#mentions-and-references-styling
+[todo-ordered-list-auto-numbering]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#ordered-list-auto-numbering
+[todo-per-file-toggle-state]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#per-file-toggle-state
+[todo-table-column-alignment]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#table-column-alignment-with-markup
+[todo-tables]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#tables
