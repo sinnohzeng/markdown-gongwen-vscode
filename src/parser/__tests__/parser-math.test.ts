@@ -172,6 +172,91 @@ describe('MarkdownParser - Math regions', () => {
     });
   });
 
+  describe('math fences', () => {
+    it('detects ```math fence body as display math', () => {
+      const text = '```math\n\\begin{align}\na&=b\n\\end{align}\n```';
+      const regions = getMathRegions(text);
+      expect(regions).toHaveLength(1);
+      expect(regions[0].displayMode).toBe(true);
+      expect(regions[0].source).toBe('\\begin{align}\na&=b\n\\end{align}\n');
+      expect(regions[0].numLines).toBe(3);
+      expect(text.slice(regions[0].startPos, regions[0].endPos)).toBe(text);
+    });
+
+    it('accepts latex and tex fence languages (case and whitespace normalized)', () => {
+      const latex = '``` LaTeX \nE = mc^2\n```';
+      const tex = '``` tex numbered\nx+y\n```';
+      const latexRegions = getMathRegions(latex);
+      const texRegions = getMathRegions(tex);
+
+      expect(latexRegions).toHaveLength(1);
+      expect(latexRegions[0].displayMode).toBe(true);
+      expect(latexRegions[0].source).toBe('E = mc^2\n');
+      expect(latexRegions[0].numLines).toBe(1);
+      expect(latex.slice(latexRegions[0].startPos, latexRegions[0].endPos)).toBe(latex);
+
+      expect(texRegions).toHaveLength(1);
+      expect(texRegions[0].displayMode).toBe(true);
+      expect(texRegions[0].source).toBe('x+y\n');
+      expect(texRegions[0].numLines).toBe(1);
+      expect(tex.slice(texRegions[0].startPos, texRegions[0].endPos)).toBe(tex);
+    });
+
+    it('does not treat non-math fence content as math', () => {
+      const text = '```js\nconst price = "$100";\nconst eq = "$x$";\n```';
+      const regions = getMathRegions(text);
+      expect(regions).toHaveLength(0);
+    });
+
+    it('keeps delimiter math outside fences unchanged in mixed documents', () => {
+      const text = [
+        'Outside $x$',
+        '```js',
+        'const y = "$y$";',
+        '```',
+        '$$z$$',
+        '```math',
+        '\\frac{1}{2}',
+        '```',
+      ].join('\n');
+
+      const regions = getMathRegions(text);
+      expect(regions).toHaveLength(3);
+      expect(regions[0].source).toBe('x');
+      expect(regions[0].displayMode).toBe(false);
+      expect(regions[1].source).toBe('z');
+      expect(regions[1].displayMode).toBe(true);
+      expect(regions[2].source).toBe('\\frac{1}{2}\n');
+      expect(regions[2].displayMode).toBe(true);
+      expect(regions[2].numLines).toBe(1);
+    });
+
+    it('ignores unclosed and whitespace-only math fences', () => {
+      const unclosed = '```math\nx+y';
+      const whitespaceOnly = '```math\n   \n\t\n```';
+      expect(getMathRegions(unclosed)).toHaveLength(0);
+      expect(getMathRegions(whitespaceOnly)).toHaveLength(0);
+    });
+
+    it('mixed js and math fences: only math fences produce math regions', () => {
+      const text = [
+        '```js',
+        'const a = 1;',
+        '```',
+        '```math',
+        'E=mc^2',
+        '```',
+        '```javascript',
+        '""',
+        '```',
+      ].join('\n');
+      const regions = getMathRegions(text);
+      expect(regions).toHaveLength(1);
+      expect(regions[0].source).toBe('E=mc^2\n');
+      expect(regions[0].displayMode).toBe(true);
+    });
+  });
+
   describe('large document (FR-007: no line-count limit)', () => {
     it('detects math regions in a document with >500 lines', () => {
       const lines: string[] = [];

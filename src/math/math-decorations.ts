@@ -8,21 +8,25 @@ const DEFAULT_FOREGROUND = {
   light: '#3c3c3c',
 } as const;
 
-/** Compute line height from editor settings (same logic as feat/inline-math). */
-function getEditorHeights(): { blockHeight: number; inlineHeight: number } {
+/** Compute line height from editor settings, aligned with mermaid sizing fallback. */
+function getEditorHeights(): { blockHeight: number; inlineHeight: number; lineHeight: number } {
   const editorConfig = workspace.getConfiguration('editor');
   const fontSize = editorConfig.get<number>('fontSize', 14);
   const lineHeightSetting = editorConfig.get<number>('lineHeight', 0);
   let lineHeight: number;
-  if (lineHeightSetting === 0) {
-    lineHeight = Math.round(fontSize * 1.5);
+  if (lineHeightSetting === 0 || lineHeightSetting < 8) {
+    const multiplier = process.platform === 'darwin' ? 1.5 : 1.35;
+    lineHeight = Math.round(fontSize * multiplier);
+    if (lineHeight < 8) {
+      lineHeight = 8;
+    }
   } else if (lineHeightSetting >= 10) {
     lineHeight = Math.round(lineHeightSetting);
   } else {
     lineHeight = Math.round(fontSize * lineHeightSetting);
   }
   const inlineHeight = Math.round(fontSize * 1.2);
-  return { blockHeight: lineHeight, inlineHeight };
+  return { blockHeight: lineHeight, inlineHeight, lineHeight };
 }
 
 type MathDecorationEntry = {
@@ -31,8 +35,11 @@ type MathDecorationEntry = {
   isDarkTheme: boolean;
 };
 
-/** Creates content key for caching decoration type (source + displayMode). */
-function contentKey(source: string, displayMode: boolean): string {
+/** Creates content key for caching decoration type (source + displayMode + optional numLines for height). */
+function contentKey(source: string, displayMode: boolean, numLines?: number): string {
+  if (displayMode && numLines != null) {
+    return `block:${numLines}:${source}`;
+  }
   return `${displayMode ? 'block' : 'inline'}:${source}`;
 }
 
@@ -57,19 +64,24 @@ export class MathDecorations {
       window.activeColorTheme.kind === ColorThemeKind.HighContrast;
 
     const foregroundColor = DEFAULT_FOREGROUND[isDarkTheme ? 'dark' : 'light'];
-    const { blockHeight, inlineHeight } = getEditorHeights();
+    const { blockHeight, inlineHeight, lineHeight } = getEditorHeights();
 
     const byKey = new Map<string, { ranges: Range[]; dataUri: string }>();
     for (const { region, range } of regionsWithRanges) {
       if (!range) continue;
-      const height = region.displayMode ? blockHeight : inlineHeight;
+      const height =
+        region.displayMode && region.numLines != null
+          ? (region.numLines + 2) * lineHeight
+          : region.displayMode
+            ? blockHeight
+            : inlineHeight;
       const dataUri = renderMathToDataUri(region.source, {
         displayMode: region.displayMode,
         height,
         foregroundColor,
       });
       if (!dataUri) continue;
-      const key = contentKey(region.source, region.displayMode);
+      const key = contentKey(region.source, region.displayMode, region.numLines);
       const existing = byKey.get(key);
       if (existing) {
         existing.ranges.push(range);
@@ -116,9 +128,6 @@ export class MathDecorations {
       before: {
         contentIconPath: Uri.parse(dataUri),
         textDecoration: 'none;',
-        ...(displayMode
-          ? { margin: '0 0 0 0', width: '100%', height: 'auto' as const }
-          : {}),
       },
       ...(displayMode
         ? { rangeBehavior: 1 as const /* TrackedRangeStickiness.NeverGrowWhenTypingAtEdges */ }
