@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.2](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.18.1..v1.18.2) - 2026-03-09
+
+### Changed
+
+- update README and references for consolidated todo list and LaTeX done - ([33fbcab](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/commit/33fbcababef1252ed335e62a53302ad7dc3626e2))
+
 ## [1.18.1](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/compare/v1.18.0..v1.18.1) - 2026-03-09
 
 ### Changed
