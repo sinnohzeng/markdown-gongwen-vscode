@@ -363,6 +363,11 @@ Special thanks to these projects, which inspired or enabled this extension:
 - [Typora](https://typora.io/) – Original inspiration for the inline markdown editing concept
 - [Obsidian](https://obsidian.md/) – Markdown-based knowledge management application that inspired the editing experience
 
+### Contributors
+
+- [@patrick-yip](https://github.com/patrick-yip)
+- [@bircni](https://github.com/bircni)
+
 [ci-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml/badge.svg
 [ci]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml
 
