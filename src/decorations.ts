@@ -482,7 +482,7 @@ export function TablePipeDecorationType() {
 /**
  * Creates a decoration type for table separator row pipe characters.
  *
- * Hides the original pipe and renders a box-drawing T-junction (├, ┼, or ┤)
+ * Hides the original pipe and renders a vertical line (│), same as data-row pipes,
  * via per-range `renderOptions.before.contentText`.
  *
  * @returns {vscode.TextEditorDecorationType} A decoration type for separator pipes
@@ -500,8 +500,8 @@ export function TableSeparatorPipeDecorationType() {
 /**
  * Creates a decoration type for table separator row dash segments.
  *
- * Hides the original dashes and renders horizontal box-drawing lines (─)
- * via per-range `renderOptions.before.contentText`.
+ * Hides the original dashes and renders padded ASCII hyphen (`-`) runs via per-range
+ * `renderOptions.before.contentText` (matches monospace width; avoids U+2500 misalignment).
  *
  * @returns {vscode.TextEditorDecorationType} A decoration type for separator dashes
  */

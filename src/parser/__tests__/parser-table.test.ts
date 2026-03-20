@@ -158,6 +158,19 @@ describe('MarkdownParser - Tables', () => {
   });
 
   describe('outer-pipe-less tables', () => {
+    it('should render outer-pipe-less table when it starts at document offset 0', () => {
+      const md = 'A | B\n---|---\n1 | 2';
+      const result = parser.extractDecorations(md);
+      const cells = byType(result, 'tableCell');
+      const pipes = byType(result, 'tablePipe');
+      expect(cells.length).toBeGreaterThanOrEqual(4);
+      expect(cells.every((c) => c.startPos >= 0 && c.endPos > c.startPos)).toBe(true);
+      pipes.forEach((p) => {
+        expect(p.startPos).toBeGreaterThanOrEqual(0);
+        expect(p.replacement).toBe('\u2502');
+      });
+    });
+
     it('should render cells when table has no outer pipes', () => {
       const md = 'A | B\n---|---\n1 | 2';
       const result = parser.extractDecorations(md);
@@ -180,6 +193,17 @@ describe('MarkdownParser - Tables', () => {
       pipes.forEach((p) => {
         expect(p.replacement).toBe('\u2502');
       });
+    });
+  });
+
+  describe('links in cells', () => {
+    it('should include link label text in cell replacement', () => {
+      const md = '| Col |\n|-----|\n| [label](https://example.com) |';
+      const result = parser.extractDecorations(md);
+      const cells = byType(result, 'tableCell');
+      const dataCell = cells.find((c) => c.replacement?.includes('label'));
+      expect(dataCell).toBeDefined();
+      expect(dataCell!.replacement).not.toContain('https://');
     });
   });
 

@@ -2268,24 +2268,6 @@ export class MarkdownParser {
   }
 
   /**
-   * Measures the display width of cell text after stripping inline markdown markers.
-   *
-   * CJK wide characters (Unicode ranges U+2E80-U+9FFF, U+F900-U+FAFF,
-   * U+FE30-U+FE4F, U+20000-U+2FA1F) count as 2 columns; all others count as 1.
-   *
-   * @param raw - Raw cell text (may contain inline markdown markers)
-   * @returns Display width in monospace columns
-   */
-  private static readonly INLINE_MARKER_RE = /(\*{1,3}|_{1,3}|~~|`+)/g;
-
-  /**
-   * Strips inline markdown markers from cell text, returning plain display text.
-   */
-  private stripCellMarkers(raw: string): string {
-    return raw.replace(MarkdownParser.INLINE_MARKER_RE, "");
-  }
-
-  /**
    * Extracts plain display text from a TableCell AST node by walking its
    * child tree. Avoids regex-based stripping which incorrectly removes
    * literal underscores and asterisks (e.g. snake_case, 100*200).
@@ -2372,12 +2354,18 @@ export class MarkdownParser {
   }
 
   /**
-   * Measures width of already-plain text (no marker stripping).
-   * CJK wide characters count as 2 columns; all others as 1.
+   * Measures display width for monospace column alignment of **plain** cell text
+   * (no markdown markers — callers use `extractCellPlainText` / `detectCellStyle` paths).
+   *
+   * CJK wide characters (Unicode ranges U+2E80–U+9FFF, U+F900–U+FAFF,
+   * U+FE30–U+FE4F, U+20000–U+2FA1F) count as 2 columns; all others as 1.
    *
    * Adds a small per-CJK-character correction because VS Code's `before`
    * pseudo-element renders CJK glyphs slightly wider than exactly 2x
    * ASCII width in most monospace fonts.
+   *
+   * @param plain - Already-unmarked cell display text
+   * @returns Estimated width in monospace columns
    */
   private measureTextWidth(plain: string): number {
     let width = 0;
@@ -2400,10 +2388,6 @@ export class MarkdownParser {
     // slightly wider than exactly 2x ASCII in most default fonts.
     // ceil(n*0.25) ensures every CJK cell gets at least +1 correction.
     return width + Math.ceil(cjkCount * 0.25);
-  }
-
-  private measureCellText(raw: string): number {
-    return this.measureTextWidth(this.stripCellMarkers(raw));
   }
 
   /**
@@ -2457,9 +2441,13 @@ export class MarkdownParser {
       firstContentPos++;
     }
 
-    // Inject virtual leading boundary if first pipe is not the first content char
+    // Inject virtual leading boundary if first pipe is not the first content char.
+    // When the line starts with content at `lineStart`, `firstContentPos - 1` would be
+    // invalid (-1); use -1 as a sentinel so cell ranges use substring(pipes[i] + 1, …) → start at 0.
     if (pipes[0] !== firstContentPos) {
-      positions.unshift(firstContentPos - 1);
+      const virtualLead =
+        firstContentPos > lineStart ? firstContentPos - 1 : -1;
+      positions.unshift(virtualLead);
       isVirtual.unshift(true);
     }
 
