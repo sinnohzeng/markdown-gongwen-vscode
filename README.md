@@ -141,8 +141,8 @@ Everything works out of the box. If you want to tune the experience, open Settin
   - Opens links/images without Ctrl/Cmd-click, but may interfere with text selection.
 - **Emoji shortcodes** (`emojis.enabled`, default `true`)
   - Disable if you prefer seeing `:shortcode:` text.
-- **Syntax colors** (`colors.heading1` … `colors.checkbox`, 14 options)
-  - Optional hex overrides (e.g. `#e06c75`) for headings, links, list markers, inline code, emphasis, blockquote, image, horizontal rule, checkbox. Unset or invalid values use theme-derived defaults. See [Customizable Syntax Colors][feat-customizable-syntax-colors].
+- **Syntax colors** (`colors.heading1` … `colors.checkbox`, 15 options including `inlineCodeBackground`)
+  - Optional hex overrides (e.g. `#e06c75`) for headings, links, list markers, inline code, inline code background, emphasis, blockquote, image, horizontal rule, checkbox. Unset or invalid values use theme-derived defaults. See [Customizable Syntax Colors][feat-customizable-syntax-colors].
 
 ### Example `settings.json`
 
@@ -368,6 +368,7 @@ Special thanks to these projects, which inspired or enabled this extension:
 - [@patrick-yip](https://github.com/patrick-yip)
 - [@bircni](https://github.com/bircni)
 - [@ssebs](https://github.com/ssebs)
+- [@IrishBruse](https://github.com/IrishBruse)
 
 [ci-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml/badge.svg
 [ci]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml
