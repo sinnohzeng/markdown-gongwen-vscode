@@ -108,6 +108,7 @@ The extension supports the following Markdown (and common GitHub-flavored) featu
 ### Structure
 - [x] **Headings** (`# H1` through `###### H6`) • [Details][feat-headings]
 - [x] **Links** (`[text](url)`) • [Details][feat-links]
+- [x] **Mentions & issue references** (`@user`, `@org/team`, `#123`, `@owner/repo#456`) • [Details][feat-mentions-references] • [Issue #25](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/25)
 - [x] **Autolinks & bare links** (`<https://…>` / `user@example.com`) • [Details][feat-autolinks] • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
 - [x] **Images** (`![alt](img.png)`) • [Details][feat-images]
 - [x] **Blockquotes** (`> quote`) • [Details][feat-blockquotes]
@@ -139,6 +140,8 @@ Everything works out of the box. If you want to tune the experience, open Settin
   - Keep `false` to review raw Markdown in diffs; set `true` if you want the same inline rendering in diffs too.
 - **Single-click links** (`links.singleClickOpen`, default `false`)
   - Opens links/images without Ctrl/Cmd-click, but may interfere with text selection.
+- **Mentions & issue refs** (`mentions.enabled`, default `true`; `mentions.linksEnabled`, unset = infer from `git remote`)
+  - Style GitHub-style `@user` / `#123`; optional clickable targets when forge context is available. See [Mentions & references][feat-mentions-references].
 - **Emoji shortcodes** (`emojis.enabled`, default `true`)
   - Disable if you prefer seeing `:shortcode:` text.
 - **Syntax colors** (`colors.heading1` … `colors.checkbox`, 15 options including `inlineCodeBackground`)
@@ -170,7 +173,6 @@ Want to help? Pick an item below and open a PR (or add feedback in the linked is
 - [ ] **Highlighting support** • [Spec][todo-highlighting-support]
 
 ### Low priority
-- [ ] **Mentions/References** • [Spec][todo-mentions-references] • [Issue #25](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/25)
 - [ ] **Ordered list auto-numbering** • [Spec][todo-ordered-list-auto-numbering] • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
 - [ ] **HTML tags** • [Issue #29](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/29) (spec TBD)
 - [ ] **Footnotes** • [Issue #32](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/32) (spec TBD)
@@ -406,6 +408,7 @@ Special thanks to these projects, which inspired or enabled this extension:
 [feat-inline-code]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/inline-code.md
 [feat-italic]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/italic.md
 [feat-links]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/links.md
+[feat-mentions-references]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/mentions-references.md
 [feat-latex-math]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/latex-math.md
 [feat-mermaid-diagrams]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/mermaid-diagrams.md
 [feat-show-raw-markdown-in-diffs]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/show-raw-markdown-in-diffs.md
@@ -419,7 +422,6 @@ Special thanks to these projects, which inspired or enabled this extension:
 [todo-default-feature-activation]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#default-feature-activation
 [todo-highlighting-support]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#highlighting-support
 [todo-image-ux-improvements]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#image-ux-improvements
-[todo-mentions-references]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#mentions-and-references-styling
 [todo-ordered-list-auto-numbering]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#ordered-list-auto-numbering
 [todo-per-file-toggle-state]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#per-file-toggle-state
 [todo-table-column-alignment]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#table-column-alignment-with-markup

@@ -53,13 +53,7 @@ Improve image experience: click-to-open, richer hover, visual distinction, optio
 
 ## Mentions and references styling
 
-Visually style GitHub-style mentions (`@username`, `@org/team`) and references (`#123`, `@user/repo#456`) inline.
-
-- Pattern detection for mentions and issue/PR refs; apply distinct decoration (e.g. code-like or tag style).
-- Purely visual—no navigation, links, or API lookups; text unchanged.
-- Edge cases: exclude emails (`user@example.com`), “@ $5”; style only the mention/reference part.
-- Reveal raw markdown on selection/caret, re-apply decoration when deselected.
-- High feasibility, moderate complexity due to pattern edge cases.
+**Implemented** — see [`docs/features/done/mentions-references.md`](./done/mentions-references.md) (inline styling, optional forge-aware links, settings `markdownInlineEditor.mentions.*`).
 
 ---
 

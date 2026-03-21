@@ -85,3 +85,7 @@ Feature: Reveal link
 
 - `[Link Text](https://example.com)` → **Link Text** (URL hidden, clickable)
 - `[**Bold** Link](https://example.com)` → **Bold** Link (supports formatting)
+
+## See also
+
+- [Mentions and issue references](./mentions-references.md) — `@user`, `#123`, forge-aware links (same **Ctrl/Cmd+click** / optional single-click behavior).
