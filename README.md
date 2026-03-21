@@ -2,7 +2,7 @@
 
 <img src="assets/icon.png" align="right" alt="Markdown Inline Editor icon" width="120" height="120">
 
-[![CI/CD Status][ci-img]][ci] [![VS Code Marketplace][marketplace-img]][marketplace] [![OpenVSX][openvsx-img]][openvsx] [![License: MIT][license-img]][license]
+[![CI/CD Status][ci-img]][ci] [![Dependency vulnerabilities][audit-img]][audit] [![VS Code Marketplace][marketplace-img]][marketplace] [![OpenVSX][openvsx-img]][openvsx] [![License: MIT][license-img]][license]
 
 **Typora-like Markdown editing in VS Code.** Write in a clean, WYSIWYG-style view with context-aware syntax shadowing, **GFM pipe tables**, inline Mermaid and LaTeX math rendering, hover previews, and clickable task lists.
 
@@ -374,6 +374,9 @@ Special thanks to these projects, which inspired or enabled this extension:
 
 [ci-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml/badge.svg
 [ci]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml
+
+[audit-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/npm-audit.yml/badge.svg?branch=main
+[audit]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/npm-audit.yml
 
 [repo]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode
 [releases]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/releases
