@@ -70,24 +70,37 @@ function checkRecommendedExtensions(context: vscode.ExtensionContext): void {
 }
 
 /**
+ * Public API exposed via `vscode.extensions.getExtension(id).exports`.
+ *
+ * Intended for integration / E2E tests — allows test code to inspect the
+ * parse cache and decorator without monkey-patching or modifying the source.
+ */
+export type ExtensionApi = {
+  /** The live parse cache; call `.get(document)` to read decoration ranges. */
+  parseCache: MarkdownParseCache;
+  /** The live decorator instance; exposes isEnabled(), activeEditor, etc. */
+  decorator: Decorator;
+};
+
+/**
  * Activates the markdown inline preview extension.
- * 
+ *
  * This function is called by VS Code when the extension is activated (typically
  * when a markdown file is opened). It sets up event listeners for:
  * - Active editor changes
  * - Text selection changes
  * - Document content changes
- * 
+ *
  * All event subscriptions are registered with the extension context for proper
  * cleanup when the extension is deactivated.
- * 
+ *
  * @param {vscode.ExtensionContext} context - The extension context provided by VS Code
- * 
+ *
  * @example
  * // Called automatically by VS Code when extension is activated
  * activate(context);
  */
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): ExtensionApi {
   // Initialize mermaid renderer with extension context
   initMermaidRenderer(context);
 
@@ -245,6 +258,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(navigateToAnchorCommand);
   context.subscriptions.push({ dispose: () => decorator.dispose() });
   context.subscriptions.push({ dispose: () => linkClickHandler.dispose() });
+
+  return { parseCache, decorator };
 }
 
 /**

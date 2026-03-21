@@ -11,7 +11,22 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/test/**',
+    '!src/extension.ts',
+    '!src/mermaid/**',
+    '!src/code-block-hover-provider.ts',
+    '!src/decorator/decoration-type-registry.ts',
+    '!src/math/math-decorations.ts',
+    '!src/forge-context.ts',
+    '!src/github-context.ts',
   ],
+  coverageThreshold: {
+    global: {
+      statements: 80,
+      branches: 70,
+      functions: 80,
+      lines: 80,
+    },
+  },
   reporters: [
     'default',
     [

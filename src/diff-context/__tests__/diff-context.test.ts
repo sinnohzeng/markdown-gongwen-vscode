@@ -1,5 +1,5 @@
-import { TextDocument, Uri, workspace } from '../../test/__mocks__/vscode';
-import { isDiffLikeUri, shouldSkipInDiffView } from '../../diff-context';
+import { TextDocument, TextEditor, Uri, workspace } from '../../test/__mocks__/vscode';
+import { isDiffLikeUri, isDiffViewVisible, shouldSkipInDiffView } from '../../diff-context';
 
 const mockGetConfiguration = jest.fn().mockReturnValue({
   get: jest.fn().mockReturnValue(false),
@@ -17,6 +17,38 @@ describe('diff-context', () => {
 
     it('does not flag normal file URIs', () => {
       expect(isDiffLikeUri(Uri.file('/path/to/file.md') as any)).toBe(false);
+    });
+
+    it('detects "diff" in URI path string', () => {
+      expect(isDiffLikeUri(Uri.parse('file:///path/to/diff-view.md') as any)).toBe(true);
+    });
+
+    it('detects "merge" in URI path string', () => {
+      expect(isDiffLikeUri(Uri.parse('file:///path/to/merge-result.md') as any)).toBe(true);
+    });
+
+    it('detects "compare" in URI path string', () => {
+      expect(isDiffLikeUri(Uri.parse('file:///compare/files.md') as any)).toBe(true);
+    });
+  });
+
+  describe('isDiffViewVisible', () => {
+    it('returns true when at least one editor has a diff-like URI', () => {
+      const editors = [
+        new TextEditor(new TextDocument(Uri.parse('git:/file.md'), 'markdown', 1, ''), []),
+      ];
+      expect(isDiffViewVisible(editors as any)).toBe(true);
+    });
+
+    it('returns false when no editors have diff-like URIs', () => {
+      const editors = [
+        new TextEditor(new TextDocument(Uri.file('/normal.md'), 'markdown', 1, ''), []),
+      ];
+      expect(isDiffViewVisible(editors as any)).toBe(false);
+    });
+
+    it('returns false for empty editors array', () => {
+      expect(isDiffViewVisible([])).toBe(false);
     });
   });
 
