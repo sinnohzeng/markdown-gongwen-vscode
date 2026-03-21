@@ -34,7 +34,12 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:markdown"
+    "onLanguage:markdown",
+    "onLanguage:skill",
+    "onLanguage:markdoc",
+    "onLanguage:mdc",
+    "onLanguage:juliamarkdown",
+    "onLanguage:rmarkdown"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -49,7 +54,7 @@
       "editor/title": [
         {
           "command": "mdInline.toggleDecorations",
-          "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx",
+          "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
           "group": "navigation"
         }
       ]
@@ -238,6 +243,7 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
     "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test:e2e": "npm run bundle && npm run compile:e2e && vscode-test",
     "test:report": "NODE_OPTIONS=--experimental-vm-modules jest && echo 'HTML report generated at: dist/test-report/report.html'",
     "test:crlf": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns='(crlf|position-mapping|cache-crlf)'",
     "clean": "rimraf dist",
@@ -249,8 +255,13 @@
     "build": "npm run copy:mermaid && npm run compile && npm run bundle:prod && npm run package",
     "build:dev": "npm run compile && npm run bundle && npm run package",
     "validate": "npm run lint:docs && npm test && npm run build",
+    "compile:e2e": "tsc -p tsconfig.e2e.json",
     "release": "node scripts/release.js",
     "prepublishOnly": "npm run clean && npm run build"
+  },
+  "overrides": {
+    "diff": "^8.0.3",
+    "serialize-javascript": "^7.0.4"
   },
   "dependencies": {
     "cheerio": "1.2.0",
@@ -265,11 +276,14 @@
   "devDependencies": {
     "@tsconfig/node-lts": "^24.0.0",
     "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^25.0.3",
     "@types/unist": "^3.0.3",
     "@types/vscode": "1.88.0",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.50.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.27.2",
     "eslint": "^9.39.2",

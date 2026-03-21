@@ -410,7 +410,12 @@ export class Decorator {
     if (!this.activeEditor) {
       return false;
     }
-    return ['markdown', 'md', 'mdx'].includes(this.activeEditor.document.languageId);
+    // 'skill'         (#58): SKILL.md files assigned languageId 'skill' by the SKILL extension.
+    // 'markdoc'       (#61): Markdoc files assigned languageId 'markdoc' by the Markdoc language server.
+    // 'mdc'           (#61): Nuxt Content .mdc files assigned languageId 'mdc' by vscode-mdc.
+    // 'juliamarkdown' (#61): Julia Markdown files (VS Code built-in identifier).
+    // 'rmarkdown'     (#61): R Markdown files assigned languageId 'rmarkdown' by vscode-R.
+    return ['markdown', 'md', 'mdx', 'skill', 'markdoc', 'mdc', 'juliamarkdown', 'rmarkdown'].includes(this.activeEditor.document.languageId);
   }
 
   /**
