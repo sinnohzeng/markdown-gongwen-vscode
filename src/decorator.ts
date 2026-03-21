@@ -97,6 +97,14 @@ export class Decorator {
   /** The currently active text editor being decorated */
   activeEditor: TextEditor | undefined;
 
+  /**
+   * Optional test hook — set from E2E tests via the exported ExtensionApi.
+   * Called at the end of every applyDecorations() cycle with the number of
+   * decoration types that had at least one non-empty range applied.
+   * Undefined in production; never called when decorations are disabled.
+   */
+  onApply: ((nonEmptyTypeCount: number) => void) | undefined = undefined;
+
   private parseCache: MarkdownParseCache;
   private updateTimeout: NodeJS.Timeout | undefined;
 
@@ -712,6 +720,12 @@ export class Decorator {
 
     const ghostFaintRanges = (filteredDecorations.get('ghostFaint') as Range[] | undefined) || [];
     this.activeEditor.setDecorations(this.decorationTypes.getGhostFaintDecorationType(), ghostFaintRanges);
+
+    // Fire optional test hook (E2E only — undefined in production).
+    if (this.onApply) {
+      const nonEmptyTypeCount = [...filteredDecorations.values()].filter(r => r.length > 0).length;
+      this.onApply(nonEmptyTypeCount);
+    }
   }
 
   /**
