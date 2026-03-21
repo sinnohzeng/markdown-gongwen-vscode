@@ -1,0 +1,6 @@
+# Code scanning: exclude vendored Mermaid bundles (third-party, minified).
+# See https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+name: Markdown Inline Editor CodeQL config
+
+paths-ignore:
+  - assets/mermaid/**
