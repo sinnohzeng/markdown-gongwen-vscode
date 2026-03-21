@@ -58,6 +58,10 @@ export const Position = class {
     public line: number,
     public character: number,
   ) {}
+
+  translate(lineDelta: number, characterDelta: number) {
+    return new (Position as any)(this.line + lineDelta, this.character + characterDelta);
+  }
 };
 
 export const Uri = {
@@ -202,10 +206,10 @@ export function resetTextEditorDecorationTypeOptionsCapture(): void {
 }
 
 export const window = {
-  createTextEditorDecorationType: (options: unknown) => {
+  createTextEditorDecorationType: jest.fn((options: unknown) => {
     lastTextEditorDecorationTypeOptions = options;
-    return {};
-  },
+    return { dispose: jest.fn() };
+  }),
   activeTextEditor: undefined as any,
   visibleTextEditors: [] as any[],
   activeColorTheme: {
@@ -216,9 +220,23 @@ export const window = {
   onDidChangeActiveColorTheme: () => ({ dispose: () => {} }),
 };
 
+export class WorkspaceEdit {
+  private _edits: Array<{ uri: any; range: any; newText: string }> = [];
+
+  replace(uri: any, range: any, newText: string): void {
+    this._edits.push({ uri, range, newText });
+  }
+
+  /** @internal test helper — returns recorded replace calls */
+  getEdits(): Array<{ uri: any; range: any; newText: string }> {
+    return this._edits;
+  }
+}
+
 export const workspace = {
   onDidChangeTextDocument: () => ({ dispose: () => {} }),
   onDidChangeConfiguration: () => ({ dispose: () => {} }),
+  applyEdit: jest.fn().mockResolvedValue(true),
   getConfiguration: (section?: string) => ({
     get: <T>(key: string, defaultValue: T): T => {
       // Return default value for all configuration keys in tests

@@ -77,6 +77,20 @@ describe('isMarkdownDocument()', () => {
     expect(d.isMarkdownDocument()).toBe(true);
   });
 
+  // #61: Julia Markdown files use built-in languageId 'juliamarkdown'
+  it('returns true for languageId "juliamarkdown" (#61)', () => {
+    const d = makeDecorator();
+    d.activeEditor = makeEditor('juliamarkdown');
+    expect(d.isMarkdownDocument()).toBe(true);
+  });
+
+  // #61: R Markdown files use languageId 'rmarkdown' (vscode-R extension)
+  it('returns true for languageId "rmarkdown" (#61)', () => {
+    const d = makeDecorator();
+    d.activeEditor = makeEditor('rmarkdown');
+    expect(d.isMarkdownDocument()).toBe(true);
+  });
+
   it('returns false for languageId "plaintext"', () => {
     const d = makeDecorator();
     d.activeEditor = makeEditor('plaintext');
