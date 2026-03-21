@@ -88,16 +88,16 @@ export async function renderMermaidSvgNatural(
  * Uses the global decorationCache to avoid creating unbounded caches
  */
 function memoizeMermaidDecoration(
-  func: (source: string, darkMode: boolean, height: number, fontFamily?: string) => Promise<string>
-): (source: string, darkMode: boolean, height: number, fontFamily?: string) => Promise<string> {
-  return (source: string, darkMode: boolean, height: number, fontFamily?: string): Promise<string> => {
-    const key = `${source}|${darkMode}|${height}|${fontFamily ?? ''}`;
+  func: (source: string, darkMode: boolean, height: number, fontFamily?: string, maxWidth?: number) => Promise<string>
+): (source: string, darkMode: boolean, height: number, fontFamily?: string, maxWidth?: number) => Promise<string> {
+  return (source: string, darkMode: boolean, height: number, fontFamily?: string, maxWidth?: number): Promise<string> => {
+    const key = `${source}|${darkMode}|${height}|${fontFamily ?? ''}|${maxWidth ?? ''}`;
     const cached = decorationCache.get(key);
     if (cached) {
       return cached;
     }
 
-    const promise = func(source, darkMode, height, fontFamily);
+    const promise = func(source, darkMode, height, fontFamily, maxWidth);
     decorationCache.set(key, promise);
     // If a render fails (timeout, disposal, transient issues), don't pin the failure in cache.
     promise.catch(() => {
@@ -111,7 +111,8 @@ const getMermaidDecoration = memoizeMermaidDecoration(async (
   source: string,
   darkMode: boolean,
   height: number,
-  fontFamily?: string
+  fontFamily?: string,
+  maxWidth?: number
 ): Promise<string> => {
   if (!webviewManager) {
     throw new Error('Mermaid renderer not initialized. Call initMermaidRenderer first.');
@@ -136,7 +137,7 @@ const getMermaidDecoration = memoizeMermaidDecoration(async (
     return errorSvg;
   }
   
-  const processedSvg = processSvg(svgString, height);
+  const processedSvg = processSvg(svgString, height, maxWidth);
   
   return processedSvg;
 });
@@ -160,11 +161,11 @@ export async function renderMermaidSvg(
   // Calculate height based on line count (like Markless: (numLines + 2) * lineHeight)
   // Default to 200px if numLines not provided
   const editorConfig = vscode.workspace.getConfiguration('editor');
+  const fontSize = editorConfig.get<number>('fontSize', 14);
   let lineHeight = editorConfig.get<number>('lineHeight', 0);
-  
+
   // If lineHeight is 0 or invalid, calculate from fontSize (like Markless does)
   if (lineHeight === 0 || lineHeight < 8) {
-    const fontSize = editorConfig.get<number>('fontSize', 14);
     // Use platform-appropriate multiplier (Markless uses 1.5 for macOS, 1.35 for others)
     const multiplier = process.platform === 'darwin' ? 1.5 : 1.35;
     lineHeight = Math.round(multiplier * fontSize);
@@ -172,11 +173,16 @@ export async function renderMermaidSvg(
       lineHeight = 8; // Minimum line height
     }
   }
-  
+
   const numLines = options.numLines || 5;
   const height = options.height || ((numLines + 2) * lineHeight);
 
-  return getMermaidDecoration(source, darkMode, height, options.fontFamily);
+  // Estimate max width from font size to prevent diagrams from overflowing the editor viewport.
+  // Monospace character width is roughly 0.6× font size; assume ~90 visible columns as a
+  // generous but bounded default so even wide charts stay within the editor pane.
+  const maxWidth = Math.round(fontSize * 0.6 * 90);
+
+  return getMermaidDecoration(source, darkMode, height, options.fontFamily, maxWidth);
 }
 
 // Re-export utilities for use by other modules

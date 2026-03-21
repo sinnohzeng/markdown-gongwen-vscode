@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio';
  * Process SVG to adjust dimensions based on line count
  * Similar to Markless implementation
  */
-export function processSvg(svgString: string, height: number): string {
+export function processSvg(svgString: string, height: number, maxWidth?: number): string {
   const $ = cheerio.load(svgString, { xmlMode: true });
   const svgNode = $('svg').first();
   
@@ -117,15 +117,23 @@ export function processSvg(svgString: string, height: number): string {
     }
   }
 
+  // Constrain to maxWidth, scaling height proportionally to preserve aspect ratio
+  let finalWidth = calculatedWidth;
+  let finalHeight = height;
+  if (maxWidth !== undefined && calculatedWidth > maxWidth) {
+    const scale = maxWidth / calculatedWidth;
+    finalWidth = maxWidth;
+    finalHeight = Math.round(height * scale);
+  }
+
   // Set explicit width and height attributes to maintain aspect ratio
   // Remove any CSS max-width that might constrain wide charts
   svgNode.css('max-width', '');
-  
+
   // Set dimensions - but preserve the original viewBox to avoid mirroring
   // The viewBox defines the coordinate system, so we should keep it as-is
-  // calculatedWidth is guaranteed to be assigned at this point
-  svgNode.attr('width', `${calculatedWidth}px`);
-  svgNode.attr('height', `${height}px`);
+  svgNode.attr('width', `${finalWidth}px`);
+  svgNode.attr('height', `${finalHeight}px`);
   
   // Keep original preserveAspectRatio to maintain alignment
   // Use 'meet' to ensure content fits within bounds while maintaining aspect ratio
