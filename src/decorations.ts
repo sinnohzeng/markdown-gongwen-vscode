@@ -481,7 +481,7 @@ function createCheckboxBeforeOptions(resolvedColor: string | ThemeColor, boxSize
 /**
  * Creates a decoration type for unchecked checkbox styling.
  *
- * Replaces [ ] with an empty checkbox symbol (☐).
+ * Replaces [ ] with an empty checkbox.
  * Click inside the brackets to toggle.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses editor.foreground
@@ -512,7 +512,7 @@ export function CheckboxUncheckedDecorationType(color?: string | ThemeColor) {
 /**
  * Creates a decoration type for checked checkbox styling.
  *
- * Replaces [x] or [X] with a checked checkbox symbol (☑).
+ * Replaces [x] or [X] with a checked checkbox.
  * Click inside the brackets to toggle.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses editor.foreground
