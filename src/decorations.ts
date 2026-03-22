@@ -530,6 +530,9 @@ export function CheckboxCheckedDecorationType(color?: string | ThemeColor) {
       contentText: '✔',
       color: resolvedColor,
       textDecoration: `
+        display: inline-block;
+        position: relative;
+        top: -0.1em;
         width: ${boxSize};
         cursor: pointer;
         margin-right: ${gapSize};
