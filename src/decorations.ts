@@ -6,6 +6,13 @@ import { window, ThemeColor, ColorThemeKind } from 'vscode';
  */
 const BRIGHTNESS_OVERLAY_OPACITY = 0.1;
 
+/** Size of the checkbox box (width and height). */
+const CHECKBOX_BOX_SIZE = '1em';
+/** Gap between checkbox and adjacent text. */
+const CHECKBOX_GAP_SIZE = '0.6em';
+/** Left padding applied after the checkbox. */
+const CHECKBOX_PADDING = '0.2em';
+
 /**
  * Determines if the current theme is dark or high contrast.
  *
@@ -272,7 +279,7 @@ const HEADING_CONFIG = [
   { size: '120%', bold: true },  // H3: Just above body text
   { size: '110%', bold: false }, // H4: Subtle bump
   { size: '100%', bold: false }, // H5: Same size, usually distinct by color/bold
-  { size: '90%',  bold: false }, // H6: Slightly diminished
+  { size: '90%', bold: false }, // H6: Slightly diminished
 ];
 /**
  * Creates a heading decoration type with the specified level.
@@ -463,9 +470,26 @@ export function HorizontalRuleDecorationType(color?: string | ThemeColor) {
 }
 
 /**
+ * Creates the before block options for checkbox decorations.
+ * Shared between CheckboxUncheckedDecorationType and CheckboxCheckedDecorationType.
+ */
+function createCheckboxBeforeOptions(resolvedColor: string | ThemeColor) {
+  return {
+    contentText: ' ',
+    color: resolvedColor,
+    height: CHECKBOX_BOX_SIZE,
+    width: CHECKBOX_BOX_SIZE,
+    border: '1px solid',
+    borderColor: resolvedColor,
+    // Negative margin-right pulls the 'after' element inside the box border.
+    textDecoration: `display: inline-block; box-sizing: border-box; vertical-align: middle; margin-right: -${CHECKBOX_BOX_SIZE}; cursor: pointer;`,
+  };
+}
+
+/**
  * Creates a decoration type for unchecked checkbox styling.
  *
- * Replaces [ ] with an empty checkbox symbol (☐).
+ * Replaces [ ] with an empty checkbox.
  * Click inside the brackets to toggle.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses editor.foreground
@@ -473,19 +497,29 @@ export function HorizontalRuleDecorationType(color?: string | ThemeColor) {
  */
 export function CheckboxUncheckedDecorationType(color?: string | ThemeColor) {
   const resolvedColor = color ?? new ThemeColor('editor.foreground');
+
   return window.createTextEditorDecorationType({
-    textDecoration: 'none; display: none;', // Hide the original [ ]
-    before: {
-      contentText: '☐',
+    textDecoration: 'none; display: none;',
+    before: createCheckboxBeforeOptions(resolvedColor),
+    after: {
+      contentText: ' ',
       color: resolvedColor,
-    },
+      textDecoration: `
+        display: inline-block;
+        position: relative;
+        width: ${CHECKBOX_BOX_SIZE};
+        cursor: pointer;
+        margin-right: ${CHECKBOX_GAP_SIZE};
+        margin-left: ${CHECKBOX_PADDING};
+      `
+    }
   });
 }
 
 /**
  * Creates a decoration type for checked checkbox styling.
  *
- * Replaces [x] or [X] with a checked checkbox symbol (☑).
+ * Replaces [x] or [X] with a checked checkbox.
  * Click inside the brackets to toggle.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses editor.foreground
@@ -493,12 +527,22 @@ export function CheckboxUncheckedDecorationType(color?: string | ThemeColor) {
  */
 export function CheckboxCheckedDecorationType(color?: string | ThemeColor) {
   const resolvedColor = color ?? new ThemeColor('editor.foreground');
+
   return window.createTextEditorDecorationType({
-    textDecoration: 'none; display: none;', // Hide the original [x]
-    before: {
-      contentText: '☑',
+    textDecoration: 'none; display: none;',
+    before: createCheckboxBeforeOptions(resolvedColor),
+    after: {
+      contentText: '✔',
       color: resolvedColor,
-    },
+      textDecoration: `
+        display: inline-block;
+        position: relative;
+        width: ${CHECKBOX_BOX_SIZE};
+        cursor: pointer;
+        margin-right: ${CHECKBOX_GAP_SIZE};
+        margin-left: ${CHECKBOX_PADDING};
+      `
+    }
   });
 }
 

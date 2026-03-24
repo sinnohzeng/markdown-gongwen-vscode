@@ -122,6 +122,46 @@ describe('decoration creation with color (hex vs theme)', () => {
       expect(CheckboxCheckedDecorationType('#98c379')).toBeDefined();
       expect(CheckboxCheckedDecorationType()).toBeDefined();
     });
+
+    it('CheckboxCheckedDecorationType has after block with contentText "✔"', () => {
+      resetTextEditorDecorationTypeOptionsCapture();
+      CheckboxCheckedDecorationType();
+      const opts = getLastTextEditorDecorationTypeOptions() as Record<string, unknown>;
+      expect(opts.after).toBeDefined();
+      expect((opts.after as Record<string, unknown>).contentText).toBe('✔');
+    });
+
+    it('CheckboxCheckedDecorationType after block includes display: inline-block in textDecoration', () => {
+      resetTextEditorDecorationTypeOptionsCapture();
+      CheckboxCheckedDecorationType();
+      const opts = getLastTextEditorDecorationTypeOptions() as Record<string, unknown>;
+      const after = opts.after as Record<string, unknown>;
+      expect(after.textDecoration).toContain('display: inline-block');
+    });
+
+    it('CheckboxCheckedDecorationType after block includes cursor: pointer in textDecoration', () => {
+      resetTextEditorDecorationTypeOptionsCapture();
+      CheckboxCheckedDecorationType();
+      const opts = getLastTextEditorDecorationTypeOptions() as Record<string, unknown>;
+      const after = opts.after as Record<string, unknown>;
+      expect(after.textDecoration).toContain('cursor: pointer');
+    });
+
+    it('CheckboxUncheckedDecorationType after block has space contentText', () => {
+      resetTextEditorDecorationTypeOptionsCapture();
+      CheckboxUncheckedDecorationType();
+      const opts = getLastTextEditorDecorationTypeOptions() as Record<string, unknown>;
+      expect(opts.after).toBeDefined();
+      expect((opts.after as Record<string, unknown>).contentText).toBe(' ');
+    });
+
+    it('CheckboxUncheckedDecorationType after block includes cursor: pointer in textDecoration', () => {
+      resetTextEditorDecorationTypeOptionsCapture();
+      CheckboxUncheckedDecorationType();
+      const opts = getLastTextEditorDecorationTypeOptions() as Record<string, unknown>;
+      const after = opts.after as Record<string, unknown>;
+      expect(after.textDecoration).toContain('cursor: pointer');
+    });
   });
 
   describe('CodeDecorationType backgroundColor parameter', () => {
