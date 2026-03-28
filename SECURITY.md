@@ -2,20 +2,8 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+Only the **latest published version** of this extension receives security-related attention. Older releases are not supported.
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
-
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Please open a **[GitHub issue](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues)** with a clear description of the concern, steps to reproduce if applicable, and any relevant context. We do not guarantee response timelines but will review legitimate reports as we are able.
