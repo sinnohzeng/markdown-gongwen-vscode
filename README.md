@@ -1,430 +1,245 @@
-# Markdown Inline Editor
+# Markdown 公文视图
 
-<img src="assets/icon.png" align="right" alt="Markdown Inline Editor icon" width="120" height="120">
+<img src="assets/icon.png" align="right" alt="Markdown 公文视图图标" width="120" height="120">
 
-[![Build & quality][ci-img]][ci] [![Dependency health][audit-img]][audit] [![Install on VS Code][marketplace-img]][marketplace] [![Get on Open VSX][openvsx-img]][openvsx] [![MIT License][license-img]][license]
+**在 VS Code 中以党政公文字体风格编辑 Markdown 文档。** 类 Typora 的所见即所得编辑体验，内置 GB/T 9704 公文排版风格，支持 GFM 表格、Mermaid 图表、LaTeX 数学公式的行内渲染。
 
-**Typora-like Markdown editing in VS Code.** Write in a clean, WYSIWYG-style view with context-aware syntax shadowing, **GFM pipe tables**, inline Mermaid and LaTeX math rendering, hover previews, and clickable task lists.
+文件始终保持 100% 标准 Markdown 格式。本插件仅使用编辑器装饰（decoration），不会改动文档内容。
 
-Your files stay 100% standard Markdown. This extension uses editor decorations — it never rewrites your document.
+## 为什么用这个插件？
 
-- **Install:** [VS Code Marketplace][marketplace] • [OpenVSX][openvsx] • [Download VSIX][releases]
-- **Jump to:** [Why people install it](#why-people-install-it) • [Demo](#demo) • [Get started](#get-started) • [3-state syntax shadowing](#3-state-syntax-shadowing) • [Customize](#customize-optional) • [Supported features](#supported-features) • [FAQ][faq]
-- **Project:** [Repository][repo] • [Changelog][changelog] • [Issues][issues] • [Roadmap](#roadmap)
+- **无需预览面板**：标题、加粗、链接、图片、列表、代码、GFM 表格、数学公式、Mermaid 图表全部在编辑区行内渲染
+- **三态语法遮蔽**：Markdown 标记符号在编辑时自动隐藏→淡入→显示，不干扰阅读也不影响编辑
+- **公文排版风格**：内置 GB/T 9704 党政公文字体配置，安装即用
+  - 一级标题（`#`）：宋体粗体 200%
+  - 二级标题（`##`）：黑体 165%
+  - 三级标题（`###`）：楷体 160%
+  - 四级标题（`####`）：仿宋加粗 150%
+  - 五级标题（`#####`）：仿宋 150%
+  - 正文：宋体 150%，行高 1.8
+- **交互式编辑**：点击任务列表复选框直接切换、悬停链接查看目标、悬停图片预览
+- **安全可靠**：文件保持纯 Markdown，差异视图默认显示原始语法
 
-## Why people install it
-
-- **No preview pane needed:** headings, emphasis, links, images, lists, code, **GFM tables**, math, and Mermaid render inline where you write.
-- **Rendered -> Ghost -> Raw syntax shadowing:** Markdown markers stay out of the way until you need them, then fade in on the active line or fully reveal for precise edits.
-- **GFM tables:** pipe characters and cell text are drawn as an aligned grid; place the cursor anywhere in the table to reveal raw `|` syntax for editing.
-- **Inline Mermaid and LaTeX math:** render `` ```mermaid `` diagrams, `$...$`, `$$...$$`, and `` ```math `` blocks directly in the editor.
-- **Interactive Markdown:** click task list checkboxes to toggle them, hover links to see targets, and hover images to preview them.
-- **Safe for real workflows:** files remain plain Markdown, and diffs stay raw by default for Git, merge editor, and Copilot inline review contexts.
-- **Theme-aware, configurable, and fast:** matches your VS Code theme, lets you tune colors/opacity/behavior, and uses a shared parse cache to avoid lag during normal editing.
-
-## Demo
+## 演示
 
 <p align="center">
-  <img src="assets/autoplay-demo.gif" alt="Markdown Inline Editor demo" width="900">
+  <img src="assets/autoplay-demo.gif" alt="Markdown 公文视图演示" width="900">
 </p>
 
-*Tip: move the cursor onto a line to see faint “ghost” markers; click/select to reveal raw Markdown for precise edits.*
+*提示：将光标移到某行可看到淡入的语法标记；点击/选中则完全显示原始 Markdown。*
 
-## Get started
+## 快速开始
 
-1. **Install**:
-   - [VS Code Marketplace][marketplace]
-   - [OpenVSX][openvsx]
-   - [GitHub Releases][releases]
-2. **Open** a Markdown file (`.md`) to activate the extension. (It also supports editors with `markdown`/`md`/`mdx` language IDs once active.)
-3. **Start typing** – formatting appears inline while syntax is hidden (**Rendered** state).
-4. **Move the cursor** onto a line – syntax fades in for edit cues (**Ghost** state).
-5. **Click/select** inside formatted text – raw Markdown becomes fully visible (**Raw** state).
-6. **Toggle anytime** – Command Palette → **Toggle Markdown Decorations** (command id: `mdInline.toggleDecorations`) or use the editor title bar eye icon.
+1. **安装**：在 VS Code 扩展市场搜索 **"Markdown 公文视图"** 或直接安装 VSIX
+2. **打开** 任意 `.md` 文件，插件自动激活
+3. **开始编辑**——格式化内容行内显示，语法标记自动隐藏（**渲染态**）
+4. **移动光标**到某行——语法标记淡入显示（**幽灵态**）
+5. **点击/选中**格式化文本——原始 Markdown 完全可见（**原始态**）
+6. **随时切换**——命令面板 → **Toggle Markdown Decorations** 或点击编辑器标题栏眼睛图标
 
-**Requirement:** VS Code 1.88+ (Cursor is supported too).
+**系统要求**：VS Code 1.100+（也支持 Cursor）
 
-If decorations aren’t showing, see the [FAQ][faq].
+## 行间距配置教程
 
-## Why inline (instead of a preview pane)?
+> **重要**：安装插件后，由于正文字号放大至 150%，需要同步调整编辑器行间距，否则文字会互相重叠。
 
-VS Code’s Markdown preview is great for reading. Markdown Inline Editor is for *writing*: it keeps you in the editor, reduces syntax noise, and reveals raw Markdown only where you’re editing.
+### 方法一：图形化界面（推荐）
 
-## Feature videos
+1. 打开 VS Code
+2. 按 `Cmd + ,`（macOS）或 `Ctrl + ,`（Windows/Linux）打开设置界面
+3. 在搜索框中输入：`editor.lineHeight`
+4. 找到 **Editor: Line Height** 选项
+5. 将值修改为 `2.2`（或更高，根据个人喜好调整）
+6. 设置自动保存，关闭设置页面即可生效
 
-- **Start here:** [Watch the feature][demo-overview]
-- **Mermaid:** [Watch inline Mermaid rendering][demo-mermaid]
-- **Task lists:** [Watch checkbox toggling + syntax shadowing][demo-checkbox]
+### 方法二：命令面板
 
-## Commands
-
-- **Toggle Markdown Decorations** (`mdInline.toggleDecorations`): Enable/disable inline Markdown rendering.
-
-## Recommended extensions (optional)
-
-- **[Markdown All in One](https://marketplace.visualstudio.com/items?itemName=yzhang.markdown-all-in-one)**: Shortcuts, auto-formatting, table of contents, preview, and more.
-- **[Mermaid Chart](https://marketplace.visualstudio.com/items?itemName=MermaidChart.vscode-mermaid-chart)**: Mermaid authoring tools and preview.
-
-## 3-state syntax shadowing
-
-The extension uses an intelligent **3-state syntax shadowing system** that adapts syntax visibility based on your editing context:
-
-### **Rendered State** (Default)
-- Syntax markers are **hidden** – see only formatted content
-- Clean, distraction-free reading experience
-- Example: `**bold**` appears as **bold** with no visible markers
-
-### **Ghost State** (Cursor on line)
-- Syntax markers appear **faintly** (30% opacity by default, configurable)
-- Provides edit cues without cluttering the view
-- Only applies to constructs on the active line, not the entire document
-- Example: Cursor on a line with `**bold**` shows faint `**` markers
-
-### **Raw State** (Cursor/selection inside construct)
-- Syntax markers are **fully visible** for direct editing
-- Precise scope detection – only the specific construct you're editing shows raw
-- Example: Cursor inside `**bold**` reveals the full `**bold**` syntax
-
-**Special behavior for structural markers:**
-- **Blockquotes, lists, and checkboxes** stay fully rendered on active lines unless you directly click on the marker
-- **Headings** show raw `#` markers and remove styling when cursor is on the heading line
-- **Ordered list numbers** always remain visible
-- **Tables** switch the **entire** table to raw Markdown (all rows) when your cursor or selection is on any line inside the table
-
-Configure ghost opacity: `markdownInlineEditor.decorations.ghostFaintOpacity` (default: 0.3)
-Configure emoji shortcodes: `markdownInlineEditor.emojis.enabled` (default: true)
-
-## Supported Features
-
-The extension supports the following Markdown (and common GitHub-flavored) features with inline rendering and syntax hiding. Formatting appears inline while syntax markers stay hidden—click any text to reveal and edit raw Markdown.
-
-### Text Formatting
-- [x] **Bold** (`**text**`) • [Details][feat-bold]
-- [x] **Italic** (`*text*`) • [Details][feat-italic]
-- [x] **Bold + Italic** (`***text***`) • [Details][feat-bold-italic]
-- [x] **Strikethrough** (`~~text~~`) • [Details][feat-strikethrough]
-- [x] **Inline Code** (`` `code` ``) • [Details][feat-inline-code]
-
-### Structure
-- [x] **Headings** (`# H1` through `###### H6`) • [Details][feat-headings]
-- [x] **Links** (`[text](url)`) • [Details][feat-links]
-- [x] **Mentions & issue references** (`@user`, `@org/team`, `#123`, `@owner/repo#456`) • [Details][feat-mentions-references] • [Issue #25](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/25)
-- [x] **Autolinks & bare links** (`<https://…>` / `user@example.com`) • [Details][feat-autolinks] • [Issue #24](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/24)
-- [x] **Images** (`![alt](img.png)`) • [Details][feat-images]
-- [x] **Blockquotes** (`> quote`) • [Details][feat-blockquotes]
-- [x] **Horizontal Rules** (`---`, `***`, `___`) • [Details][feat-horizontal-rules]
-- [x] **GFM Tables** (pipe tables, `|---|` separator row, `:---` / `:---:` / `---:` column alignment) • [Details][feat-tables]
-
-### Lists
-- [x] **Unordered Lists** (`-`, `*`, `+`) • [Details][feat-unordered-lists]
-- [x] **Task Lists** (`- [ ]` / `- [x]`) • [Details][feat-task-lists]
-
-### Code
-- [x] **Code Blocks** (`` ```lang ``) • [Details][feat-code-blocks]
-- [x] **YAML Frontmatter** • [Details][feat-yaml-frontmatter] • [Issue #27](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/27)
-- [x] **Emoji Support** (`:smile:`) • [Details][feat-emoji-support] • [Issue #30](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/30)
-- [x] **Mermaid Diagrams** (`` ```mermaid ``) • [Details][feat-mermaid-diagrams] • [Issue #26](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/26)
-- [x] **LaTeX/Math** (`$...$`, `$$...$$`, ` ```math `) • [Details][feat-latex-math] • [Issue #6](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/6)
-
-### Configuration
-- [x] **Show Raw Markdown in Diffs** • [Details][feat-show-raw-markdown-in-diffs] • [Issue #20](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/20)
-- [x] **Customizable Syntax Colors** (headings, links, lists, code, emphasis, blockquote, image, horizontal rule, checkbox) • [Details][feat-customizable-syntax-colors] • [Issue #49](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/49)
-
-## Customize (optional)
-
-Everything works out of the box. If you want to tune the experience, open Settings and search for **“Markdown Inline Editor”** (all keys start with `markdownInlineEditor.`).
-
-- **Ghost markers visibility** (`decorations.ghostFaintOpacity`, default `0.3`)
-  - Lower it for a cleaner look, raise it for stronger edit cues.
-- **Diff view behavior** (`defaultBehaviors.diffView.applyDecorations`, default `false`)
-  - Keep `false` to review raw Markdown in diffs; set `true` if you want the same inline rendering in diffs too.
-- **Single-click links** (`links.singleClickOpen`, default `false`)
-  - Opens links/images without Ctrl/Cmd-click, but may interfere with text selection.
-- **Mentions & issue refs** (`mentions.enabled`, default `true`; `mentions.linksEnabled`, unset = infer from `git remote`)
-  - Style GitHub-style `@user` / `#123`; optional clickable targets when forge context is available. See [Mentions & references][feat-mentions-references].
-- **Emoji shortcodes** (`emojis.enabled`, default `true`)
-  - Disable if you prefer seeing `:shortcode:` text.
-- **Syntax colors** (`colors.heading1` … `colors.checkbox`, 15 options including `inlineCodeBackground`)
-  - Optional hex overrides (e.g. `#e06c75`) for headings, links, list markers, inline code, inline code background, emphasis, blockquote, image, horizontal rule, checkbox. Unset or invalid values use theme-derived defaults (for headings, unset keeps the editor’s markdown heading syntax colors rather than forcing a single foreground). See [Customizable Syntax Colors][feat-customizable-syntax-colors].
-
-### Example `settings.json`
+1. 按 `Cmd + Shift + P`（macOS）或 `Ctrl + Shift + P`（Windows/Linux）打开命令面板
+2. 输入 `Open User Settings (JSON)` 并回车
+3. 在打开的 `settings.json` 文件中添加以下配置：
 
 ```json
 {
+  "editor.lineHeight": 2.2
+}
+```
+
+4. 保存文件（`Cmd + S`）即可生效
+
+### 推荐配置
+
+以下是搭配本插件的推荐 `settings.json` 配置：
+
+```json
+{
+  "editor.lineHeight": 2.2,
   "markdownInlineEditor.decorations.ghostFaintOpacity": 0.25,
-  "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": false,
-  "markdownInlineEditor.links.singleClickOpen": false,
   "markdownInlineEditor.emojis.enabled": true
 }
 ```
 
-## Roadmap
+### 为什么需要手动设置行间距？
 
-Want to help? Pick an item below and open a PR (or add feedback in the linked issue/spec).
+VS Code 的编辑器行高由全局设置 `editor.lineHeight` 控制，插件无法通过 decoration API 修改行间距（这是 VS Code 的已知限制）。当插件将正文字号放大至 150% 时，默认行间距会导致上下行文字重叠，因此需要手动调大行高。
 
-### Work in progress
-- [ ] **Default feature activation** – configure which features are decorated by default • [Spec][todo-default-feature-activation]
+> VS Code 团队正在开发原生的可变行高支持（Issue #246822），未来可能不再需要手动配置。
 
-### Medium priority
-- [ ] **Per-file toggle state** • [Spec][todo-per-file-toggle-state] • [Issue #28](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/28)
-- [ ] **Column alignment in tables with markup** • [Spec][todo-table-column-alignment] • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)
-- [ ] **Default decorator rendering** – open files with decorations on/off by default • [Spec][todo-default-decorator-rendering]
-- [ ] **Image UX improvements** • [Spec][todo-image-ux-improvements]
-- [ ] **Highlighting support** • [Spec][todo-highlighting-support]
+## 三态语法遮蔽
 
-### Low priority
-- [ ] **Ordered list auto-numbering** • [Spec][todo-ordered-list-auto-numbering] • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
-- [ ] **HTML tags** • [Issue #29](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/29) (spec TBD)
-- [ ] **Footnotes** • [Issue #32](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/32) (spec TBD)
+本插件使用智能的 **三态语法遮蔽系统**，根据编辑上下文自动调整语法标记的可见性：
 
-## Getting Started (Developers)
+### 渲染态（默认）
+- 语法标记 **隐藏**——只看到格式化后的内容
+- 干净、无干扰的阅读体验
+- 例如：`**粗体**` 显示为 **粗体**，无可见标记
 
-### Quick Setup (TLDR)
+### 幽灵态（光标所在行）
+- 语法标记 **淡入显示**（默认 30% 透明度，可配置）
+- 提供编辑提示但不影响阅读
+- 仅对光标所在行的构造生效
+- 例如：光标在 `**粗体**` 所在行时显示淡入的 `**` 标记
+
+### 原始态（光标/选区在构造内部）
+- 语法标记 **完全可见**，可直接编辑
+- 精确的范围检测——只有正在编辑的特定构造显示原始语法
+- 例如：光标在 `**粗体**` 内部时显示完整的 `**粗体**` 语法
+
+**结构性标记的特殊行为**：
+- **引用、列表和复选框**：在光标所在行保持渲染态，除非直接点击标记符号
+- **标题**：光标在标题行时显示 `#` 标记并移除样式
+- **有序列表数字**：始终可见
+- **表格**：光标在表格任意行时，**整个表格** 切换为原始 Markdown
+
+配置幽灵态透明度：`markdownInlineEditor.decorations.ghostFaintOpacity`（默认 0.3）
+
+## 支持的功能
+
+### 文本格式
+- [x] **粗体**（`**文本**`）
+- [x] **斜体**（`*文本*`）
+- [x] **粗斜体**（`***文本***`）
+- [x] **删除线**（`~~文本~~`）
+- [x] **行内代码**（`` `代码` ``）
+
+### 文档结构
+- [x] **标题**（`# H1` 到 `###### H6`）——内置公文字体风格
+- [x] **链接**（`[文本](url)`）
+- [x] **GitHub @提及和 #引用**（`@user`、`@org/team`、`#123`）
+- [x] **图片**（`![描述](img.png)`）
+- [x] **引用**（`> 引用`）
+- [x] **分割线**（`---`、`***`、`___`）
+- [x] **GFM 表格**（管道符表格，支持列对齐）
+
+### 列表
+- [x] **无序列表**（`-`、`*`、`+`）
+- [x] **任务列表**（`- [ ]` / `- [x]`）——可点击切换
+
+### 代码与扩展
+- [x] **代码块**（` ```lang `）
+- [x] **YAML 前置元数据**
+- [x] **Emoji 短代码**（`:smile:`）
+- [x] **Mermaid 图表**（` ```mermaid `）——行内渲染
+- [x] **LaTeX 数学公式**（`$...$`、`$$...$$`、` ```math `）——行内渲染
+
+## 自定义配置
+
+所有功能开箱即用。如需调整，打开设置（`Cmd + ,`）搜索 **"Markdown Inline Editor"**：
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `decorations.ghostFaintOpacity` | 幽灵态标记透明度 | `0.3` |
+| `defaultBehaviors.diffView.applyDecorations` | 差异视图中启用装饰 | `false` |
+| `links.singleClickOpen` | 单击打开链接 | `false` |
+| `emojis.enabled` | 渲染 Emoji 短代码 | `true` |
+| `math.enabled` | 渲染 LaTeX 数学公式 | `true` |
+| `mentions.enabled` | 启用 @提及 和 #引用 样式 | `true` |
+| `fonts.body.fontSize` | 正文字号（如 `150%`） | 内置 `150%` |
+| `fonts.body.lineHeight` | 正文行高（如 `1.8`） | 内置 `1.8` |
+| `fonts.body.fontFamily` | 正文字体 | 内置宋体系列 |
+| `colors.heading1` ~ `colors.checkbox` | 15 个颜色自定义选项 | 跟随主题 |
+
+### 字体配置
+
+每个标题层级都可以独立配置字体、字重和字号：
+
+```json
+{
+  "markdownInlineEditor.fonts.heading1.fontFamily": "\"Songti SC\", serif",
+  "markdownInlineEditor.fonts.heading1.fontWeight": "bold",
+  "markdownInlineEditor.fonts.heading1.fontSize": "200%",
+  "markdownInlineEditor.fonts.body.fontFamily": "\"Songti SC\", serif",
+  "markdownInlineEditor.fonts.body.fontSize": "150%"
+}
+```
+
+## 开发者指南
+
+### 快速上手
 
 ```bash
-git clone https://github.com/SeardnaSchmid/markdown-inline-editor-vscode.git
+git clone https://github.com/sinnohzeng/markdown-inline-editor-vscode.git
 cd markdown-inline-editor-vscode
 npm install
 npm run compile
 npm test
 ```
 
-Press `F5` to launch the Extension Development Host and test your changes.
+按 `F5` 启动 Extension Development Host 测试你的更改。
 
-### Dependencies
+### 常用命令
 
-**Key Technologies:**
-- **TypeScript** 5.9+ – Type-safe development
-- **VS Code API** 1.88.0+ – Editor integration and decoration system
-- **[remark](https://github.com/remarkjs/remark)** – Markdown parser for precise AST-based parsing
-- **[unified](https://github.com/unifiedjs/unified)** – AST processing framework
-- **[remark-gfm](https://github.com/remarkjs/remark-gfm)** – GitHub Flavored Markdown support
-- **Jest** – Testing framework
+| 命令 | 说明 |
+|------|------|
+| `npm run compile` | 编译 TypeScript |
+| `npm run bundle` | 用 esbuild 打包 |
+| `npm test` | 运行所有测试 |
+| `npm run test:watch` | 监视模式运行测试 |
+| `npm run lint` | 运行 ESLint |
+| `npm run validate` | 文档检查 + 测试 + 构建 |
+| `npm run package` | 创建 `.vsix` 安装包 |
+| `npm run build` | 完整构建 |
 
-**Runtime Requirements:**
-- **Node.js** 20 or higher
-- **VS Code** 1.88.0+ (or Cursor IDE)
-
-**Production Dependencies:**
-- `remark-gfm`, `remark-parse`, `unified`, `unist-util-visit`
-
-**Development Dependencies:**
-- TypeScript, Jest, ESLint, VS Code extension tools
-
-### Architecture
+### 项目结构
 
 ```
 src/
-├── extension.ts          # Extension entry point and activation
-├── config.ts             # Centralized configuration access
-├── diff-context.ts       # Unified diff view detection and policy
-├── link-targets.ts       # Unified link/image URL resolution
-├── markdown-parse-cache.ts # Shared parsing and caching service
-├── parser.ts             # Markdown AST parsing (remark-based)
-├── parser-remark.ts     # Remark dependency helper
-├── decorations.ts        # VS Code decoration type definitions
-├── decorator.ts          # Decoration orchestration
+├── extension.ts          # 插件入口
+├── config.ts             # 配置管理
+├── parser.ts             # Markdown AST 解析（基于 remark）
+├── decorations.ts        # VS Code 装饰类型定义
+├── decorator.ts          # 装饰协调器
 ├── decorator/
-│   ├── decoration-type-registry.ts  # Decoration type lifecycle
-│   ├── visibility-model.ts          # 3-state filtering logic
-│   ├── checkbox-toggle.ts           # Checkbox click handling
-│   └── decoration-categories.ts    # Decoration type categorization
-├── link-provider.ts      # Clickable link provider
-├── link-hover-provider.ts # Hover provider for link URLs
-├── image-hover-provider.ts # Hover provider for image previews
-├── link-click-handler.ts # Single-click navigation handler
-├── position-mapping.ts   # Position mapping utilities (CRLF handling)
-└── */__tests__/         # Comprehensive test suites
-    ├── parser/__tests__/              # Parser tests
-    ├── markdown-parse-cache/__tests__/ # Parse cache tests
-    ├── diff-context/__tests__/        # Diff context tests
-    ├── link-targets/__tests__/        # Link target resolution tests
-    ├── link-provider/__tests__/       # Link provider tests
-    ├── image-hover-provider/__tests__/ # Image hover tests
-    ├── link-hover-provider/__tests__/  # Link hover tests
-    └── link-click-handler/__tests__/   # Click handler tests
+│   ├── decoration-type-registry.ts  # 装饰类型生命周期
+│   ├── visibility-model.ts          # 三态过滤逻辑
+│   └── checkbox-toggle.ts           # 复选框点击处理
+├── math/                 # LaTeX 数学公式渲染
+├── mermaid/              # Mermaid 图表渲染
+└── */__tests__/          # 测试套件（560+ 测试用例）
 ```
 
-**How it works:**
-1. **Parser** (`parser.ts`) – Uses remark to parse Markdown into an AST and extract scopes
-2. **Shared Cache** (`markdown-parse-cache.ts`) – Single parse cache instance shared across all components
-3. **Decorator** (`decorator.ts`) – Orchestrates decoration management with 3-state syntax shadowing
-4. **Scope-based detection** – Precisely identifies markdown constructs for context-aware syntax visibility
-5. **3-state model** – Rendered (hidden), Ghost (faint), Raw (visible) states adapt to editing context
-6. **Hover providers** – Show image previews and link URLs on hover (use shared cache)
-7. **Click handler** – Optional single-click navigation for links and images (uses shared cache)
+## 已知限制
 
-### Testing
+- **GFM 表格**：暂不支持多行单元格和嵌套块内容
+- **行间距**：插件无法自动调整行间距，需手动设置 `editor.lineHeight`（详见上方教程）
+- **H1 标题裁切**：当 H1 在首行时文字可能超出窗口
+- **超大文件**：超过 1MB 的文件解析可能较慢
 
-The project maintains comprehensive test coverage with **560+ passing tests** across 40+ test suites:
+## 许可证
 
-- **Parser tests** (`parser/__tests__/`) – Core markdown parsing logic (including GFM tables, math, Mermaid regions)
-- **Parse cache tests** (`markdown-parse-cache/__tests__/`) – Shared caching and LRU eviction
-- **Diff context tests** (`diff-context/__tests__/`) – Diff view detection and policy
-- **Link target tests** (`link-targets/__tests__/`) – Link/image URL resolution
-- **Image hover provider tests** (`image-hover-provider/__tests__/`) – Image preview hover functionality
-- **Link hover provider tests** (`link-hover-provider/__tests__/`) – Link URL hover functionality
-- **Link click handler tests** (`link-click-handler/__tests__/`) – Single-click navigation behavior
-- **Link provider tests** (`link-provider/__tests__/`) – Clickable link provider functionality
+MIT License——详见 [LICENSE.txt](LICENSE.txt)
 
-Run tests with `npm test` or `npm run test:watch` for development.
+## 致谢
 
-### Installing
+感谢以下项目的启发：
 
-```bash
-npm install
-```
+- [markdown-inline-preview-vscode](https://github.com/domdomegg/markdown-inline-preview-vscode)——原始概念
+- [Markless](https://github.com/tejasvi/markless)——高级装饰方案
+- [Typora](https://typora.io/)——行内编辑灵感
+- [Obsidian](https://obsidian.md/)——知识管理编辑体验
 
-### Key Commands
-
-| Command                 | Description                             |
-| ----------------------- | --------------------------------------- |
-| `npm run compile`       | Compile TypeScript to JavaScript        |
-| `npm run bundle`        | Bundle with esbuild                     |
-| `npm test`              | Run all tests                           |
-| `npm run test:watch`    | Run tests in watch mode                 |
-| `npm run test:coverage` | Generate coverage report                |
-| `npm run lint`          | Run ESLint                              |
-| `npm run validate`      | Run docs lint + tests + build           |
-| `npm run package`       | Create `.vsix` package                  |
-| `npm run clean`         | Clean build artifacts                   |
-| `npm run build`         | Full build (compile + bundle + package) |
-| `npm run release`       | Automated release workflow              |
-
-### Executing
-
-**Option 1: VS Code Launch Configuration**
-
-Create `.vscode/launch.json` with the extension host configuration, then press `F5` to launch the Extension Development Host.
-
-**Option 2: Manual Build & Test**
-
-```bash
-npm run compile
-npm run package
-code --install-extension dist/extension.vsix
-```
-
-## Contributing
-
-Contributions are welcome! This project follows [Conventional Commits](https://www.conventionalcommits.org/) and maintains high code quality standards.
-
-### Quick Start
-
-```bash
-git checkout -b feat/my-feature
-# Make changes, write tests
-npm test && npm run lint
-git commit -m "feat(parser): add support for definition lists"
-```
-
-### Contribution Guidelines (TLDR)
-
-- **Read first:** [`CONTRIBUTING.md`][contributing] for detailed workflow
-- **Code style:** TypeScript strict mode, JSDoc comments, comprehensive tests
-- **Commit format:** `<type>(<scope>): <description>`
-  - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`
-- **Testing:** All changes must include tests
-- **Performance:** No regressions – maintain efficient code execution
-
-See [`CONTRIBUTING.md`][contributing] for full contribution guidelines and [`AGENTS.md`][agents] for agent roles and architecture details.
-
-## Known Limitations & Reporting Bugs
-
-### Known Limitations
-
-- **GFM tables** – Multi-line cells, nested block content in cells, and perfect alignment when *every* cell mixes multiple inline formats are limited or not supported yet • [Issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21) • [Issue #23](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/23)
-- **Ordered list auto-numbering** – Planned (numbers remain visible today) • [Issue #31](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/31)
-- **H1 heading clipping** – Text can go out of window when H1 is on first line • [#4](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/4)
-- **Very large files** – Files over ~1MB may parse more slowly (see [FAQ][faq])
-- **Sidebar button** – A "Markdown Inline" button appears in the activity bar for Mermaid rendering (hidden webview). You can ignore it—it's not interactive. See [FAQ][faq] for details.
-
-### Reporting Bugs
-
-If you encounter an issue not covered in the [FAQ][faq], please [open an issue](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues) with:
-- VS Code version
-- Extension version
-- Steps to reproduce
-- Expected vs. actual behavior
-- Screenshots/GIFs if applicable
-
-For common issues and solutions, see the [FAQ][faq].
-
-## License
-
-MIT License – See [LICENSE.txt][license]
-
-## Acknowledgments
-
-Special thanks to these projects, which inspired or enabled this extension:
-
-- [markdown-inline-preview-vscode](https://github.com/domdomegg/markdown-inline-preview-vscode) by [domdomegg](https://github.com/domdomegg) – Original concept and codebase for using VS Code decorations to hide markdown syntax (MIT License, Copyright (c) Adam Jones (domdomegg))
-- [Markdown Inline Preview](https://marketplace.visualstudio.com/items?itemName=markdown-inline-preview.markdown-inline-preview) by [markdown-inline-preview](https://marketplace.visualstudio.com/publishers/markdown-inline-preview) – Horizontal rule implementation using border-bottom approach that prevents editor width expansion
-- [Markdown WYSIWYG](https://marketplace.visualstudio.com/items?itemName=remcohaszing.markdown-decorations) by [remcohaszing](https://github.com/remcohaszing) – Decoration-based markdown editor with similar approach
-- [markless](https://github.com/tejasvi/markless) by [tejasvi](https://github.com/tejasvi) – Advanced decoration-based markdown editor with Mermaid and LaTeX support
-- [Typora](https://typora.io/) – Original inspiration for the inline markdown editing concept
-- [Obsidian](https://obsidian.md/) – Markdown-based knowledge management application that inspired the editing experience
-
-### Contributors
+### 贡献者
 
 - [@patrick-yip](https://github.com/patrick-yip)
 - [@bircni](https://github.com/bircni)
 - [@ssebs](https://github.com/ssebs)
 - [@IrishBruse](https://github.com/IrishBruse)
-
-[ci-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml/badge.svg
-[ci]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/ci.yaml
-
-[audit-img]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/npm-audit.yml/badge.svg?branch=main
-[audit]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/actions/workflows/npm-audit.yml
-
-[repo]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode
-[releases]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/releases
-[issues]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues
-[changelog]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/CHANGELOG.md
-[contributing]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/CONTRIBUTING.md
-[agents]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/AGENTS.md
-[faq]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/FAQ.md
-[license]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/LICENSE.txt
-
-[marketplace]: https://marketplace.visualstudio.com/items?itemName=CodeSmith.markdown-inline-editor-vscode
-[openvsx]: https://open-vsx.org/extension/CodeSmith/markdown-inline-editor-vscode
-
-[marketplace-img]: https://img.shields.io/visual-studio-marketplace/v/CodeSmith.markdown-inline-editor-vscode?label=Install%20on%20VS%20Code&logo=visualstudiocode&logoColor=white
-[openvsx-img]: https://img.shields.io/open-vsx/v/CodeSmith/markdown-inline-editor-vscode?label=Get%20on%20Open%20VSX&logo=openvsx&logoColor=white
-[license-img]: https://img.shields.io/badge/License-MIT-555555?labelColor=blue
-
-[demo-mermaid]: https://github.com/user-attachments/assets/9898d617-acbb-4e81-944b-623d545a29ce
-[demo-checkbox]: https://github.com/user-attachments/assets/c9025dd2-c2ca-44e5-a501-c9638a5e60cc
-[demo-overview]: https://github.com/user-attachments/assets/8bad925d-1538-4105-b5b5-c8db493f9734
-
-[feat-autolinks]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/autolinks.md
-[feat-blockquotes]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/blockquotes.md
-[feat-bold]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/bold.md
-[feat-bold-italic]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/bold-italic.md
-[feat-code-blocks]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/code-blocks.md
-[feat-emoji-support]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/emoji-support.md
-[feat-headings]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/headings.md
-[feat-horizontal-rules]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/horizontal-rules.md
-[feat-tables]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/55
-[feat-images]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/images.md
-[feat-inline-code]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/inline-code.md
-[feat-italic]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/italic.md
-[feat-links]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/links.md
-[feat-mentions-references]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/mentions-references.md
-[feat-latex-math]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/latex-math.md
-[feat-mermaid-diagrams]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/mermaid-diagrams.md
-[feat-show-raw-markdown-in-diffs]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/show-raw-markdown-in-diffs.md
-[feat-customizable-syntax-colors]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/customizable-syntax-colors.md
-[feat-strikethrough]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/strikethrough.md
-[feat-task-lists]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/task-lists.md
-[feat-unordered-lists]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/unordered-lists.md
-[feat-yaml-frontmatter]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/done/yaml-frontmatter.md
-
-[todo-default-decorator-rendering]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#default-decorator-rendering
-[todo-default-feature-activation]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#default-feature-activation
-[todo-highlighting-support]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#highlighting-support
-[todo-image-ux-improvements]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#image-ux-improvements
-[todo-ordered-list-auto-numbering]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#ordered-list-auto-numbering
-[todo-per-file-toggle-state]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#per-file-toggle-state
-[todo-table-column-alignment]: https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/blob/main/docs/features/todo.md#table-column-alignment-with-markup
