@@ -1,7 +1,7 @@
 {
   "name": "markdown-gongwen-view",
   "displayName": "Markdown 公文视图",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "以党政公文字体风格显示 Markdown 文档 — WYSIWYG inline editor with Chinese government document typography",
   "license": "MIT",
   "author": "sinnohzeng",
@@ -54,12 +54,29 @@
       {
         "command": "mdInline.installBundledFonts",
         "title": "Markdown Inline Editor: Open Bundled Fonts Folder"
+      },
+      {
+        "command": "mdInline.exportDocx",
+        "title": "导出公文 DOCX (Export to Government DOCX)",
+        "icon": {
+          "dark": "assets/icons/export-docx-dark.svg",
+          "light": "assets/icons/export-docx-light.svg"
+        }
+      },
+      {
+        "command": "mdInline.exportDocxQuick",
+        "title": "快速导出公文 DOCX (Quick Export DOCX)"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "mdInline.toggleDecorations",
+          "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
+          "group": "navigation"
+        },
+        {
+          "command": "mdInline.exportDocx",
           "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
           "group": "navigation"
         }
@@ -424,9 +441,11 @@
   },
   "dependencies": {
     "cheerio": "1.2.0",
+    "docx": "^9.6.1",
     "katex": "^0.16.44",
     "mathjax-full": "^3.2.2",
     "mermaid": "11.13.0",
+    "remark-frontmatter": "^5.0.0",
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",

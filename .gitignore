@@ -136,3 +136,4 @@ examples/
 
 # Firecrawl files
 .firecrawl
+*.docx

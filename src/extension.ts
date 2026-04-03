@@ -11,6 +11,7 @@ import { MarkdownParser } from './parser';
 import { MarkdownParseCache } from './markdown-parse-cache';
 import { initMermaidRenderer, disposeMermaidRenderer } from './mermaid/mermaid-renderer';
 import { processSvg } from './mermaid/svg-processor';
+import { createExportDocxCommand, createExportDocxQuickCommand } from './export/export-command';
 
 /**
  * Checks if a recommended extension is installed and optionally shows a notification.
@@ -219,6 +220,16 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     }
   );
 
+  // Register commands for DOCX export
+  const exportDocxCommand = vscode.commands.registerCommand(
+    'mdInline.exportDocx',
+    createExportDocxCommand(context),
+  );
+  const exportDocxQuickCommand = vscode.commands.registerCommand(
+    'mdInline.exportDocxQuick',
+    createExportDocxQuickCommand(context),
+  );
+
   const changeActiveTextEditor = vscode.window.onDidChangeActiveTextEditor((editor) => {
     decorator.setActiveEditor(editor);
   });
@@ -290,6 +301,8 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   context.subscriptions.push(toggleDecorationsCommand);
   context.subscriptions.push(installBundledFontsCommand);
   context.subscriptions.push(navigateToAnchorCommand);
+  context.subscriptions.push(exportDocxCommand);
+  context.subscriptions.push(exportDocxQuickCommand);
   context.subscriptions.push({ dispose: () => decorator.dispose() });
   context.subscriptions.push({ dispose: () => linkClickHandler.dispose() });
 
