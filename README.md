@@ -43,16 +43,9 @@
 
 > **重要**：安装插件后，由于正文字号放大至 150%，需要同步调整编辑器行间距，否则文字会互相重叠。
 
-### 方法一：图形化界面（推荐）
+### 方法一：编辑 settings.json（推荐）
 
-1. 打开 VS Code
-2. 按 `Cmd + ,`（macOS）或 `Ctrl + ,`（Windows/Linux）打开设置界面
-3. 在搜索框中输入：`editor.lineHeight`
-4. 找到 **Editor: Line Height** 选项
-5. 将值修改为 `2.2`（或更高，根据个人喜好调整）
-6. 设置自动保存，关闭设置页面即可生效
-
-### 方法二：命令面板
+使用 `[markdown]` 语言作用域，**只影响 Markdown 文件，不改变代码文件的行高**：
 
 1. 按 `Cmd + Shift + P`（macOS）或 `Ctrl + Shift + P`（Windows/Linux）打开命令面板
 2. 输入 `Open User Settings (JSON)` 并回车
@@ -60,19 +53,34 @@
 
 ```json
 {
-  "editor.lineHeight": 2.2
+  "[markdown]": {
+    "editor.lineHeight": 2.2
+  }
 }
 ```
 
 4. 保存文件（`Cmd + S`）即可生效
 
+> **提示**：这样配置后，只有 `.md` 文件的行间距会增大，你的代码文件（`.ts`、`.js`、`.py` 等）完全不受影响。
+
+### 方法二：图形化界面
+
+如果你希望所有文件类型都使用相同行高：
+
+1. 按 `Cmd + ,`（macOS）或 `Ctrl + ,`（Windows/Linux）打开设置界面
+2. 在搜索框中输入：`@lang:markdown editor.lineHeight`
+3. 找到 **Editor: Line Height** 选项
+4. 将值修改为 `2.2`（或更高，根据个人喜好调整）
+
 ### 推荐配置
 
-以下是搭配本插件的推荐 `settings.json` 配置：
+以下是搭配本插件的完整推荐 `settings.json` 配置：
 
 ```json
 {
-  "editor.lineHeight": 2.2,
+  "[markdown]": {
+    "editor.lineHeight": 2.2
+  },
   "markdownInlineEditor.decorations.ghostFaintOpacity": 0.25,
   "markdownInlineEditor.emojis.enabled": true
 }
