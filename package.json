@@ -375,6 +375,18 @@
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for body/paragraph text",
           "markdownDescription": "CSS font-weight for body/paragraph text (e.g. `300` for light weight). Leave empty to use default."
+        },
+        "markdownInlineEditor.fonts.body.fontSize": {
+          "type": "string",
+          "default": "",
+          "description": "正文字号 / CSS font-size for body text",
+          "markdownDescription": "CSS font-size for body/paragraph text (e.g. `105%`, `16px`). Default is `105%` — slightly larger than editor default for better CJK readability. Leave empty to use extension default."
+        },
+        "markdownInlineEditor.fonts.body.lineHeight": {
+          "type": "string",
+          "default": "",
+          "description": "正文行高 / CSS line-height for body text",
+          "markdownDescription": "CSS line-height for body/paragraph text (e.g. `1.8`, `28px`). Default is `1.8`. **Important:** This only affects in-line text vertical positioning. For actual editor line spacing, you **must** set `editor.lineHeight` in VS Code settings (recommended: `2.2` or higher when using 150%+ font sizes). Leave empty to use extension default."
         }
       }
     }

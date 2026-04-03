@@ -133,3 +133,6 @@ examples/
 
 # MacOS files
 .DS_Store
+
+# Firecrawl files
+.firecrawl

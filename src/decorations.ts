@@ -105,10 +105,16 @@ export function CodeBlockLanguageDecorationType(opacity: number = 0.3) {
 export function BoldDecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string) {
   const effectiveWeight = fontWeight ?? 'bold';
   const cssParts = ['none'];
-  if (fontFamily) cssParts.push(`font-family: ${fontFamily}`);
-  const options: Record<string, unknown> = { fontWeight: effectiveWeight };
+  if (fontFamily) {
+    // When textDecoration hack is needed, fontWeight must go inside it
+    cssParts.push(`font-weight: ${effectiveWeight}`);
+    cssParts.push(`font-family: ${fontFamily}`);
+  }
+  const options: Record<string, unknown> = {};
   if (cssParts.length > 1) {
     options.textDecoration = cssParts.join('; ') + ';';
+  } else {
+    options.fontWeight = effectiveWeight;
   }
   if (color !== undefined) {
     options.color = color;
@@ -147,10 +153,15 @@ export function ItalicDecorationType(color?: string | ThemeColor, fontFamily?: s
 export function BoldItalicDecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string) {
   const effectiveWeight = fontWeight ?? 'bold';
   const cssParts = ['none'];
-  if (fontFamily) cssParts.push(`font-family: ${fontFamily}`);
-  const options: Record<string, unknown> = { fontWeight: effectiveWeight, fontStyle: 'italic' };
+  if (fontFamily) {
+    cssParts.push(`font-weight: ${effectiveWeight}`);
+    cssParts.push(`font-family: ${fontFamily}`);
+  }
+  const options: Record<string, unknown> = { fontStyle: 'italic' };
   if (cssParts.length > 1) {
     options.textDecoration = cssParts.join('; ') + ';';
+  } else {
+    options.fontWeight = effectiveWeight;
   }
   if (color !== undefined) {
     options.color = color;
@@ -296,20 +307,36 @@ export function HeadingDecorationType() {
  * Default body text font configuration.
  * Uses Times New Roman for English, Source Han Serif SC / Noto Serif SC for Chinese.
  */
-const BODY_DEFAULT_FONT_FAMILY = '"Times New Roman", "Source Han Serif SC", "Noto Serif SC", "SimSun", serif';
-const BODY_DEFAULT_FONT_WEIGHT = '300';
+const BODY_DEFAULT_FONT_FAMILY = '"Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif';
+const BODY_DEFAULT_FONT_WEIGHT = 'normal';
+/** Default body font size — 150% matches H5 (公文四级标题) for visual consistency. */
+const BODY_DEFAULT_FONT_SIZE = '150%';
+/**
+ * Default body line height — injected via CSS hack but only affects in-line vertical positioning.
+ * For actual editor line spacing, users must also set `editor.lineHeight` in VS Code settings.
+ * Recommended: editor.lineHeight = 2.2 (or higher) when using 150%+ font sizes.
+ */
+const BODY_DEFAULT_LINE_HEIGHT = '1.8';
 
 /**
  * Heading decoration configuration.
- * Defaults follow Chinese government document (GB/T 9704-2012) typography conventions.
+ *
+ * Mapping rationale: In practice, H1 is used as the document/file title,
+ * so the actual government document heading levels start from H2:
+ *   H1 = 文件标题（思源宋体粗体）
+ *   H2 = 公文一级标题（黑体）
+ *   H3 = 公文二级标题（楷体）
+ *   H4 = 公文三级标题（仿宋加粗）
+ *   H5 = 公文四级标题（仿宋）
+ *   H6 = 备用
  */
 const HEADING_CONFIG = [
-  { size: '137%', bold: false, fontFamily: 'Arial, SimHei, "Heiti SC", sans-serif' },       // H1: 公文标题 — 黑体
-  { size: '100%', bold: false, fontFamily: 'Arial, KaiTi, STKaiti, serif' },                 // H2: 一级标题 — 楷体
-  { size: '100%', bold: true,  fontFamily: '"Times New Roman", FangSong, STFangsong, serif' }, // H3: 二级标题 — 仿宋加粗
-  { size: '100%', bold: false, fontFamily: '"Times New Roman", FangSong, STFangsong, serif' }, // H4: 三级标题 — 仿宋
-  { size: '90%',  bold: false, fontFamily: '' },                                              // H5: fallback to editor default
-  { size: '80%',  bold: false, fontFamily: '' },                                              // H6: fallback to editor default
+  { size: '200%', bold: true,  fontFamily: '"Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif' },  // H1: 文件标题 — 宋体粗体
+  { size: '165%', bold: false, fontFamily: 'SimHei, "Heiti SC", "Microsoft YaHei", sans-serif' },        // H2: 一级标题 — 黑体
+  { size: '160%', bold: false, fontFamily: 'KaiTi, STKaiti, "KaiTi_GB2312", serif' },                    // H3: 二级标题 — 楷体
+  { size: '150%', bold: true,  fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H4: 三级标题 — 仿宋加粗
+  { size: '150%', bold: false, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H5: 四级标题 — 仿宋
+  { size: '135%', bold: false, fontFamily: '' },                                                          // H6: 备用
 ];
 /**
  * Creates a heading decoration type with the specified level.
@@ -329,12 +356,14 @@ function createHeadingDecoration(level: number, color?: string | ThemeColor, fon
   const effectiveFont = fontFamily ?? cfg.fontFamily;
 
   // Build CSS injection string via textDecoration hack
+  // IMPORTANT: fontWeight MUST go inside the textDecoration string, NOT as a native property.
+  // When both textDecoration and native fontWeight are present, VS Code's renderer breaks the CSS hack.
   const cssParts = [`none; font-size: ${effectiveSize}`];
+  if (effectiveWeight) cssParts.push(`font-weight: ${effectiveWeight}`);
   if (effectiveFont) cssParts.push(`font-family: ${effectiveFont}`);
 
   const options: Record<string, unknown> = {
     textDecoration: cssParts.join('; ') + ';',
-    ...(effectiveWeight ? { fontWeight: effectiveWeight } : {}),
   };
   if (color !== undefined) {
     options.color = color;
@@ -370,21 +399,31 @@ export function Heading6DecorationType(color?: string | ThemeColor, fontFamily?:
 /**
  * Creates a decoration type for body/paragraph text styling.
  *
+ * Injects font-size and line-height via the textDecoration CSS hack (same
+ * technique used by headings).  Note: CSS `line-height` affects text
+ * positioning inside the line box; for actual editor line spacing the user
+ * should also set `editor.lineHeight` in VS Code settings.
+ *
  * @param {string | undefined} fontFamily - Optional CSS font-family
  * @param {string | undefined} fontWeight - Optional CSS font-weight
- * @returns {vscode.TextEditorDecorationType | null} A decoration type, or null if no font settings configured
+ * @param {string | undefined} fontSize - Optional CSS font-size (default: 105%)
+ * @param {string | undefined} lineHeight - Optional CSS line-height (default: 1.8)
+ * @returns {vscode.TextEditorDecorationType} A decoration type for body text
  */
-export function BodyTextDecorationType(fontFamily?: string, fontWeight?: string) {
+export function BodyTextDecorationType(fontFamily?: string, fontWeight?: string, fontSize?: string, lineHeight?: string) {
   const effectiveFont = fontFamily ?? BODY_DEFAULT_FONT_FAMILY;
   const effectiveWeight = fontWeight ?? BODY_DEFAULT_FONT_WEIGHT;
-  const cssParts = ['none'];
+  const effectiveFontSize = fontSize ?? BODY_DEFAULT_FONT_SIZE;
+  const effectiveLineHeight = lineHeight ?? BODY_DEFAULT_LINE_HEIGHT;
+
+  // IMPORTANT: fontWeight MUST go inside the textDecoration string, NOT as a native property.
+  // When both textDecoration and native fontWeight are present, VS Code's renderer breaks the CSS hack.
+  const cssParts = [`none; font-size: ${effectiveFontSize}; line-height: ${effectiveLineHeight}`];
+  if (effectiveWeight) cssParts.push(`font-weight: ${effectiveWeight}`);
   if (effectiveFont) cssParts.push(`font-family: ${effectiveFont}`);
-  const options: Record<string, unknown> = {};
-  if (cssParts.length > 1) {
-    options.textDecoration = cssParts.join('; ') + ';';
-  }
-  if (effectiveWeight) options.fontWeight = effectiveWeight;
-  return window.createTextEditorDecorationType(options);
+  return window.createTextEditorDecorationType({
+    textDecoration: cssParts.join('; ') + ';',
+  });
 }
 
 /**

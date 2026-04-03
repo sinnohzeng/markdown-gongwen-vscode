@@ -12,6 +12,9 @@ const FONT_WEIGHT_REGEX = /^(normal|bold|lighter|bolder|[1-9]00)$/;
 /** Matches valid CSS font-size values: number + unit. */
 const FONT_SIZE_REGEX = /^[\d.]+(px|pt|em|rem|%|vw|vh)$/;
 
+/** Matches valid CSS line-height values: bare number (1.8) or number + unit (28px). */
+const LINE_HEIGHT_REGEX = /^[\d.]+(px|pt|em|rem|%)?$/;
+
 function parseHexColor(value: string | undefined | null): string | undefined {
   if (value === undefined || value === null || typeof value !== 'string') {
     return undefined;
@@ -43,6 +46,12 @@ function getFontSizeConfig(key: string): string | undefined {
   const value = getFontConfig(key);
   if (value === undefined) return undefined;
   return FONT_SIZE_REGEX.test(value) ? value : undefined;
+}
+
+function getLineHeightConfig(key: string): string | undefined {
+  const value = getFontConfig(key);
+  if (value === undefined) return undefined;
+  return LINE_HEIGHT_REGEX.test(value) ? value : undefined;
 }
 
 export const config = {
@@ -175,5 +184,7 @@ export const config = {
     emphasisFontWeight(): string | undefined { return getFontWeightConfig('emphasis.fontWeight'); },
     bodyFontFamily(): string | undefined { return getFontConfig('body.fontFamily'); },
     bodyFontWeight(): string | undefined { return getFontWeightConfig('body.fontWeight'); },
+    bodyFontSize(): string | undefined { return getFontSizeConfig('body.fontSize'); },
+    bodyLineHeight(): string | undefined { return getLineHeightConfig('body.lineHeight'); },
   },
 } as const;

@@ -81,6 +81,8 @@ type RegistryOptions = {
   getEmphasisFontWeight?: () => string | undefined;
   getBodyFontFamily?: () => string | undefined;
   getBodyFontWeight?: () => string | undefined;
+  getBodyFontSize?: () => string | undefined;
+  getBodyLineHeight?: () => string | undefined;
 };
 
 export class DecorationTypeRegistry {
@@ -159,7 +161,7 @@ export class DecorationTypeRegistry {
     this.tableSeparatorPipeDecorationType = TableSeparatorPipeDecorationType();
     this.tableSeparatorDashDecorationType = TableSeparatorDashDecorationType();
     this.tableCellDecorationType = TableCellDecorationType();
-    this.bodyTextDecorationType = BodyTextDecorationType(this.options.getBodyFontFamily?.(), this.options.getBodyFontWeight?.());
+    this.bodyTextDecorationType = BodyTextDecorationType(this.options.getBodyFontFamily?.(), this.options.getBodyFontWeight?.(), this.options.getBodyFontSize?.(), this.options.getBodyLineHeight?.());
 
     this.decorationTypeMap = new Map<DecorationType, TextEditorDecorationType>([
       // Body text decoration first so headings/emphasis can override
@@ -245,7 +247,7 @@ export class DecorationTypeRegistry {
     this.recreateDecorationType(this.checkboxUncheckedDecorationType, () => CheckboxUncheckedDecorationType(this.options.getCheckboxColor?.()), (t) => { this.checkboxUncheckedDecorationType = t; }, 'checkboxUnchecked');
     this.recreateDecorationType(this.checkboxCheckedDecorationType, () => CheckboxCheckedDecorationType(this.options.getCheckboxColor?.()), (t) => { this.checkboxCheckedDecorationType = t; }, 'checkboxChecked');
     // Recreate body text decoration
-    this.recreateDecorationType(this.bodyTextDecorationType, () => BodyTextDecorationType(this.options.getBodyFontFamily?.(), this.options.getBodyFontWeight?.())!, (t) => { this.bodyTextDecorationType = t; }, 'body');
+    this.recreateDecorationType(this.bodyTextDecorationType, () => BodyTextDecorationType(this.options.getBodyFontFamily?.(), this.options.getBodyFontWeight?.(), this.options.getBodyFontSize?.(), this.options.getBodyLineHeight?.())!, (t) => { this.bodyTextDecorationType = t; }, 'body');
   }
 
   recreateGhostFaintDecorationType(): void {

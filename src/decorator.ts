@@ -177,6 +177,8 @@ export class Decorator {
       getEmphasisFontWeight: () => config.fonts.emphasisFontWeight(),
       getBodyFontFamily: () => config.fonts.bodyFontFamily(),
       getBodyFontWeight: () => config.fonts.bodyFontWeight(),
+      getBodyFontSize: () => config.fonts.bodyFontSize(),
+      getBodyLineHeight: () => config.fonts.bodyLineHeight(),
     });
   }
 
