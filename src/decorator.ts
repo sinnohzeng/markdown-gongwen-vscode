@@ -14,7 +14,7 @@ import { renderMermaidSvg, svgToDataUri, createErrorSvg } from './mermaid/mermai
 import { MermaidHoverIndicatorDecorationType } from './decorations';
 
 /** Workspace state key prefix for per-file decoration toggle persistence. */
-const DECORATION_STATE_KEY_PREFIX = 'mdInline.decorationsEnabled';
+const DECORATION_STATE_KEY_PREFIX = 'gongwen.decorationsEnabled';
 
 /**
  * Performance and caching constants.
@@ -896,7 +896,7 @@ export class Decorator {
 
   /**
    * Recreates all decoration types that depend on color settings or theme.
-   * Called when markdownInlineEditor.colors or active color theme changes.
+   * Called when markdownGongwen.colors or active color theme changes.
    */
   recreateColorDependentTypes(): void {
     this.decorationTypes.recreateColorDependentTypes();

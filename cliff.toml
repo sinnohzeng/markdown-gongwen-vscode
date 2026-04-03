@@ -2,8 +2,8 @@
 # https://git-cliff.org/docs/configuration
 
 [remote.github]
-owner = "SeardnaSchmid"
-repo = "markdown-inline-editor-vscode"
+owner = "sinnohzeng"
+repo = "markdown-gongwen-vscode"
 
 [changelog]
 # A Tera template to be rendered as the changelog's footer.
@@ -52,7 +52,7 @@ body = """
 trim = true
 postprocessors = [
     # Replace the placeholder `<REPO>` with a URL.
-    { pattern = '\$REPO', replace = "https://github.com/SeardnaSchmid/markdown-inline-editor-vscode" }, # replace repository URL
+    { pattern = '\$REPO', replace = "https://github.com/sinnohzeng/markdown-gongwen-vscode" }, # replace repository URL
     { pattern = '\$GH', replace = "https://github.com" },                                               # replace repository URL
 ]
 
@@ -68,7 +68,7 @@ split_commits = false
 # An array of regex based parsers to modify commit messages prior to further processing.
 commit_preprocessors = [
     # Replace issue numbers with link templates to be updated in `changelog.postprocessors`.
-    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/${2}))" },
+    { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/sinnohzeng/markdown-gongwen-vscode/issues/${2}))" },
 ]
 # An array of regex based parsers for extracting data from the commit message.
 # Assigns commits to groups following Keep a Changelog format:

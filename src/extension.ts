@@ -156,7 +156,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
   // Register command for toggling markdown decorations
   const toggleDecorationsCommand = vscode.commands.registerCommand(
-    'mdInline.toggleDecorations',
+    'gongwen.toggleDecorations',
     () => {
       const enabled = decorator.toggleDecorations();
       const fileName = decorator.activeEditor
@@ -170,7 +170,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
   // Register command for opening bundled fonts folder
   const installBundledFontsCommand = vscode.commands.registerCommand(
-    'mdInline.installBundledFonts',
+    'gongwen.installBundledFonts',
     async () => {
       const fontsPath = vscode.Uri.joinPath(context.extensionUri, 'fonts');
       try {
@@ -188,7 +188,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
   // Register command for navigating to anchor links
   const navigateToAnchorCommand = vscode.commands.registerCommand(
-    'markdown-inline-editor.navigateToAnchor',
+    'gongwen.navigateToAnchor',
     async (anchor: string, documentUri: string) => {
       const uri = vscode.Uri.parse(documentUri);
       const document = await vscode.workspace.openTextDocument(uri);
@@ -222,11 +222,11 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
 
   // Register commands for DOCX export
   const exportDocxCommand = vscode.commands.registerCommand(
-    'mdInline.exportDocx',
+    'gongwen.exportDocx',
     createExportDocxCommand(context),
   );
   const exportDocxQuickCommand = vscode.commands.registerCommand(
-    'mdInline.exportDocxQuick',
+    'gongwen.exportDocxQuick',
     createExportDocxQuickCommand(context),
   );
 
@@ -251,30 +251,30 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   });
 
   const changeConfiguration = vscode.workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.diffView.applyDecorations')) {
+    if (event.affectsConfiguration('markdownGongwen.defaultBehaviors.diffView.applyDecorations')) {
       const diffViewApplyDecorations = config.diffView.applyDecorations();
       decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
       decorator.updateDecorationsForSelection();
     }
     
-    if (event.affectsConfiguration('markdownInlineEditor.decorations.ghostFaintOpacity')) {
+    if (event.affectsConfiguration('markdownGongwen.decorations.ghostFaintOpacity')) {
       decorator.recreateGhostFaintDecorationType();
     }
     
-    if (event.affectsConfiguration('markdownInlineEditor.decorations.frontmatterDelimiterOpacity')) {
+    if (event.affectsConfiguration('markdownGongwen.decorations.frontmatterDelimiterOpacity')) {
       decorator.recreateFrontmatterDelimiterDecorationType();
     }
     
-    if (event.affectsConfiguration('markdownInlineEditor.decorations.codeBlockLanguageOpacity')) {
+    if (event.affectsConfiguration('markdownGongwen.decorations.codeBlockLanguageOpacity')) {
       decorator.recreateCodeBlockLanguageDecorationType();
     }
 
-    if (event.affectsConfiguration('markdownInlineEditor.links.singleClickOpen')) {
+    if (event.affectsConfiguration('markdownGongwen.links.singleClickOpen')) {
       const singleClickEnabled = config.links.singleClickOpen();
       linkClickHandler.setEnabled(singleClickEnabled);
     }
 
-    if (event.affectsConfiguration('markdownInlineEditor.colors') || event.affectsConfiguration('markdownInlineEditor.fonts')) {
+    if (event.affectsConfiguration('markdownGongwen.colors') || event.affectsConfiguration('markdownGongwen.fonts')) {
       decorator.recreateColorDependentTypes();
     }
 

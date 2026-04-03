@@ -1,8 +1,8 @@
 {
-  "name": "markdown-gongwen-view",
-  "displayName": "Markdown 公文视图",
+  "name": "markdown-gongwen",
+  "displayName": "Markdown 公文",
   "version": "1.1.0",
-  "description": "以党政公文字体风格显示 Markdown 文档 — WYSIWYG inline editor with Chinese government document typography",
+  "description": "在 VS Code 中编辑和导出党政公文——所见即所得 Markdown 编辑 + 一键导出 GB/T 9704 DOCX",
   "license": "MIT",
   "author": "sinnohzeng",
   "publisher": "sinnohzeng",
@@ -10,11 +10,11 @@
   "icon": "assets/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sinnohzeng/markdown-inline-editor-vscode.git"
+    "url": "https://github.com/sinnohzeng/markdown-gongwen-vscode.git"
   },
-  "homepage": "https://github.com/sinnohzeng/markdown-inline-editor-vscode",
+  "homepage": "https://github.com/sinnohzeng/markdown-gongwen-vscode",
   "bugs": {
-    "url": "https://github.com/sinnohzeng/markdown-inline-editor-vscode/issues"
+    "url": "https://github.com/sinnohzeng/markdown-gongwen-vscode/issues"
   },
   "keywords": [
     "markdown",
@@ -47,16 +47,16 @@
   "contributes": {
     "commands": [
       {
-        "command": "mdInline.toggleDecorations",
+        "command": "gongwen.toggleDecorations",
         "title": "Toggle Markdown Decorations",
         "icon": "$(eye)"
       },
       {
-        "command": "mdInline.installBundledFonts",
-        "title": "Markdown Inline Editor: Open Bundled Fonts Folder"
+        "command": "gongwen.installBundledFonts",
+        "title": "Markdown Gongwen: Open Bundled Fonts Folder"
       },
       {
-        "command": "mdInline.exportDocx",
+        "command": "gongwen.exportDocx",
         "title": "导出公文 DOCX (Export to Government DOCX)",
         "icon": {
           "dark": "assets/icons/export-docx-dark.svg",
@@ -64,19 +64,19 @@
         }
       },
       {
-        "command": "mdInline.exportDocxQuick",
+        "command": "gongwen.exportDocxQuick",
         "title": "快速导出公文 DOCX (Quick Export DOCX)"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "mdInline.toggleDecorations",
+          "command": "gongwen.toggleDecorations",
           "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
           "group": "navigation"
         },
         {
-          "command": "mdInline.exportDocx",
+          "command": "gongwen.exportDocx",
           "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
           "group": "navigation"
         }
@@ -85,32 +85,32 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "mdInlineRenderer",
-          "title": "Markdown Inline Editor",
+          "id": "gongwenRenderer",
+          "title": "Markdown Gongwen",
           "icon": "assets/activityBar.svg"
         }
       ]
     },
     "views": {
-      "mdInlineRenderer": [
+      "gongwenRenderer": [
         {
           "type": "webview",
-          "id": "mdInline.mermaidRenderer",
+          "id": "gongwen.mermaidRenderer",
           "name": "Mermaid Renderer",
           "visibility": "hidden"
         }
       ]
     },
     "configuration": {
-      "title": "Markdown Inline Editor",
+      "title": "Markdown Gongwen",
       "properties": {
-        "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": {
+        "markdownGongwen.defaultBehaviors.diffView.applyDecorations": {
           "type": "boolean",
           "default": false,
           "description": "Apply decorators in diff view",
           "markdownDescription": "Apply markdown decorations in diff views. Disabled by default to show raw syntax for easier review."
         },
-        "markdownInlineEditor.decorations.ghostFaintOpacity": {
+        "markdownGongwen.decorations.ghostFaintOpacity": {
           "type": "number",
           "default": 0.3,
           "minimum": 0,
@@ -118,7 +118,7 @@
           "description": "Opacity for ghost faint decorations",
           "markdownDescription": "Opacity of syntax markers when cursor is on a line (0.0-1.0)."
         },
-        "markdownInlineEditor.decorations.frontmatterDelimiterOpacity": {
+        "markdownGongwen.decorations.frontmatterDelimiterOpacity": {
           "type": "number",
           "default": 0.3,
           "minimum": 0,
@@ -126,7 +126,7 @@
           "description": "Opacity for frontmatter delimiters",
           "markdownDescription": "Opacity of frontmatter delimiters (---) (0.0-1.0)."
         },
-        "markdownInlineEditor.decorations.codeBlockLanguageOpacity": {
+        "markdownGongwen.decorations.codeBlockLanguageOpacity": {
           "type": "number",
           "default": 0.3,
           "minimum": 0,
@@ -134,272 +134,272 @@
           "description": "Opacity for code block language identifiers",
           "markdownDescription": "Opacity of code block language identifiers (0.0-1.0)."
         },
-        "markdownInlineEditor.links.singleClickOpen": {
+        "markdownGongwen.links.singleClickOpen": {
           "type": "boolean",
           "default": false,
           "description": "Open links and images with single click",
           "markdownDescription": "Single-click to open links and image links (no Ctrl+Click needed). May interfere with text selection."
         },
-        "markdownInlineEditor.emojis.enabled": {
+        "markdownGongwen.emojis.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Render emoji shortcodes (e.g., :smile:)",
           "markdownDescription": "Render emoji shortcodes (e.g., :smile:) inline in Markdown documents."
         },
-        "markdownInlineEditor.math.enabled": {
+        "markdownGongwen.math.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Render LaTeX math inline ($...$ and $$...$$)",
           "markdownDescription": "Render LaTeX math inline ($...$ and $$...$$). When disabled, math delimiters are shown as plain text."
         },
-        "markdownInlineEditor.mentions.enabled": {
+        "markdownGongwen.mentions.enabled": {
           "type": "boolean",
           "default": true,
           "description": "Enable GitHub-style mentions and issue reference styling",
           "markdownDescription": "Enable detection and inline styling for GitHub-style mentions and references such as @username, @org/team, #123, and @owner/repo#456."
         },
-        "markdownInlineEditor.mentions.linksEnabled": {
+        "markdownGongwen.mentions.linksEnabled": {
           "type": "boolean",
           "description": "Override clickable mention and issue reference links",
           "markdownDescription": "Override git-remote context auto-detection for clickable mention and issue links. `true` forces links on; `false` forces links off; leave unset to use origin remote auto-detection."
         },
-        "markdownInlineEditor.colors.heading1": {
+        "markdownGongwen.colors.heading1": {
           "type": "string",
           "description": "Hex color for level-1 headings",
           "format": "color",
           "markdownDescription": "Hex color for level-1 headings (e.g. `#e06c75`). Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.heading2": {
+        "markdownGongwen.colors.heading2": {
           "type": "string",
           "description": "Hex color for level-2 headings",
           "format": "color",
           "markdownDescription": "Hex color for level-2 headings. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.heading3": {
+        "markdownGongwen.colors.heading3": {
           "type": "string",
           "description": "Hex color for level-3 headings",
           "format": "color",
           "markdownDescription": "Hex color for level-3 headings. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.heading4": {
+        "markdownGongwen.colors.heading4": {
           "type": "string",
           "description": "Hex color for level-4 headings",
           "format": "color",
           "markdownDescription": "Hex color for level-4 headings. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.heading5": {
+        "markdownGongwen.colors.heading5": {
           "type": "string",
           "description": "Hex color for level-5 headings",
           "format": "color",
           "markdownDescription": "Hex color for level-5 headings. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.heading6": {
+        "markdownGongwen.colors.heading6": {
           "type": "string",
           "description": "Hex color for level-6 headings",
           "format": "color",
           "markdownDescription": "Hex color for level-6 headings. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.link": {
+        "markdownGongwen.colors.link": {
           "type": "string",
           "description": "Hex color for link text",
           "format": "color",
           "markdownDescription": "Hex color for link text. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.listMarker": {
+        "markdownGongwen.colors.listMarker": {
           "type": "string",
           "description": "Hex color for list markers",
           "format": "color",
           "markdownDescription": "Hex color for list markers (unordered and ordered). Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.inlineCode": {
+        "markdownGongwen.colors.inlineCode": {
           "type": "string",
           "description": "Hex color for inline code",
           "format": "color",
           "markdownDescription": "Hex color for inline code. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.inlineCodeBackground": {
+        "markdownGongwen.colors.inlineCodeBackground": {
           "type": "string",
           "description": "Hex color for inline code background",
           "format": "color",
           "markdownDescription": "Hex color for inline code background overlay. Leave empty to use theme-aware default."
         },
-        "markdownInlineEditor.colors.emphasis": {
+        "markdownGongwen.colors.emphasis": {
           "type": "string",
           "description": "Hex color for emphasis (bold/italic)",
           "format": "color",
           "markdownDescription": "Hex color for emphasis (bold/italic). Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.blockquote": {
+        "markdownGongwen.colors.blockquote": {
           "type": "string",
           "description": "Hex color for blockquote",
           "format": "color",
           "markdownDescription": "Hex color for blockquote markers and/or text. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.image": {
+        "markdownGongwen.colors.image": {
           "type": "string",
           "description": "Hex color for image link text",
           "format": "color",
           "markdownDescription": "Hex color for image link text/placeholder. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.horizontalRule": {
+        "markdownGongwen.colors.horizontalRule": {
           "type": "string",
           "description": "Hex color for horizontal rule line",
           "format": "color",
           "markdownDescription": "Hex color for horizontal rule line. Leave empty to use theme default."
         },
-        "markdownInlineEditor.colors.checkbox": {
+        "markdownGongwen.colors.checkbox": {
           "type": "string",
           "description": "Hex color for checkbox (unchecked and checked)",
           "format": "color",
           "markdownDescription": "Hex color for unchecked and checked checkbox symbols. Leave empty to use theme default."
         },
-        "markdownInlineEditor.fonts.heading1.fontFamily": {
+        "markdownGongwen.fonts.heading1.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for level-1 headings",
           "markdownDescription": "CSS font-family for level-1 headings (e.g. `Arial, SimHei, sans-serif`). English fonts should come first for CJK mixed text. Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.heading1.fontWeight": {
+        "markdownGongwen.fonts.heading1.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for level-1 headings",
           "markdownDescription": "CSS font-weight for level-1 headings (`normal`, `bold`, `100`–`900`). Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading1.fontSize": {
+        "markdownGongwen.fonts.heading1.fontSize": {
           "type": "string",
           "default": "",
           "description": "CSS font-size for level-1 headings",
           "markdownDescription": "CSS font-size for level-1 headings (e.g. `180%`, `22pt`, `1.4em`). Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading2.fontFamily": {
+        "markdownGongwen.fonts.heading2.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for level-2 headings",
           "markdownDescription": "CSS font-family for level-2 headings (e.g. `Arial, KaiTi, serif`). Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.heading2.fontWeight": {
+        "markdownGongwen.fonts.heading2.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for level-2 headings",
           "markdownDescription": "CSS font-weight for level-2 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading2.fontSize": {
+        "markdownGongwen.fonts.heading2.fontSize": {
           "type": "string",
           "default": "",
           "description": "CSS font-size for level-2 headings",
           "markdownDescription": "CSS font-size for level-2 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading3.fontFamily": {
+        "markdownGongwen.fonts.heading3.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for level-3 headings",
           "markdownDescription": "CSS font-family for level-3 headings (e.g. `\"Times New Roman\", FangSong, serif`). Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.heading3.fontWeight": {
+        "markdownGongwen.fonts.heading3.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for level-3 headings",
           "markdownDescription": "CSS font-weight for level-3 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading3.fontSize": {
+        "markdownGongwen.fonts.heading3.fontSize": {
           "type": "string",
           "default": "",
           "description": "CSS font-size for level-3 headings",
           "markdownDescription": "CSS font-size for level-3 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading4.fontFamily": {
+        "markdownGongwen.fonts.heading4.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for level-4 headings",
           "markdownDescription": "CSS font-family for level-4 headings. Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.heading4.fontWeight": {
+        "markdownGongwen.fonts.heading4.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for level-4 headings",
           "markdownDescription": "CSS font-weight for level-4 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading4.fontSize": {
+        "markdownGongwen.fonts.heading4.fontSize": {
           "type": "string",
           "default": "",
           "description": "CSS font-size for level-4 headings",
           "markdownDescription": "CSS font-size for level-4 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading5.fontFamily": {
+        "markdownGongwen.fonts.heading5.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for level-5 headings",
           "markdownDescription": "CSS font-family for level-5 headings. Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.heading5.fontWeight": {
+        "markdownGongwen.fonts.heading5.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for level-5 headings",
           "markdownDescription": "CSS font-weight for level-5 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading5.fontSize": {
+        "markdownGongwen.fonts.heading5.fontSize": {
           "type": "string",
           "default": "",
           "description": "CSS font-size for level-5 headings",
           "markdownDescription": "CSS font-size for level-5 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading6.fontFamily": {
+        "markdownGongwen.fonts.heading6.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for level-6 headings",
           "markdownDescription": "CSS font-family for level-6 headings. Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.heading6.fontWeight": {
+        "markdownGongwen.fonts.heading6.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for level-6 headings",
           "markdownDescription": "CSS font-weight for level-6 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.heading6.fontSize": {
+        "markdownGongwen.fonts.heading6.fontSize": {
           "type": "string",
           "default": "",
           "description": "CSS font-size for level-6 headings",
           "markdownDescription": "CSS font-size for level-6 headings. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.emphasis.fontFamily": {
+        "markdownGongwen.fonts.emphasis.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for bold/italic emphasis",
           "markdownDescription": "CSS font-family for bold/italic emphasis text. Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.emphasis.fontWeight": {
+        "markdownGongwen.fonts.emphasis.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight override for bold emphasis",
           "markdownDescription": "CSS font-weight override for bold emphasis (e.g. `900` for extra bold). Leave empty to use default `bold`."
         },
-        "markdownInlineEditor.fonts.body.fontFamily": {
+        "markdownGongwen.fonts.body.fontFamily": {
           "type": "string",
           "default": "",
           "description": "CSS font-family for body/paragraph text",
           "markdownDescription": "CSS font-family for body/paragraph text (e.g. `\"Times New Roman\", \"Source Han Serif SC\", serif`). Fonts must be installed on your system. Leave empty to use editor default."
         },
-        "markdownInlineEditor.fonts.body.fontWeight": {
+        "markdownGongwen.fonts.body.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "CSS font-weight for body/paragraph text",
           "markdownDescription": "CSS font-weight for body/paragraph text (e.g. `300` for light weight). Leave empty to use default."
         },
-        "markdownInlineEditor.fonts.body.fontSize": {
+        "markdownGongwen.fonts.body.fontSize": {
           "type": "string",
           "default": "",
           "description": "正文字号 / CSS font-size for body text",
           "markdownDescription": "CSS font-size for body/paragraph text (e.g. `105%`, `16px`). Default is `105%` — slightly larger than editor default for better CJK readability. Leave empty to use extension default."
         },
-        "markdownInlineEditor.fonts.body.lineHeight": {
+        "markdownGongwen.fonts.body.lineHeight": {
           "type": "string",
           "default": "",
           "description": "正文行高 / CSS line-height for body text",

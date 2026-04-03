@@ -2,7 +2,7 @@
 const { execSync } = require("child_process");
 
 /**
- * Release helper script for markdown-inline-editor-vscode.
+ * Release helper script for markdown-gongwen-vscode.
  * - Runs validation checks (lint:docs, test, build)
  * - Gets next version with git-cliff
  * - Generates CHANGELOG.md

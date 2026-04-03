@@ -2,7 +2,7 @@
 
 > 更新日期：2026-04-03
 >
-> 本文档适用于将 **Markdown 公文视图** 插件发布到 VS Code Marketplace（微软官方市场）和 Open VSX Registry（开源替代市场）。
+> 本文档适用于将 **Markdown 公文** 插件发布到 VS Code Marketplace（微软官方市场）和 Open VSX Registry（开源替代市场）。
 
 ---
 
@@ -104,11 +104,11 @@ vsce verify-pat sinnohzeng
 
 | 字段 | 要求 | 当前值 |
 |------|------|--------|
-| `name` | 全小写，无空格，市场中唯一 | `markdown-gongwen-view` ✅ |
+| `name` | 全小写，无空格，市场中唯一 | `markdown-gongwen` ✅ |
 | `version` | SemVer（Semantic Versioning，语义化版本）格式 | `1.0.0` ✅ |
 | `publisher` | 与注册的发布者 ID 完全一致 | `sinnohzeng` ✅ |
 | `engines.vscode` | 最低 VS Code 版本，不能为 `*` | `^1.100.0` ✅ |
-| `displayName` | 市场中唯一的显示名称 | `Markdown 公文视图` ✅ |
+| `displayName` | 市场中唯一的显示名称 | `Markdown 公文` ✅ |
 | `description` | 简短描述 | ✅ |
 | `categories` | 合法分类值 | `["Formatters", "Visualization", "Other"]` ✅ |
 
@@ -157,14 +157,14 @@ npm run build
 vsce package
 
 # 指定输出路径
-vsce package -o dist/markdown-gongwen-view-1.0.0.vsix
+vsce package -o dist/markdown-gongwen-1.0.0.vsix
 ```
 
 打包后可以本地安装测试：
 
 ```bash
 # 命令行安装
-code --install-extension markdown-gongwen-view-1.0.0.vsix
+code --install-extension markdown-gongwen-1.0.0.vsix
 ```
 
 或在 VS Code 中：扩展面板 → 右上角 `...` → 「从 VSIX 安装…」
@@ -187,7 +187,7 @@ vsce publish -p <你的PAT>
 发布后访问以下地址确认：
 
 ```
-https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen-view
+https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen
 ```
 
 ---
@@ -221,7 +221,7 @@ vsce publish --pre-release
 ### 6.3 下架插件（谨慎操作）
 
 ```bash
-vsce unpublish sinnohzeng.markdown-gongwen-view
+vsce unpublish sinnohzeng.markdown-gongwen
 ```
 
 **⚠️ 警告** ：下架后，插件名称将被永久保留，任何人都无法再使用该名称。请谨慎操作。
@@ -256,7 +256,7 @@ npx ovsx create-namespace sinnohzeng -p <Open-VSX-Token>
 npx ovsx publish -p <Open-VSX-Token>
 
 # 或者发布已打包的 .vsix 文件
-npx ovsx publish markdown-gongwen-view-1.0.0.vsix -p <Open-VSX-Token>
+npx ovsx publish markdown-gongwen-1.0.0.vsix -p <Open-VSX-Token>
 ```
 
 ### 7.4 同时发布到两个市场（CI/CD 示例）

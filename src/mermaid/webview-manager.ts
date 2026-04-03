@@ -59,7 +59,7 @@ export class MermaidWebviewManager {
     const SWITCH_BACK_DELAY_MS = 100;
 
     vscode.commands
-      .executeCommand('mdInline.mermaidRenderer.focus')
+      .executeCommand('gongwen.mermaidRenderer.focus')
       .then(
         () => {
           // Wait for webview to be ready or timeout, then switch back
@@ -145,7 +145,7 @@ export class MermaidWebviewManager {
 <body>
   <div class="info-box">
     <h3>Mermaid Diagram Renderer</h3>
-    <p>This webview is used internally by the Markdown Inline Editor extension to render Mermaid diagrams inline in your markdown files.</p>
+    <p>This webview is used internally by the Markdown Gongwen extension to render Mermaid diagrams inline in your markdown files.</p>
     <p><strong>You can safely ignore this view.</strong> It runs in the background and has no user-facing functionality. The diagrams appear directly in your editor, not here.</p>
     <p>If you're seeing this view, you can close it and return to your editor. The extension will continue to work normally.</p>
   </div>
@@ -428,7 +428,7 @@ export class MermaidWebviewManager {
  * Webview view provider for Mermaid rendering
  */
 class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'mdInline.mermaidRenderer';
+  public static readonly viewType = 'gongwen.mermaidRenderer';
 
   constructor(private manager: MermaidWebviewManager) {}
 

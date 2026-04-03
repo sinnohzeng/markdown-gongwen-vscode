@@ -1,4 +1,4 @@
-# AI Agent Guide for Markdown Inline Editor
+# AI Agent Guide for Markdown Gongwen
 
 This document provides essential context and guidelines for AI agents working on this VS Code extension project. Follow these instructions to ensure your contributions align with project standards.
 

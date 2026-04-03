@@ -223,7 +223,7 @@ export class DecorationTypeRegistry {
 
   /**
    * Recreates all decoration types that depend on color settings or theme.
-   * Call when config (markdownInlineEditor.colors) or active color theme changes.
+   * Call when config (markdownGongwen.colors) or active color theme changes.
    */
   recreateColorDependentTypes(): void {
     this.recreateDecorationType(this.heading1DecorationType, () => Heading1DecorationType(this.options.getHeading1Color?.(), this.options.getHeading1FontFamily?.(), this.options.getHeading1FontWeight?.(), this.options.getHeading1FontSize?.()), (t) => { this.heading1DecorationType = t; }, 'heading1');

@@ -6,4 +6,4 @@
 
 ## 报告安全问题
 
-请在 [GitHub Issues](https://github.com/sinnohzeng/markdown-inline-editor-vscode/issues) 中提交，说明问题、复现步骤和相关上下文。我们会尽力及时处理。
+请在 [GitHub Issues](https://github.com/sinnohzeng/markdown-gongwen-vscode/issues) 中提交，说明问题、复现步骤和相关上下文。我们会尽力及时处理。

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-const SECTION = 'markdownInlineEditor' as const;
+const SECTION = 'markdownGongwen' as const;
 
 /** Matches `#` + 3, 4, 6, or 8 hex digits (#RGB, #RGBA, #RRGGBB, #RRGGBBAA). Invalid values are treated as unset. */
 /** Matches `#` + 3, 4, 6, or 8 hex digits (#RGB, #RGBA, #RRGGBB, #RRGGBBAA). Invalid values are treated as unset. */
