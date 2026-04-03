@@ -10,13 +10,15 @@
 
 - **无需预览面板**：标题、加粗、链接、图片、列表、代码、GFM 表格、数学公式、Mermaid 图表全部在编辑区行内渲染
 - **三态语法遮蔽**：Markdown 标记符号在编辑时自动隐藏→淡入→显示，不干扰阅读也不影响编辑
-- **公文排版风格**：内置 GB/T 9704 党政公文字体配置，安装即用
-  - 一级标题（`#`）：宋体粗体 200%
-  - 二级标题（`##`）：黑体 165%
-  - 三级标题（`###`）：楷体 160%
-  - 四级标题（`####`）：仿宋加粗 150%
-  - 五级标题（`#####`）：仿宋 150%
-  - 正文：宋体 150%，行高 1.8
+- **公文排版风格**：严格遵循 GB/T 9704《党政机关公文格式》字体规范，安装即用
+  - 公文标题（`#`）：宋体粗体，二号 22pt（137%）
+  - 一级标题（`##`）：黑体，三号 16pt（100%）
+  - 二级标题（`###`）：楷体，三号 16pt（100%）
+  - 三级标题（`####`）：仿宋加粗，三号 16pt（100%）
+  - 四级标题（`#####`）：仿宋，三号 16pt（100%）
+  - 正文：宋体，三号 16pt（100%）
+
+  > **注**：GB/T 9704 规定除公文标题用二号（22pt）外，各级标题和正文均为三号（16pt），仅靠字体区分层级。建议配合 `editor.fontSize: 22` 使用。
 - **交互式编辑**：点击任务列表复选框直接切换、悬停链接查看目标、悬停图片预览
 - **安全可靠**：文件保持纯 Markdown，差异视图默认显示原始语法
 
@@ -45,7 +47,7 @@
 
 ### 方法一：编辑 settings.json（推荐）
 
-使用 `[markdown]` 语言作用域，**只影响 Markdown 文件，不改变代码文件的行高**：
+使用 `[markdown]` 语言作用域，**只影响 Markdown 文件，不改变代码文件的字号和行高**：
 
 1. 按 `Cmd + Shift + P`（macOS）或 `Ctrl + Shift + P`（Windows/Linux）打开命令面板
 2. 输入 `Open User Settings (JSON)` 并回车
@@ -54,43 +56,49 @@
 ```json
 {
   "[markdown]": {
-    "editor.lineHeight": 2.2
+    "editor.fontSize": 22,
+    "editor.lineHeight": 1.8,
+    "editor.wordWrap": "on",
+    "editor.minimap.enabled": false,
+    "editor.unicodeHighlight.ambiguousCharacters": false,
+    "editor.quickSuggestions": {
+      "comments": "off",
+      "strings": "off",
+      "other": "off"
+    }
   }
 }
 ```
 
 4. 保存文件（`Cmd + S`）即可生效
 
-> **提示**：这样配置后，只有 `.md` 文件的行间距会增大，你的代码文件（`.ts`、`.js`、`.py` 等）完全不受影响。
+> **提示**：这样配置后，只有 `.md` 文件受影响，你的代码文件完全不变。
+
+### 配置说明
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| `editor.fontSize` | `22` | 对应公文三号字（16pt ≈ 22px），正文基础字号 |
+| `editor.lineHeight` | `1.8` | 参照公文 28pt 行距（28/16 ≈ 1.75） |
+| `editor.wordWrap` | `"on"` | 长段落自动折行 |
+| `editor.minimap.enabled` | `false` | 写文章时小地图没用 |
+| `editor.unicodeHighlight.ambiguousCharacters` | `false` | 关闭中文标点的黄色警告 |
+| `editor.quickSuggestions` | 全部 `"off"` | 写文章时关闭自动补全弹窗 |
 
 ### 方法二：图形化界面
 
-如果你希望所有文件类型都使用相同行高：
-
 1. 按 `Cmd + ,`（macOS）或 `Ctrl + ,`（Windows/Linux）打开设置界面
-2. 在搜索框中输入：`@lang:markdown editor.lineHeight`
-3. 找到 **Editor: Line Height** 选项
-4. 将值修改为 `2.2`（或更高，根据个人喜好调整）
+2. 在搜索框中输入：`@lang:markdown editor.fontSize`
+3. 将 **Editor: Font Size** 修改为 `22`
+4. 再搜索 `@lang:markdown editor.lineHeight`，修改为 `1.8`
 
-### 推荐配置
+### 为什么用 editor.fontSize 而不是插件内置放大？
 
-以下是搭配本插件的完整推荐 `settings.json` 配置：
+VS Code 的换行和光标定位基于编辑器字号计算。如果用插件 decoration 放大字号（如 150%），VS Code 不知道文字变大了，会导致：
+- 换行位置不正确，文字超出视口
+- 光标位置计算偏移
 
-```json
-{
-  "[markdown]": {
-    "editor.lineHeight": 2.2
-  },
-  "markdownInlineEditor.decorations.ghostFaintOpacity": 0.25,
-  "markdownInlineEditor.emojis.enabled": true
-}
-```
-
-### 为什么需要手动设置行间距？
-
-VS Code 的编辑器行高由全局设置 `editor.lineHeight` 控制，插件无法通过 decoration API 修改行间距（这是 VS Code 的已知限制）。当插件将正文字号放大至 150% 时，默认行间距会导致上下行文字重叠，因此需要手动调大行高。
-
-> VS Code 团队正在开发原生的可变行高支持（Issue #246822），未来可能不再需要手动配置。
+使用 `editor.fontSize` 让 VS Code **原生知道字号变化**，换行、行高、光标全部自动适配。插件的标题百分比（如 137%）基于此字号等比缩放。
 
 ## 三态语法遮蔽
 

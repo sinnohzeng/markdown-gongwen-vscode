@@ -309,8 +309,13 @@ export function HeadingDecorationType() {
  */
 const BODY_DEFAULT_FONT_FAMILY = '"Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif';
 const BODY_DEFAULT_FONT_WEIGHT = 'normal';
-/** Default body font size — 150% matches H5 (公文四级标题) for visual consistency. */
-const BODY_DEFAULT_FONT_SIZE = '150%';
+/**
+ * Default body font size — 100% (no enlargement via decoration).
+ * For larger body text, users should set `editor.fontSize` in `[markdown]` scope.
+ * This avoids the word-wrap mismatch where VS Code calculates wrap positions
+ * using the base font but decorations render at a different size.
+ */
+const BODY_DEFAULT_FONT_SIZE = '100%';
 /**
  * Default body line height — injected via CSS hack but only affects in-line vertical positioning.
  * For actual editor line spacing, users must also set `editor.lineHeight` in VS Code settings.
@@ -331,12 +336,12 @@ const BODY_DEFAULT_LINE_HEIGHT = '1.8';
  *   H6 = 备用
  */
 const HEADING_CONFIG = [
-  { size: '200%', bold: true,  fontFamily: '"Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif' },  // H1: 文件标题 — 宋体粗体
-  { size: '165%', bold: false, fontFamily: 'SimHei, "Heiti SC", "Microsoft YaHei", sans-serif' },        // H2: 一级标题 — 黑体
-  { size: '160%', bold: false, fontFamily: 'KaiTi, STKaiti, "KaiTi_GB2312", serif' },                    // H3: 二级标题 — 楷体
-  { size: '150%', bold: true,  fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H4: 三级标题 — 仿宋加粗
-  { size: '150%', bold: false, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H5: 四级标题 — 仿宋
-  { size: '135%', bold: false, fontFamily: '' },                                                          // H6: 备用
+  { size: '137%', bold: true,  fontFamily: '"Songti SC", "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif' },  // H1: 公文标题 — 小标宋/宋体粗体，二号 22pt (22/16=137%)
+  { size: '100%', bold: false, fontFamily: 'SimHei, "Heiti SC", "Microsoft YaHei", sans-serif' },        // H2: 一级标题 — 黑体，三号 16pt
+  { size: '100%', bold: false, fontFamily: 'KaiTi, STKaiti, "KaiTi_GB2312", serif' },                    // H3: 二级标题 — 楷体，三号 16pt
+  { size: '100%', bold: true,  fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H4: 三级标题 — 仿宋加粗，三号 16pt
+  { size: '100%', bold: false, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H5: 四级标题 — 仿宋，三号 16pt
+  { size: '90%',  bold: false, fontFamily: '' },                                                          // H6: 备用
 ];
 /**
  * Creates a heading decoration type with the specified level.

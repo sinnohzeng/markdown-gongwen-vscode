@@ -52,21 +52,29 @@ window.createTextEditorDecorationType({
 
 这条规则同样适用于 `fontWeight: 'normal'`——即使是默认值，设置了也会导致 hack 失效。
 
-## 行高限制
+## 行高和字号限制
 
-CSS `line-height` 通过 textDecoration hack 注入后，**不能控制编辑器的实际行间距**。VS Code 的 Monaco 编辑器独立计算行高，CSS line-height 只影响行内文字的垂直定位。
+### font-size 导致换行错位
 
-### 解决方案
+通过 textDecoration hack 注入 `font-size: 150%` 时，VS Code 的换行引擎仍按原始字号计算换行位置，导致文字超出视口、出现水平滚动条。
 
-用户需要在 VS Code 设置中调整 `editor.lineHeight`：
+**正确方案**：不用 decoration 放大字号，改用 `editor.fontSize` 在 `[markdown]` 语言作用域中设置：
 
 ```json
 {
-  "editor.lineHeight": 2.2
+  "[markdown]": {
+    "editor.fontSize": 22,
+    "editor.lineHeight": 1.8,
+    "editor.wordWrap": "on"
+  }
 }
 ```
 
-当 font-size 设置为 150% 以上时，建议 `editor.lineHeight` 至少设为 2.0-2.5。
+这样 VS Code **原生知道字号变化**，换行、行高、光标位置全部自动适配。
+
+### line-height 限制
+
+CSS `line-height` 通过 textDecoration hack 注入后，**不能控制编辑器的实际行间距**。同样需要使用 `editor.lineHeight` 原生设置。
 
 > VS Code 团队正在开发原生的可变行高支持（Issue #246822），但尚未作为公开 API 发布。
 
