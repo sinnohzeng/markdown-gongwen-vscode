@@ -36,7 +36,7 @@ let _exporter: typeof import("./ast-to-docx") | undefined;
 
 async function getExporter() {
   if (!_exporter) {
-    _exporter = await import("./ast-to-docx");
+    _exporter = await import("./ast-to-docx.js");
   }
   return _exporter;
 }
@@ -195,7 +195,7 @@ async function doExport(
         progress.report({ message: "正在处理图片...", increment: 20 });
         const imageUrls = collectImageUrls(ast);
         log(`发现 ${imageUrls.length} 张图片引用`);
-        const { resolveImages } = await import("./image-resolver");
+        const { resolveImages } = await import("./image-resolver.js");
         const { images, warnings } = await resolveImages(imageUrls, document.uri, token);
         log(`图片处理完成: ${images.size} 张成功, ${warnings.length} 张警告`);
         for (const w of warnings) {
@@ -206,7 +206,7 @@ async function doExport(
 
         // 3. 生成 DOCX Document
         progress.report({ message: "正在生成 DOCX...", increment: 30 });
-        const exporter = await getExporter();
+        const exporter = (await getExporter())!;
         const doc = exporter.convertToDocx(ast, images);
         log("DOCX Document 对象生成完成");
 

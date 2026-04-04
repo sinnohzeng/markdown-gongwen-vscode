@@ -120,7 +120,8 @@ function convertNodes(
   for (const node of nodes) {
     try {
       // 跳过 frontmatter
-      if (node.type === "yaml" || node.type === "toml") continue;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- remark-frontmatter 注入的 "toml" 节点不在标准 mdast 类型中
+      if (node.type === "yaml" || (node.type as any) === "toml") continue;
 
       switch (node.type) {
         case "heading":
@@ -379,7 +380,9 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
         }),
       );
     } else {
-      result.push(...convertNodes([child], images, { italic: true }));
+      for (const item of convertNodes([child], images, { italic: true })) {
+        if (item instanceof Paragraph) result.push(item);
+      }
     }
   }
 

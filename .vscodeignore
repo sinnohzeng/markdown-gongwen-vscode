@@ -55,6 +55,7 @@ dist/**/*.d.ts
 
 # Test files
 test-*.md
+test-*.docx
 *.test.ts
 **/__tests__/**
 dist/test-report/**
@@ -63,6 +64,10 @@ dist/coverage
 
 # CI/CD
 .github/**
+
+# Temporary / generated data (not part of extension)
+.firecrawl/**
+.remember/**
 
 # Cursor files
 .cursor/**
