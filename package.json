@@ -1,7 +1,7 @@
 {
   "name": "markdown-gongwen",
   "displayName": "Markdown 公文",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "在 VS Code 中编辑和导出党政公文——所见即所得 Markdown 编辑 + 一键导出 GB/T 9704 DOCX",
   "license": "MIT",
   "author": "sinnohzeng",
