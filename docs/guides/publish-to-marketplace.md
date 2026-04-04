@@ -1,6 +1,6 @@
 # 发布到 VS Code 应用市场教程
 
-> 更新日期：2026-04-03
+> 更新日期：2026-04-04
 >
 > 本文档适用于将 **Markdown 公文** 插件发布到 VS Code Marketplace（微软官方市场）和 Open VSX Registry（开源替代市场）。
 
@@ -38,24 +38,33 @@ npm install -g @vscode/vsce
 
 ### 2.1 创建 Azure DevOps 组织
 
-1. 访问 **https://dev.azure.com/**
-2. 使用 Microsoft 账号登录
-3. 如果没有组织，按照提示创建一个新组织（Organization）
+> **⚠️ 注意** ：直接访问 `dev.azure.com` 在未登录时可能会跳转到 Azure 产品营销页面（azure.microsoft.com），而不是 Azure DevOps 控制台。这是微软近期的页面调整，请按以下步骤操作。
+
+1. 访问 **https://dev.azure.com/** ，点击页面上的 **Sign in to Azure DevOps** 按钮（如果被重定向到 Azure 首页，请直接访问 **https://aex.dev.azure.com/** 进入登录流程）
+2. 使用 Microsoft 账号（个人账号或工作账号均可）登录
+3. 如果没有组织，系统会提示你创建一个新组织（Organization）。填写组织名称后点击 **Continue**
+4. 创建完成后，你会进入组织主页：`https://dev.azure.com/{你的组织名}`
 
 ### 2.2 创建个人访问令牌（PAT，Personal Access Token）
 
-1. 登录 **https://dev.azure.com/** ，点击右上角头像 → **User settings** → **Personal access tokens**
-2. 点击 **New Token** ，按以下设置填写：
+> **安全提示** ：微软官方已建议在条件允许时优先使用 [Microsoft Entra tokens](https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/entra) 替代 PAT，因为 PAT 属于长期凭据，存在泄露风险。但对于 VS Code 插件发布场景，`vsce` 工具目前仅支持 PAT 认证，因此仍需创建 PAT。
+
+1. 进入你的组织页面 **https://dev.azure.com/{你的组织名}**
+2. 点击页面 **右上角** 的用户设置图标（齿轮形状 ⚙️，位于个人头像旁边）→ 在下拉菜单中选择 **Personal access tokens**
+
+   > 如果找不到齿轮图标，也可以直接访问：`https://dev.azure.com/{你的组织名}/_usersSettings/tokens`
+
+3. 点击 **+ New Token** ，按以下设置填写：
 
 | 设置项 | 值 |
 |--------|-----|
 | Name | 任意描述性名称（例如 `VS Code Extension Publishing`） |
-| Organization | **⚠️ 必须选择 All accessible organizations** |
+| Organization | **⚠️ 必须选择 All accessible organizations**（不要选择某个具体组织） |
 | Expiration | 自定义，最长 1 年 |
 | Scopes | 选择 **Custom defined** → 点击 **Show all scopes** → 找到 **Marketplace** → 勾选 **Manage** |
 
-3. 点击 **Create**
-4. **⚠️ 立即复制令牌并妥善保存** ——令牌只显示一次，关闭页面后无法再次查看
+4. 点击 **Create**
+5. **⚠️ 立即复制令牌并妥善保存** ——令牌只显示一次，关闭页面后无法再次查看
 
 > **最常见的错误** ：Organization 选项如果选择了某个具体的组织（而非 All accessible organizations），发布时会遇到 401 或 403 错误。请务必选择 **All accessible organizations** 。
 
@@ -105,7 +114,7 @@ vsce verify-pat sinnohzeng
 | 字段 | 要求 | 当前值 |
 |------|------|--------|
 | `name` | 全小写，无空格，市场中唯一 | `markdown-gongwen` ✅ |
-| `version` | SemVer（Semantic Versioning，语义化版本）格式 | `1.0.0` ✅ |
+| `version` | SemVer（Semantic Versioning，语义化版本）格式 | `1.1.0` ✅ |
 | `publisher` | 与注册的发布者 ID 完全一致 | `sinnohzeng` ✅ |
 | `engines.vscode` | 最低 VS Code 版本，不能为 `*` | `^1.100.0` ✅ |
 | `displayName` | 市场中唯一的显示名称 | `Markdown 公文` ✅ |
@@ -317,7 +326,8 @@ npx ovsx publish markdown-gongwen-1.0.0.vsix -p <Open-VSX-Token>
 |------|------|
 | VS Code 官方发布文档 | https://code.visualstudio.com/api/working-with-extensions/publishing-extension |
 | 扩展清单参考 | https://code.visualstudio.com/api/references/extension-manifest |
-| Azure DevOps | https://dev.azure.com/ |
+| Azure DevOps 登录入口 | https://aex.dev.azure.com/ |
+| Azure DevOps PAT 官方文档 | https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate |
 | Marketplace 发布者管理 | https://marketplace.visualstudio.com/manage |
 | Open VSX Registry | https://open-vsx.org/ |
 | `@vscode/vsce` npm 包 | https://www.npmjs.com/package/@vscode/vsce |
