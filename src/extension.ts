@@ -14,64 +14,6 @@ import { processSvg } from './mermaid/svg-processor';
 import { createExportDocxCommand, createExportDocxQuickCommand } from './export/export-command';
 
 /**
- * Checks if a recommended extension is installed and optionally shows a notification.
- * 
- * @param extensionId - The extension ID (e.g., 'yzhang.markdown-all-in-one')
- * @param context - The extension context for storing state
- * @param showNotification - Whether to show a notification if not installed (default: false)
- * @returns True if the extension is installed, false otherwise
- */
-function checkRecommendedExtension(
-  extensionId: string,
-  context: vscode.ExtensionContext,
-  showNotification: boolean = false
-): boolean {
-  const extension = vscode.extensions.getExtension(extensionId);
-  const isInstalled = extension !== undefined;
-  
-  if (!isInstalled && showNotification) {
-    const notificationKey = `recommendationShown.${extensionId}`;
-    const hasShownBefore = context.globalState.get<boolean>(notificationKey, false);
-    
-    if (!hasShownBefore) {
-      const extensionName = extensionId.split('.').pop() || extensionId;
-      vscode.window.showInformationMessage(
-        `Enhance your Markdown workflow: Consider installing "${extensionName}"`,
-        'Install',
-        'Dismiss'
-      ).then((selection) => {
-        if (selection === 'Install') {
-          vscode.commands.executeCommand('workbench.extensions.installExtension', extensionId);
-        }
-        // Mark as shown regardless of user choice
-        context.globalState.update(notificationKey, true);
-      });
-    }
-  }
-  
-  return isInstalled;
-}
-
-/**
- * Checks for recommended extensions and shows notifications if needed.
- * Only shows each recommendation once per user.
- * 
- * @param context - The extension context
- */
-function checkRecommendedExtensions(context: vscode.ExtensionContext): void {
-  // List of recommended extension IDs
-  const recommendedExtensions = [
-    'yzhang.markdown-all-in-one',
-    'MermaidChart.vscode-mermaid-chart'
-  ];
-  
-  // Check each extension (notifications are shown only once per extension)
-  recommendedExtensions.forEach((extensionId) => {
-    checkRecommendedExtension(extensionId, context, true);
-  });
-}
-
-/**
  * Public API exposed via `vscode.extensions.getExtension(id).exports`.
  *
  * Intended for integration / E2E tests — allows test code to inspect the
@@ -118,9 +60,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   
   decorator.setActiveEditor(vscode.window.activeTextEditor);
 
-  // Check for recommended extensions (shows notifications if not installed)
-  checkRecommendedExtensions(context);
-
   // Register link provider for clickable markdown links
   const linkProvider = new MarkdownLinkProvider(parseCache);
   const linkProviderDisposable = vscode.languages.registerDocumentLinkProvider(
@@ -161,28 +100,10 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
       const enabled = decorator.toggleDecorations();
       const fileName = decorator.activeEditor
         ? vscode.workspace.asRelativePath(decorator.activeEditor.document.uri)
-        : 'this file';
+        : '当前文件';
       vscode.window.showInformationMessage(
-        `Markdown decorations ${enabled ? 'enabled' : 'disabled'} for ${fileName}`
+        `已${enabled ? '开启' : '关闭'} Markdown 渲染：${fileName}`
       );
-    }
-  );
-
-  // Register command for opening bundled fonts folder
-  const installBundledFontsCommand = vscode.commands.registerCommand(
-    'gongwen.installBundledFonts',
-    async () => {
-      const fontsPath = vscode.Uri.joinPath(context.extensionUri, 'fonts');
-      try {
-        await vscode.env.openExternal(fontsPath);
-        void vscode.window.showInformationMessage(
-          'Opened the bundled fonts folder. Install the font files (e.g., Source Han Serif SC) to your operating system to use them in font settings.'
-        );
-      } catch {
-        void vscode.window.showErrorMessage(
-          `Could not open fonts folder. You can find them manually at: ${fontsPath.fsPath}`
-        );
-      }
     }
   );
 
@@ -216,7 +137,7 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
       }
       
       // If not found, show a message
-      vscode.window.showInformationMessage(`Anchor "${anchor}" not found`);
+      vscode.window.showInformationMessage(`未找到锚点 "${anchor}"`);
     }
   );
 
@@ -274,8 +195,22 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
       linkClickHandler.setEnabled(singleClickEnabled);
     }
 
+    if (event.affectsConfiguration('markdownGongwen.links.showEmoji')) {
+      decorator.recreateLinkDecorationType();
+    }
+
     if (event.affectsConfiguration('markdownGongwen.colors') || event.affectsConfiguration('markdownGongwen.fonts')) {
       decorator.recreateColorDependentTypes();
+    }
+
+    // 内容渲染类设置（解析/装饰时读取，缓存在解析结果里），改动后需清缓存重解析才即时生效
+    if (
+      event.affectsConfiguration('markdownGongwen.orderedLists') ||
+      event.affectsConfiguration('markdownGongwen.emojis.enabled') ||
+      event.affectsConfiguration('markdownGongwen.math.enabled') ||
+      event.affectsConfiguration('markdownGongwen.mentions')
+    ) {
+      decorator.refreshContentDecorations();
     }
 
     if (event.affectsConfiguration('editor.fontSize') || event.affectsConfiguration('editor.lineHeight')) {
@@ -299,7 +234,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   context.subscriptions.push(linkHoverProviderDisposable);
   context.subscriptions.push(codeBlockHoverProviderDisposable);
   context.subscriptions.push(toggleDecorationsCommand);
-  context.subscriptions.push(installBundledFontsCommand);
   context.subscriptions.push(navigateToAnchorCommand);
   context.subscriptions.push(exportDocxCommand);
   context.subscriptions.push(exportDocxQuickCommand);

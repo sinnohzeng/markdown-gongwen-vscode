@@ -68,6 +68,12 @@ export const config = {
         .getConfiguration(SECTION)
         .get<boolean>('links.singleClickOpen', false);
     },
+    /** Chain (🔗) icon after link text; off by default so raw markdown tables stay aligned. */
+    showEmoji(): boolean {
+      return vscode.workspace
+        .getConfiguration(SECTION)
+        .get<boolean>('links.showEmoji', false);
+    },
   },
   decorations: {
     ghostFaintOpacity(): number {
@@ -98,6 +104,20 @@ export const config = {
       return vscode.workspace
         .getConfiguration(SECTION)
         .get<boolean>('math.enabled', true);
+    },
+  },
+  orderedLists: {
+    /** When true, ordered list markers are hidden and replaced with computed numbers (lazy `1.` numbering, etc.). When false, the source text is shown as written. */
+    autoNumber(): boolean {
+      return vscode.workspace
+        .getConfiguration(SECTION)
+        .get<boolean>('orderedLists.autoNumber', true);
+    },
+    /** When auto-numbering is on, tint the displayed marker when it differs from the number in the source. */
+    warnWhenSourceNumberDiffers(): boolean {
+      return vscode.workspace
+        .getConfiguration(SECTION)
+        .get<boolean>('orderedLists.warnWhenSourceNumberDiffers', true);
     },
   },
   mentions: {

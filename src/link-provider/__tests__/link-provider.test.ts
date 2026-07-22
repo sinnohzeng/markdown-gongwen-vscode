@@ -62,6 +62,26 @@ describe("MarkdownLinkProvider", () => {
     expect(links[0].target?.toString()).toBe("https://example.com");
   });
 
+  it("expands zero-width ranges for images with empty alt text", () => {
+    const document = new TextDocument(
+      Uri.file("/test.md"),
+      "markdown",
+      1,
+      "![](https://example.com/a.png)",
+    );
+    const links = provider.provideDocumentLinks(
+      document,
+      new CancellationToken(false),
+    ) as any[];
+
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    for (const link of links) {
+      const { start, end } = link.range;
+      const collapsed = start.line === end.line && start.character === end.character;
+      expect(collapsed).toBe(false);
+    }
+  });
+
   it("provides document links for mentions without requiring a workspace folder", () => {
     const document = new TextDocument(
       Uri.file("/tmp/test.md"),

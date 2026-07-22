@@ -146,6 +146,7 @@ export class Decorator {
       getHeading5Color: () => config.colors.heading5(),
       getHeading6Color: () => config.colors.heading6(),
       getLinkColor: () => config.colors.link(),
+      getLinkShowEmoji: () => config.links.showEmoji(),
       getListMarkerColor: () => config.colors.listMarker(),
       getInlineCodeColor: () => config.colors.inlineCode(),
       getInlineCodeBackgroundColor: () => config.colors.inlineCodeBackground(),
@@ -773,7 +774,7 @@ export class Decorator {
 
     // Types that use per-range renderOptions (DecorationOptions, not plain Range)
     const renderOptionsTypes = new Set<DecorationType>([
-      'emoji', 'tablePipe', 'tableSeparatorPipe', 'tableSeparatorDash', 'tableCell',
+      'emoji', 'orderedListItem', 'tablePipe', 'tableSeparatorPipe', 'tableSeparatorDash', 'tableCell',
     ]);
 
     // Apply all decorations by iterating through the type map
@@ -889,6 +890,31 @@ export class Decorator {
     this.decorationTypes.recreateCodeDecorationType();
 
     // Reapply decorations with the new decoration type
+    if (this.activeEditor && this.isMarkdownDocument()) {
+      this.updateDecorationsForSelection();
+    }
+  }
+
+  /**
+   * Recreates link decoration (underline + optional chain icon) when link emoji setting changes.
+   */
+  recreateLinkDecorationType(): void {
+    this.decorationTypes.recreateLinkDecorationType();
+    if (this.activeEditor && this.isMarkdownDocument()) {
+      this.updateDecorationsForSelection();
+    }
+  }
+
+  /**
+   * Clears the parse cache and re-decorates the active editor.
+   *
+   * Content-affecting settings（orderedLists / emojis / math / mentions）are
+   * read at parse or decoration time and baked into the cached parse result,
+   * so toggling them otherwise only takes effect after the next edit. This
+   * forces a fresh parse so the change applies immediately.
+   */
+  refreshContentDecorations(): void {
+    this.clearCache();
     if (this.activeEditor && this.isMarkdownDocument()) {
       this.updateDecorationsForSelection();
     }

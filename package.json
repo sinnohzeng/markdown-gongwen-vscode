@@ -8,6 +8,10 @@
   "publisher": "sinnohzeng",
   "private": false,
   "icon": "assets/icon.png",
+  "galleryBanner": {
+    "color": "#A61B29",
+    "theme": "dark"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/sinnohzeng/markdown-gongwen-vscode.git"
@@ -23,9 +27,14 @@
     "editor",
     "公文",
     "党政公文",
+    "公文排版",
     "chinese",
     "typography",
-    "font"
+    "font",
+    "docx",
+    "word",
+    "export",
+    "gb9704"
   ],
   "engines": {
     "vscode": "^1.100.0"
@@ -37,6 +46,7 @@
   ],
   "activationEvents": [
     "onLanguage:markdown",
+    "onLanguage:mdx",
     "onLanguage:skill",
     "onLanguage:markdoc",
     "onLanguage:mdc",
@@ -48,16 +58,14 @@
     "commands": [
       {
         "command": "gongwen.toggleDecorations",
-        "title": "Toggle Markdown Decorations",
+        "title": "切换 Markdown 渲染",
+        "category": "Markdown Gongwen",
         "icon": "$(eye)"
       },
       {
-        "command": "gongwen.installBundledFonts",
-        "title": "Markdown Gongwen: Open Bundled Fonts Folder"
-      },
-      {
         "command": "gongwen.exportDocx",
-        "title": "导出公文 DOCX (Export to Government DOCX)",
+        "title": "导出公文 DOCX",
+        "category": "Markdown Gongwen",
         "icon": {
           "dark": "assets/icons/export-docx-dark.svg",
           "light": "assets/icons/export-docx-light.svg"
@@ -65,19 +73,20 @@
       },
       {
         "command": "gongwen.exportDocxQuick",
-        "title": "快速导出公文 DOCX (Quick Export DOCX)"
+        "title": "快速导出公文 DOCX",
+        "category": "Markdown Gongwen"
       }
     ],
     "menus": {
       "editor/title": [
         {
           "command": "gongwen.toggleDecorations",
-          "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == skill || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
           "group": "navigation"
         },
         {
           "command": "gongwen.exportDocx",
-          "when": "editorLangId == markdown || editorLangId == md || editorLangId == mdx || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == skill || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
           "group": "navigation"
         }
       ]
@@ -96,7 +105,7 @@
         {
           "type": "webview",
           "id": "gongwen.mermaidRenderer",
-          "name": "Mermaid Renderer",
+          "name": "Mermaid 渲染（内部使用）",
           "visibility": "hidden"
         }
       ]
@@ -134,6 +143,12 @@
           "description": "Opacity for code block language identifiers",
           "markdownDescription": "Opacity of code block language identifiers (0.0-1.0)."
         },
+        "markdownGongwen.links.showEmoji": {
+          "type": "boolean",
+          "default": false,
+          "description": "在链接文字后显示 🔗 图标",
+          "markdownDescription": "在渲染后的链接文字后追加 🔗 图标。默认关闭，公文排版及等宽表格对齐场景建议保持关闭。"
+        },
         "markdownGongwen.links.singleClickOpen": {
           "type": "boolean",
           "default": false,
@@ -151,6 +166,18 @@
           "default": true,
           "description": "Render LaTeX math inline ($...$ and $$...$$)",
           "markdownDescription": "Render LaTeX math inline ($...$ and $$...$$). When disabled, math delimiters are shown as plain text."
+        },
+        "markdownGongwen.orderedLists.autoNumber": {
+          "type": "boolean",
+          "default": true,
+          "description": "有序列表按实际顺序自动编号显示",
+          "markdownDescription": "开启后，有序列表的原始序号被隐藏并按位置显示连续编号（例如全部写 `1.` 的懒编号列表会显示为 1.、2.、3.）。关闭则完全按源文件显示。两种情况下都不会改动文件内容。"
+        },
+        "markdownGongwen.orderedLists.warnWhenSourceNumberDiffers": {
+          "type": "boolean",
+          "default": true,
+          "description": "源序号与实际编号不一致时用警告色提示",
+          "markdownDescription": "开启自动编号后，如果源文本中的序号与计算出的编号不一致（例如每行都写 `1.` 但显示为 1.、2.、3.），用编辑器警告色渲染该编号以作提示。"
         },
         "markdownGongwen.mentions.enabled": {
           "type": "boolean",
@@ -408,11 +435,8 @@
       }
     }
   },
-  "extensionRecommendations": [
-    "yzhang.markdown-all-in-one",
-    "MermaidChart.vscode-mermaid-chart"
-  ],
   "scripts": {
+    "postinstall": "node scripts/copy-mermaid.js",
     "lint": "eslint .",
     "lint:docs": "node scripts/validate-feature-outline.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
@@ -436,15 +460,14 @@
     "prepublishOnly": "npm run clean && npm run build"
   },
   "overrides": {
-    "diff": "^8.0.3",
-    "serialize-javascript": "^7.0.4"
+    "@xmldom/xmldom": "^0.9.10",
+    "lodash-es": "^4.18.1"
   },
   "dependencies": {
     "cheerio": "1.2.0",
     "docx": "^9.6.1",
-    "katex": "^0.16.44",
     "mathjax-full": "^3.2.2",
-    "mermaid": "11.13.0",
+    "mermaid": "11.15.0",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
@@ -464,11 +487,12 @@
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.7.1",
-    "esbuild": "^0.27.4",
+    "esbuild": "^0.28.1",
     "eslint": "^10.1.0",
     "git-cliff": "^2.12.0",
     "jest": "^30.3.0",
     "jest-html-reporters": "^3.1.7",
+    "jszip": "^3.10.1",
     "ovsx": "^0.10.10",
     "rimraf": "^6.1.3",
     "ts-jest": "^29.4.6",

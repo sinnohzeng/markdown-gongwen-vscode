@@ -12,6 +12,25 @@ import {
 import { getForgeContext } from "./forge-context";
 
 /**
+ * VS Code rejects DocumentLink ranges where start === end ("Illegal argument: range").
+ * Empty image alt (![](url)) yields a zero-width decoration range; expand by one UTF-16 unit.
+ */
+function expandIfEmpty(document: vscode.TextDocument, range: vscode.Range): vscode.Range {
+  const isEmpty =
+    range.start.line === range.end.line &&
+    range.start.character === range.end.character;
+  if (!isEmpty) {
+    return range;
+  }
+  const startOffset = document.offsetAt(range.start);
+  const endOffset = Math.min(startOffset + 1, document.getText().length);
+  if (endOffset <= startOffset) {
+    return range;
+  }
+  return new vscode.Range(range.start, document.positionAt(endOffset));
+}
+
+/**
  * Provides clickable links and images for markdown documents.
  *
  * This class implements VS Code's DocumentLinkProvider to make markdown links
@@ -75,7 +94,7 @@ export class MarkdownLinkProvider implements vscode.DocumentLinkProvider {
         // Create range for the link/image text (not the URL)
         const startPos = document.positionAt(mappedStart);
         const endPos = document.positionAt(mappedEnd);
-        const range = new vscode.Range(startPos, endPos);
+        const range = expandIfEmpty(document, new vscode.Range(startPos, endPos));
 
         // Create document link
         let target: vscode.Uri | undefined;

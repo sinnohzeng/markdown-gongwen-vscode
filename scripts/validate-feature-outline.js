@@ -82,7 +82,7 @@ function extractHeadings(content) {
 }
 
 function validateFile(filePath) {
-  const content = fs.readFileSync(filePath, 'utf-8');
+  const content = fs.readFileSync(filePath, 'utf-8').replace(/\r\n/g, '\n');
   const { frontmatter, body } = extractFrontmatter(content);
   const headings = extractHeadings(body);
   
@@ -116,10 +116,6 @@ function validateFile(filePath) {
   
   // Check required H2 sections in order
   const h2Headings = headings.filter(h => h.level === 2);
-  const requiredH2Titles = REQUIRED_SECTIONS
-    .filter(s => s.level === 2)
-    .map(s => s.title);
-  
   const foundH2Titles = h2Headings.map(h => h.title);
   
   // Build alias lookup: maps each alias/title to its canonical name
