@@ -15,6 +15,7 @@ export class MermaidWebviewManager {
   private renderRequestCounter = 0;
   private messageHandlerDisposable: vscode.Disposable | undefined;
   private initTimeoutId: NodeJS.Timeout | undefined;
+  private initTriggered = false;
   private _extensionContext: vscode.ExtensionContext | undefined;
 
   constructor() {
@@ -46,9 +47,9 @@ export class MermaidWebviewManager {
       )
     );
 
-    // Open the mermaid view briefly to initialize it, then switch back
-    // Focus the view so VS Code calls resolveWebviewView() (hidden views are not resolved by opening the container only)
-    void this.ensureWebviewThenSwitchBack();
+    // 懒初始化：webview 的创建（含一次短暂的视图聚焦）推迟到
+    // waitForWebview() 第一次被调用，即真正需要渲染 Mermaid 图表时。
+    // 不含 Mermaid 图表的会话完全不会触发侧边栏切换。
   }
 
   /**
@@ -71,7 +72,7 @@ export class MermaidWebviewManager {
           ])
             .then(() => {
               this.initTimeoutId = setTimeout(() => {
-                vscode.commands.executeCommand('workbench.view.explorer');
+                this.switchBackToEditor();
                 this.initTimeoutId = undefined;
               }, SWITCH_BACK_DELAY_MS);
             })
@@ -80,7 +81,7 @@ export class MermaidWebviewManager {
                 console.warn('Mermaid: Webview not ready after opening view');
               }
               this.initTimeoutId = setTimeout(() => {
-                vscode.commands.executeCommand('workbench.view.explorer');
+                this.switchBackToEditor();
                 this.initTimeoutId = undefined;
               }, SWITCH_BACK_DELAY_MS);
             });
@@ -89,8 +90,20 @@ export class MermaidWebviewManager {
           if (err !== undefined) {
             console.warn('Mermaid: Failed to focus view', err);
           }
+          // 聚焦失败则 webview 不会创建；重置一次性标志，让下次渲染重试，
+          // 否则 initTriggered 永久停在 true，Mermaid 再也无法初始化。
+          this.initTriggered = false;
         }
       );
+  }
+
+  /**
+   * 切回资源管理器视图并把键盘焦点还给编辑器。
+   * VS Code 没有公开 API 查询"之前激活的侧边栏视图"，资源管理器是最不打扰的兜底。
+   */
+  private switchBackToEditor(): void {
+    void vscode.commands.executeCommand('workbench.view.explorer');
+    void vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
   }
 
   /**
@@ -112,7 +125,7 @@ export class MermaidWebviewManager {
     );
     
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -144,10 +157,10 @@ export class MermaidWebviewManager {
 </head>
 <body>
   <div class="info-box">
-    <h3>Mermaid Diagram Renderer</h3>
-    <p>This webview is used internally by the Markdown Gongwen extension to render Mermaid diagrams inline in your markdown files.</p>
-    <p><strong>You can safely ignore this view.</strong> It runs in the background and has no user-facing functionality. The diagrams appear directly in your editor, not here.</p>
-    <p>If you're seeing this view, you can close it and return to your editor. The extension will continue to work normally.</p>
+    <h3>Mermaid 渲染引擎</h3>
+    <p>这是 Markdown Gongwen 公文插件内部使用的渲染视图：Markdown 里的 Mermaid 图表在这里渲染成 SVG，然后直接显示在编辑器中。</p>
+    <p><strong>你可以放心忽略这个视图。</strong>它只在后台工作，图表会出现在编辑器里，不会出现在这里。</p>
+    <p>不想在活动栏看到这个图标？在活动栏图标上点右键即可隐藏，插件功能不受影响。</p>
   </div>
   <div id="renderContainer" class="hidden"></div>
   <script type="module">
@@ -388,9 +401,16 @@ export class MermaidWebviewManager {
   }
 
   /**
-   * Wait for webview to be loaded
+   * Wait for webview to be loaded.
+   * 首次调用时才触发 webview 创建（懒初始化）。
    */
   async waitForWebview(): Promise<void> {
+    if (!this.webviewView && !this.initTriggered) {
+      this.initTriggered = true;
+      // Focus the view so VS Code calls resolveWebviewView()
+      // (hidden views are not resolved by opening the container only)
+      this.ensureWebviewThenSwitchBack();
+    }
     await this.webviewLoaded;
     if (!this.webviewView) {
       throw new Error('Failed to create mermaid webview');
