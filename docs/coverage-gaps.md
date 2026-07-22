@@ -24,14 +24,6 @@ This file calls `vscode.window.createTextEditorDecorationType` for every decorat
 
 `math-decorations.ts` reads `workspace.getConfiguration('editor')` for font size and line height, calls `window.activeColorTheme.kind` for theme detection, and calls `renderMathToDataUri` (KaTeX). Its logic is tightly coupled to the VS Code window state (active editor, theme) and the math renderer output. The math renderer itself is tested in `src/math/__tests__/`, covering the core rendering logic.
 
-### `src/forge-context.ts` — Git/workspace context detection
-
-`forge-context.ts` uses `child_process.execSync` to run `git remote get-url origin` and reads `.git/` files from the filesystem. It also calls `vscode.workspace.getWorkspaceFolder`. Meaningfully testing these paths requires a real git repository on disk and a VS Code workspace context. The function is integration-tested indirectly via the e2e suite. A thin unit test exists in `src/forge-context/__tests__/` covering the URL parsing helpers.
-
-### `src/github-context.ts` — VS Code extension API calls
-
-This file is a thin re-export shim over `forge-context.ts` that provides backwards-compatible named exports (`getGitHubContext`, `parseGitHubRemoteUrl`). It has no own logic and is excluded to avoid double-counting the already-excluded `forge-context.ts` lines.
-
 ---
 
 ## Files below 80% (included in coverage)

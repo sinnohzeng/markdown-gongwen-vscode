@@ -40,6 +40,7 @@ export default defineConfig(
       '*.js',
       '**/*.min.js',
       'examples/**',
+      '.remember/**',
     ],
   },
   // Allow require() and any types in parser-remark.ts for CommonJS compatibility

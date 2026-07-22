@@ -3,59 +3,33 @@
 .vscode-test/**
 src/**
 .gitignore
-.eslintrc.json
 .npmignore
 tsconfig.json
 tsconfig.build.json
+tsconfig.e2e.json
 jest.config.js
 jest.setup.js
-*.map
-**/*.map
-dist/**/*.map
-*.tsbuildinfo
+eslint.config.mjs
+.vscode-test-cursor.mjs
+.vscode-test.mjs
+cliff.toml
+scripts/**
 
-# Documentation (not needed in extension)
-FEATURES.md
-FEATURES-EXAMPLE.md
-EXTENSION_STRUCTURE_REVIEW.md
-README.md
-LICENSE
+# Documentation (marketplace listing uses README.md/CHANGELOG.md/LICENSE, which vsce force-includes)
 AGENTS.md
-TEST_VALIDATION_REPORT.md
+CONTRIBUTING.md
+SECURITY.md
 docs/**
-examples/**
 specs/**
-.specify/**
 
-# Demo assets (only needed for GitHub README, not in extension)
-assets/demo.gif
-assets/example-video.gif
-assets/example-ui.png
-assets/example-ui-selected-line.png
-
-# Bundled fonts (too large for extension package; available from GitHub repo)
-fonts/**
-
-# Build artifacts
-branding/**
-node_modules/**
-coverage/**
-test-report/**
-*.log
-
-# Source maps (exclude from package)
+# Source maps & TypeScript artifacts
 *.map
 **/*.map
-dist/**/*.map
-extension/dist/**/*.map
-
-# TypeScript declaration files (not needed at runtime)
+*.tsbuildinfo
 dist/**/*.d.ts
 **/*.d.ts
 
-# Test files
-test-*.md
-test-*.docx
+# Test files & outputs
 *.test.ts
 **/__tests__/**
 dist/test-report/**
@@ -68,16 +42,7 @@ dist/coverage
 # Temporary / generated data (not part of extension)
 .firecrawl/**
 .remember/**
-
-# Cursor files
+.claude/**
 .cursor/**
-
-# Dev tooling (not needed at runtime)
-Makefile
-eslint.config.mjs
-scripts/**
-cliff.toml
-.eslintignore
-.vscode-test-cursor.mjs
-.vscode-test.mjs
-tsconfig.e2e.json
+node_modules/**
+*.log

@@ -16,8 +16,6 @@ module.exports = {
     '!src/code-block-hover-provider.ts',
     '!src/decorator/decoration-type-registry.ts',
     '!src/math/math-decorations.ts',
-    '!src/forge-context.ts',
-    '!src/github-context.ts',
   ],
   coverageThreshold: {
     global: {
