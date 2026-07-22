@@ -1,38 +1,41 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: Bug 反馈
+about: 报告插件的问题，帮助我们改进
 title: ''
-labels: ''
+labels: 'bug'
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**问题描述**
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+清晰简要地描述遇到的问题。
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**复现步骤**
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+1. 打开一个 Markdown 文件……
+2. 执行……
+3. 出现……
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**能复现问题的 Markdown 片段**
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+```markdown
+（粘贴最小复现片段；涉及导出问题时尤其重要）
+```
 
-**Additional context**
-Add any other context about the problem here.
+**预期行为**
+
+期望发生什么。
+
+**截图**
+
+如有请附上。
+
+**环境信息**
+
+- 编辑器与版本：（VS Code 1.x / Cursor / Windsurf / Trae …）
+- 插件版本：
+- 操作系统：
+- 是否涉及导出 DOCX：是 / 否（若是，请附导出的 DOCX 或"查看日志"里的输出）
+
+**其他补充**

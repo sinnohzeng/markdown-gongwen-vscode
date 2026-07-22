@@ -1,6 +1,6 @@
 # 贡献指南
 
-开发环境搭建见 [README](README.md#getting-started-developers)。
+开发环境搭建见 [README](README.md#开发者)。
 
 ## 开发流程
 
@@ -34,7 +34,7 @@ TypeScript 要点：用接口定义对象结构，联合类型代替 `any`，参
 
 ### 4. 测试
 
-项目用 Jest，目前 33 个测试套件、438+ 个用例。所有改动必须带测试。
+项目用 Jest，具体规模以 `npm test` 输出为准（目前 56 个测试套件、800+ 个用例）。所有改动必须带测试。
 
 ```bash
 npm test              # 跑全部测试

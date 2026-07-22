@@ -1,20 +1,24 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: 功能建议
+about: 为插件提出新功能或改进
 title: ''
-labels: ''
+labels: 'enhancement'
 assignees: ''
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**想解决什么问题**
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+描述场景与痛点，例如"导出的公文缺少××版式元素"。
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+**期望的方案**
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+清晰描述你希望插件怎么做。
+
+**替代方案**
+
+考虑过的其他做法（其他插件、手工处理等）。
+
+**其他补充**
+
+上下文、截图、示例文档等。

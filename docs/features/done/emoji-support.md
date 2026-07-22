@@ -23,7 +23,7 @@ Render GitHub-style emoji shortcodes like `:smile:` and `:+1:` inline in Markdow
 - Reveal behavior:
   - Integrates with the 3‑state visibility model; when the cursor/selection enters an `emoji` scope, the raw `:shortcode:` is revealed
 - Configuration:
-  - `markdownInlineEditor.emojis.enabled` (default: `true`) toggles emoji rendering on/off
+  - `markdownGongwen.emojis.enabled` (default: `true`) toggles emoji rendering on/off
 - Performance:
   - Emoji map is **lazily loaded** only if a text slice contains `:` (fast path for documents without emojis)
 
@@ -89,7 +89,7 @@ Feature: Reveal emoji
 Feature: Emoji config toggle
 
   Scenario: Disable emoji rendering
-    Given markdownInlineEditor.emojis.enabled is false
+    Given markdownGongwen.emojis.enabled is false
     When I open a file containing :smile:
     Then the raw shortcode is shown
     And no emoji is rendered

@@ -12,7 +12,7 @@ Detect, style, and hide YAML frontmatter delimiters at the start of Markdown doc
 
 ## Implementation
 
-Detect `---` delimiters at document start, style frontmatter block with background color (similar to code blocks). Delimiters are shown at reduced opacity (configurable via `markdownInlineEditor.decorations.frontmatterDelimiterOpacity`, default: 0.3). Delimiters remain visible while the entire block is styled. Supports CRLF line endings and validates frontmatter format (closing delimiter must be `---` with optional whitespace only). Horizontal rules inside frontmatter are skipped to avoid false positives.
+Detect `---` delimiters at document start, style frontmatter block with background color (similar to code blocks). Delimiters are shown at reduced opacity (configurable via `markdownGongwen.decorations.frontmatterDelimiterOpacity`, default: 0.3). Delimiters remain visible while the entire block is styled. Supports CRLF line endings and validates frontmatter format (closing delimiter must be `---` with optional whitespace only). Horizontal rules inside frontmatter are skipped to avoid false positives.
 
 ## Acceptance Criteria
 

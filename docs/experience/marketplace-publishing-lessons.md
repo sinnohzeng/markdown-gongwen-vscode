@@ -93,3 +93,19 @@ git filter-repo --invert-paths --path fonts/FZXBSJW.TTF --path test-preview.md -
 **问题**：项目全量中文重命名后，feature 文档的章节标题从英文（Overview/Implementation...）改成了中文（概述/实现...），但校验脚本仍检查英文标题。
 
 **解决**：在 `validate-feature-outline.js` 的 `REQUIRED_SECTIONS` 中为每个必需章节添加 `aliases` 数组，支持中英文别名匹配。
+
+## 11. VSIX 里最大的文件是没人用的演示 GIF（2026-07-22）
+
+**问题**：`npx vsce ls` 实测发现 9.4MB 的包里 6.7MB 是 `assets/autoplay-demo.gif`。市场页展示 README 时，vsce 会把相对图片路径改写成 GitHub 仓库地址，包里那份 GIF 根本不会被读到——纯粹的死重。同批还发现 `assets/icon.png~` 备份文件也进了包。
+
+**解决**：删掉演示 GIF（README 不再引用上游素材）；发版前把 `npx vsce ls` 当验收步骤，逐行看清单。清理后 93 文件 / 2.4MB。
+
+**教训**：`.vscodeignore` 是排除法清单，fork 改名后新增的资源不会被旧条目覆盖。每次资产改名/新增都要重新跑 `vsce ls` 核对。
+
+## 12. 生成物不入库：assets/mermaid 改由 postinstall 重建（2026-07-22）
+
+**问题**：`assets/mermaid/`（约 14MB，含 75 个 .map）是 `scripts/copy-mermaid.js` 从 node_modules 复制出来的构建产物，却被 git 追踪，mermaid 每次升级都产生巨量 diff。
+
+**解决**：`git rm -r --cached assets/mermaid` + 加入 `.gitignore`，并在 package.json 加 `"postinstall": "node scripts/copy-mermaid.js"`——本地 `npm install`、CI 的 `npm ci` 都会自动重建，F5 调试和 e2e 也不受影响。
+
+**教训**：判断一个目录该不该入库，问一句"它能不能由脚本从依赖里确定性重建"。能，就交给 postinstall。

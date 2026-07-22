@@ -139,7 +139,7 @@ vsce verify-pat sinnohzeng
 vsce ls
 ```
 
-当前已排除：`src/`、`docs/`、`fonts/`（69MB）、`node_modules/`、测试文件、Source Map 等。
+当前已排除：`src/`、`docs/`、`specs/`、`node_modules/`、测试文件、Source Map 等。
 
 ### 4.4 关键注意事项
 
@@ -326,7 +326,7 @@ npx ovsx publish dist/extension.vsix --pat ${{ secrets.OPENVSX_TOKEN }}
 
 **解决** ：
 1. 运行 `vsce ls` 检查包含的文件
-2. 确保 `.vscodeignore` 排除了 `src/`、`node_modules/`、`fonts/`、测试文件等
+2. 确保 `.vscodeignore` 排除了 `src/`、`node_modules/`、`docs/`、测试文件等
 3. 使用 esbuild 或 webpack 打包，减小产物体积
 
 ### 8.5 临时文件 / 工具缓存被打包进 VSIX

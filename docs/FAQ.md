@@ -1,36 +1,43 @@
-# FAQ
+# 常见问题
 
-## Decorations Not Showing?
+## 装了插件但没有渲染效果？
 
-1. **Check file extension** – Ensure file is `.md`
-2. **Toggle decorations** – Click the toolbar button or use `Ctrl+Shift+P` / `Cmd+Shift+P` → "Toggle Markdown Decorations"
-3. **Reload window** – `Ctrl/Cmd+Shift+P` → "Developer: Reload Window"
-4. **Check extension status** – Verify extension is activated in the Extensions view
+1. 确认打开的是 Markdown 文件（`.md` 等）——插件只在 Markdown 语言模式下激活
+2. 试试点击编辑器右上角的眼睛图标（切换 Markdown 渲染），渲染开关是按文件记忆的
+3. 差异视图（diff）默认不渲染，方便审阅原始改动；可用 `markdownGongwen.defaultBehaviors.diffView.applyDecorations` 打开
 
-## Why is there a sidebar button in the activity bar?
+## 活动栏里的"Markdown Gongwen"图标是什么？
 
-The extension adds a "Markdown Inline" button in VS Code's activity bar (left sidebar). This button hosts a hidden webview that's required for rendering Mermaid diagrams inline. The webview is never visible to you—it runs in the background to process Mermaid code blocks.
+那是 Mermaid 图表的内部渲染视图。Mermaid 必须在真实浏览器环境里渲染 SVG，VS Code 插件没有"无头 webview"可用，业界通行做法就是挂一个隐藏的侧边栏 webview（Markless、上游 Markdown Inline Editor 都一样）。
 
-**You can safely ignore this button.** It doesn't provide any user-facing functionality and is purely a technical requirement for Mermaid diagram rendering. The button appears because VS Code requires a view container for webviews, even when they're hidden.
+- 图表直接显示在编辑器里，这个视图本身没有任何需要操作的内容
+- 只有文档里真正出现 Mermaid 图表时才会初始化（一次短暂的侧边栏切换）
+- 不想看到图标：在活动栏图标上点右键即可隐藏，功能不受影响
 
-If you don't use Mermaid diagrams, the button still appears but remains inactive.
+## 导出的 DOCX 字体不对？
 
-## Performance Issues?
+导出使用系统字体（仿宋、黑体、楷体、宋体）。公文大标题指定的方正小标宋简体为商业字体，插件不随包分发；系统未安装时 Word 自动回退到宋体，不影响文档结构。需要严格符合 GB/T 9704 的场合请自行安装方正小标宋。
 
-- **Large files** – Files over 1MB may experience slower parsing
-- **Temporarily disable** – Use the toolbar button or command palette to toggle decorations off
-- **Check performance** – `Help` → `Startup Performance` to diagnose issues
-- **Report issues** – If performance is consistently poor, please [open an issue](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues) with details (see [README](README.md#reporting-bugs) for reporting format)
+## 引用块导出后是什么样式？
 
-## Links, mentions, and issue refs won’t open?
+`>` 引用导出为楷体正文：无斜体、无背景底纹，首行缩进 2 字符，与正文同版式。中文公文排版不使用斜体，引用与正文靠字体（楷体 vs 仿宋）区分。
 
-**Regular Markdown links** (`[text](url)`) and extension-provided targets (including **mentions** like `@user` and **issue refs** like `#123`) use VS Code’s **document link** behavior:
+## 编辑大文件卡顿？
 
-- **Default:** use **Ctrl+Click** (Windows/Linux) or **Cmd+Click** (macOS). A plain left-click does not open the link (that avoids fighting text selection).
-- **Optional:** enable **Settings → Markdown Inline Editor → Open links and images with single click** (`markdownInlineEditor.links.singleClickOpen`) if you want left-click to open links (can make selecting text harder).
+- 装饰渲染做了防抖和增量解析，超过 1MB 的文件仍可能变慢
+- 可以用眼睛图标临时关闭当前文件的渲染
+- Mermaid 图表多的文档，首次渲染需要逐个生成 SVG，属正常现象
 
-**Mentions and `#` issue references** also depend on [forge-style link resolution](features/done/mentions-references.md):
+## 链接、@提及、#引用点不开？
 
-- If **`markdownInlineEditor.mentions.linksEnabled`** is **false**, mention/issue links are not offered (styling may still apply depending on other settings).
-- A bare **`#123`** needs a **repository owner and name** (usually from `git remote origin`). Without that, the ref may be styled but not get a clickable URL—use **`@owner/repo#123`** or open the repo in a workspace with a proper **`origin`** remote.
-- In **diff** views, link providers are skipped when diff decorations are off (raw markdown mode), same as other interactive link behavior.
+- 链接默认 Ctrl/Cmd+点击 打开；想单击直达可开 `markdownGongwen.links.singleClickOpen`
+- @提及 和 #123 引用需要仓库有 GitHub 远程（origin）才能解析出目标地址；也可用 `markdownGongwen.mentions.linksEnabled` 强制开或关
+- 差异视图中（未开启 diff 渲染时）链接提供器同样跳过，与其他交互行为一致
+
+## 有序列表显示的编号和我写的不一样？
+
+默认开启自动编号：全部写 `1.` 的懒编号列表会按位置显示为 1.、2.、3.，源文件不会被改动。源序号与显示编号不一致时会用警告色提示。不需要可关闭 `markdownGongwen.orderedLists.autoNumber`。
+
+## 反馈问题
+
+请到 [GitHub Issues](https://github.com/sinnohzeng/markdown-gongwen-vscode/issues) 提交，附上 VS Code 版本、插件版本和能复现问题的 Markdown 片段。

@@ -8,8 +8,8 @@ Use this file in the Extension Development Host to verify mention and issue-refe
 2. Ensure this workspace has a git origin remote (GitHub, GitLab, Gitea, or self-hosted).
 3. Open this file while the extension is active.
 4. Optional: test with these settings:
-   - markdownInlineEditor.mentions.enabled: true
-   - markdownInlineEditor.mentions.linksEnabled: undefined, then false, then true
+   - markdownGongwen.mentions.enabled: true
+   - markdownGongwen.mentions.linksEnabled: undefined, then false, then true
 
 ## Basic Patterns
 
@@ -53,7 +53,7 @@ If links are enabled in remote context:
 - Clicking #123 should open <remote-web-base>/<workspace-owner>/<workspace-repo>/<issues-path>/123
 - Clicking @owner/repo#42 should open <remote-web-base>/owner/repo/<issues-path>/42
 
-If markdownInlineEditor.mentions.linksEnabled is false:
+If markdownGongwen.mentions.linksEnabled is false:
 
 - Mentions/references remain styled
 - Clicking mention/reference should not open remote links

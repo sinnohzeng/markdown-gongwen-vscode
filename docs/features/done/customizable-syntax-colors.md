@@ -12,7 +12,7 @@ Optional hex color overrides for headings and other inline Markdown syntax. When
 
 ## Implementation
 
-- **Configuration**: 15 optional color properties under `markdownInlineEditor.colors` in `package.json`; config getters in `src/config.ts` with hex validation; decoration factories in `src/decorations.ts` accept optional `color`; `src/decorator/decoration-type-registry.ts` wires config to decoration creation; config and theme change trigger `recreateColorDependentTypes()`.
+- **Configuration**: 15 optional color properties under `markdownGongwen.colors` in `package.json`; config getters in `src/config.ts` with hex validation; decoration factories in `src/decorations.ts` accept optional `color`; `src/decorator/decoration-type-registry.ts` wires config to decoration creation; config and theme change trigger `recreateColorDependentTypes()`.
 - **Settings**: Keys `heading1` … `heading6`, `link`, `listMarker`, `inlineCode`, `inlineCodeBackground`, `emphasis`, `blockquote`, `image`, `horizontalRule`, `checkbox` (15 total).
 - **Format**: Hex `#RGB`, `#RRGGBB`, `#RGBA`, `#RRGGBBAA`; invalid/malformed values are ignored and theme default is used (no crash).
 - **Behavior**: Changing a color setting or active theme updates open Markdown editors without reload; user-configured hex is preserved when switching themes.
@@ -23,26 +23,26 @@ Optional hex color overrides for headings and other inline Markdown syntax. When
 Feature: Customizable syntax colors
 
   Scenario: Set heading color
-    When I set "markdownInlineEditor.colors.heading1" to "#e06c75"
+    When I set "markdownGongwen.colors.heading1" to "#e06c75"
     And I open a markdown file with "# Heading"
     Then the heading uses the configured color
 
   Scenario: Unset uses theme default
-    When "markdownInlineEditor.colors.heading1" is unset
+    When "markdownGongwen.colors.heading1" is unset
     Then heading text uses the theme’s markdown heading colors (syntax highlighting), not a forced editor-wide foreground override
 
   Scenario: Invalid hex falls back to theme
-    When I set "markdownInlineEditor.colors.link" to "not-a-color"
+    When I set "markdownGongwen.colors.link" to "not-a-color"
     Then links use textLink.foreground from the theme
     And the extension does not crash
 
   Scenario: Set inline code background color
-    When I set "markdownInlineEditor.colors.inlineCodeBackground" to "#f0f0f0"
+    When I set "markdownGongwen.colors.inlineCodeBackground" to "#f0f0f0"
     And I open a markdown file with "`code`"
     Then the inline code background uses the configured color
 
   Scenario: Inline code background uses default when unset
-    When "markdownInlineEditor.colors.inlineCodeBackground" is unset
+    When "markdownGongwen.colors.inlineCodeBackground" is unset
     Then inline code background uses theme-aware default (white for dark, black for light)
 ```
 
@@ -57,13 +57,13 @@ Feature: Customizable syntax colors
 
 ```json
 {
-  "markdownInlineEditor.colors.heading1": "#e06c75",
-  "markdownInlineEditor.colors.link": "#61afef",
-  "markdownInlineEditor.colors.inlineCode": "#98c379",
-  "markdownInlineEditor.colors.inlineCodeBackground": "#f0f0f0bb",
-  "markdownInlineEditor.colors.image": "#61afef",
-  "markdownInlineEditor.colors.horizontalRule": "#5c6370",
-  "markdownInlineEditor.colors.checkbox": "#98c379"
+  "markdownGongwen.colors.heading1": "#e06c75",
+  "markdownGongwen.colors.link": "#61afef",
+  "markdownGongwen.colors.inlineCode": "#98c379",
+  "markdownGongwen.colors.inlineCodeBackground": "#f0f0f0bb",
+  "markdownGongwen.colors.image": "#61afef",
+  "markdownGongwen.colors.horizontalRule": "#5c6370",
+  "markdownGongwen.colors.checkbox": "#98c379"
 }
 ```
 
@@ -71,4 +71,4 @@ Feature: Customizable syntax colors
 
 - Spec: `specs/002-customizable-syntax-colors/spec.md`
 - Issue: [#49](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/49)
-- Sister feature: [Font Customization](font-customization.md) — extends the same architecture with `markdownInlineEditor.fonts.*` settings for font-family, font-weight, and font-size customization
+- Sister feature: [Font Customization](font-customization.md) — extends the same architecture with `markdownGongwen.fonts.*` settings for font-family, font-weight, and font-size customization

@@ -20,7 +20,7 @@ priority: Core Feature
 
 ### 字体自定义
 
-通过 `markdownInlineEditor.fonts.*` 设置，用户可为每级标题独立配置：
+通过 `markdownGongwen.fonts.*` 设置，用户可为每级标题独立配置：
 
 - `fontFamily`：CSS 字体族字符串（例如 `"Arial, SimHei, sans-serif"`）
 - `fontWeight`：CSS 字重（`normal`、`bold`、`100`-`900`）
@@ -32,18 +32,18 @@ priority: Core Feature
 
 ```json
 {
-  "markdownInlineEditor.fonts.heading1.fontFamily": "Arial, SimHei, Heiti SC, sans-serif",
-  "markdownInlineEditor.fonts.heading1.fontWeight": "normal",
-  "markdownInlineEditor.fonts.heading1.fontSize": "137%",
-  "markdownInlineEditor.fonts.heading2.fontFamily": "Arial, KaiTi, STKaiti, serif",
-  "markdownInlineEditor.fonts.heading2.fontWeight": "normal",
-  "markdownInlineEditor.fonts.heading2.fontSize": "100%",
-  "markdownInlineEditor.fonts.heading3.fontFamily": "\"Times New Roman\", FangSong, STFangsong, serif",
-  "markdownInlineEditor.fonts.heading3.fontWeight": "bold",
-  "markdownInlineEditor.fonts.heading3.fontSize": "100%",
-  "markdownInlineEditor.fonts.heading4.fontFamily": "\"Times New Roman\", FangSong, STFangsong, serif",
-  "markdownInlineEditor.fonts.heading4.fontWeight": "normal",
-  "markdownInlineEditor.fonts.heading4.fontSize": "100%"
+  "markdownGongwen.fonts.heading1.fontFamily": "Arial, SimHei, Heiti SC, sans-serif",
+  "markdownGongwen.fonts.heading1.fontWeight": "normal",
+  "markdownGongwen.fonts.heading1.fontSize": "137%",
+  "markdownGongwen.fonts.heading2.fontFamily": "Arial, KaiTi, STKaiti, serif",
+  "markdownGongwen.fonts.heading2.fontWeight": "normal",
+  "markdownGongwen.fonts.heading2.fontSize": "100%",
+  "markdownGongwen.fonts.heading3.fontFamily": "\"Times New Roman\", FangSong, STFangsong, serif",
+  "markdownGongwen.fonts.heading3.fontWeight": "bold",
+  "markdownGongwen.fonts.heading3.fontSize": "100%",
+  "markdownGongwen.fonts.heading4.fontFamily": "\"Times New Roman\", FangSong, STFangsong, serif",
+  "markdownGongwen.fonts.heading4.fontWeight": "normal",
+  "markdownGongwen.fonts.heading4.fontSize": "100%"
 }
 ```
 
@@ -91,19 +91,19 @@ Feature: 标题格式化
 Feature: 标题字体自定义
 
   Scenario: 设置字体族
-    When 设置 "markdownInlineEditor.fonts.heading1.fontFamily" 为 "Arial, SimHei"
+    When 设置 "markdownGongwen.fonts.heading1.fontFamily" 为 "Arial, SimHei"
     Then H1 标题使用配置的字体
 
   Scenario: 设置字重
-    When 设置 "markdownInlineEditor.fonts.heading3.fontWeight" 为 "bold"
+    When 设置 "markdownGongwen.fonts.heading3.fontWeight" 为 "bold"
     Then H3 标题以粗体显示
 
   Scenario: 设置字号
-    When 设置 "markdownInlineEditor.fonts.heading2.fontSize" 为 "100%"
+    When 设置 "markdownGongwen.fonts.heading2.fontSize" 为 "100%"
     Then H2 标题以 100% 字号显示（覆盖默认 140%）
 
   Scenario: 空值使用默认
-    When "markdownInlineEditor.fonts.heading1.fontFamily" 未设置
+    When "markdownGongwen.fonts.heading1.fontFamily" 未设置
     Then 标题使用编辑器默认字体
 ```
 

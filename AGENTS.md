@@ -15,10 +15,12 @@ Before making changes:
 ## Project Context
 
 **What This Project Does:**
-- VS Code extension that renders markdown syntax inline (WYSIWYG-style)
+- VS Code extension for editing and exporting Chinese government documents (党政公文)
+- Renders markdown syntax inline (WYSIWYG-style) with GB/T 9704 font styling
+- One-click DOCX export: mdast AST → GB/T 9704-compliant Word document (`src/export/`, this fork's core feature)
 - Uses VS Code TextEditorDecorationType to hide/show markdown syntax
 - Parses markdown using remark and applies visual decorations
-- Supports links, images, headings, lists, code blocks, and more
+- Supports links, images, headings, lists, code blocks, math, mermaid, and more
 
 **Tech Stack:**
 - TypeScript (strict mode)
@@ -56,6 +58,18 @@ Before making changes:
 - `decorator/visibility-model.ts` - 3-state filtering (Rendered/Ghost/Raw)
 - `decorator/checkbox-toggle.ts` - Handles checkbox clicks
 - `decorator/decoration-categories.ts` - Categorizes decoration types
+
+**DOCX Export (`export/`, this fork's core feature):**
+- `export/export-command.ts` - Command handlers, save dialog, progress & notifications
+- `export/ast-to-docx.ts` - Pure mdast → docx Document conversion (fully unit-tested)
+- `export/gbt9704-styles.ts` - GB/T 9704 OOXML styles (fonts, page, footer)
+- `export/constants.ts` - GB/T 9704 typography constants (traced to docs/reference/gbt9704-typography.md)
+- `export/image-resolver.ts` - Local image loading, dimension parsing, print-area scaling
+
+**Math & Mermaid:**
+- `math/` - LaTeX math inline rendering (MathJax)
+- `mermaid/` - Mermaid diagram rendering via hidden webview (lazy-initialized)
+- `forge-context.ts` / `emoji-map*.ts` - GitHub context resolution, emoji shortcodes
 
 **Test Directories:**
 - Each module has a corresponding `__tests__/` directory
@@ -142,7 +156,7 @@ npm run release       # Automated release (see Release section)
 - Mock VS Code API when needed (see existing tests for patterns)
 
 **Current Test Coverage:**
-- 438+ passing tests across 33 test suites (parser, hover providers, click handler, decorator, and more)
+- 800+ passing tests across 56 test suites (run `npm test` for the authoritative count)
 - Maintain or improve this coverage
 
 ### 4. Code Style

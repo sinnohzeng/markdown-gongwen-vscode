@@ -85,8 +85,8 @@ Feature: Reveal Mermaid diagram
 - Comprehensive error handling and optimization
 - Theme-aware rendering (light/dark mode support)
 - Performance optimizations for large diagrams
-- See [ADR: Mermaid Diagram Hover Rendering](../architecture/ADR/mermaid.md) for implementation details
-- See [Mermaid Rendering Findings](../mermaid-rendering-findings.md) for technical details
+- See [ADR: Mermaid Diagram Hover Rendering](../../architecture/ADR/mermaid.md) for implementation details
+- See [Mermaid Rendering Findings](../../experience/mermaid-rendering-findings.md) for technical details
 
 ## Examples
 

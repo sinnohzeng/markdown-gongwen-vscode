@@ -13,7 +13,7 @@ Add a configuration setting to show raw markdown syntax when viewing diffs, allo
 
 ## Implementation
 
-VS Code configuration option `markdownInlineEditor.defaultBehaviors.diffView.applyDecorations` (boolean, default: `false`) controls whether decorations are applied in diff views. When disabled (default), raw markdown syntax is shown instead of rendered decorations, making it easier to review changes. The extension automatically detects diff contexts including Git source control diffs, merge editors, and Copilot inline diffs.
+VS Code configuration option `markdownGongwen.defaultBehaviors.diffView.applyDecorations` (boolean, default: `false`) controls whether decorations are applied in diff views. When disabled (default), raw markdown syntax is shown instead of rendered decorations, making it easier to review changes. The extension automatically detects diff contexts including Git source control diffs, merge editors, and Copilot inline diffs.
 
 **Diff Detection:**
 - Check if active editor is a diff editor using `vscode.window.activeTextEditor` and `DiffEditor` type
@@ -146,7 +146,7 @@ Raw markdown visible: `##` → `###` change is clear
 **Configuration:**
 ```json
 {
-  "markdownInlineEditor.defaultBehaviors.diffView.applyDecorations": false
+  "markdownGongwen.defaultBehaviors.diffView.applyDecorations": false
 }
 ```
 

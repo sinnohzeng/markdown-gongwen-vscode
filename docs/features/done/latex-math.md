@@ -8,7 +8,7 @@ priority: High
 
 ## Overview
 
-Inline and block LaTeX math rendering in the editor. **Delimiter math** (003-inline-latex-equations): `$...$` (inline) and `$$...$$` (block) are detected, rendered with MathJax to SVG, and displayed via decorations. **Code-block math** (004-code-block-math-environments): fenced blocks with `math`, `latex`, or `tex` language tags are rendered as display math over the whole block, with height from body line count. Raw LaTeX is revealed when the cursor or selection is inside a math region. Toggle via `markdownInlineEditor.math.enabled`.
+Inline and block LaTeX math rendering in the editor. **Delimiter math** (003-inline-latex-equations): `$...$` (inline) and `$$...$$` (block) are detected, rendered with MathJax to SVG, and displayed via decorations. **Code-block math** (004-code-block-math-environments): fenced blocks with `math`, `latex`, or `tex` language tags are rendered as display math over the whole block, with height from body line count. Raw LaTeX is revealed when the cursor or selection is inside a math region. Toggle via `markdownGongwen.math.enabled`.
 
 ## Implementation
 

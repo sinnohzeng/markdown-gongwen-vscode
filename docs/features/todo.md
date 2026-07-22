@@ -1,100 +1,59 @@
-# TODO Features
+# 功能路线图（TODO）
 
-Planned features for the Markdown Inline Editor extension. Each item has a brief summary and up to five bullet points.
-
----
-
-## Default decorator rendering
-
-Control whether markdown files open with decorations on or off by default.
-
-- Add setting under `markdownInlineEditor.defaultBehaviors`, e.g. `decorations.enabledByDefault` (default `true`).
-- Initial state applies when opening a file or when the extension activates; existing toggle command still overrides per session.
-- Optional: when off by default, skip parsing until the user runs the toggle (reduces CPU/memory with many open markdown files).
-- Aligns with existing `defaultBehaviors.diffView.applyDecorations` naming.
-- Can later integrate with per-file toggle state when that is implemented.
+Markdown Gongwen 公文的候选功能清单。已实现的条目移入 [done/](done/)；新功能开工前先在 `specs/<feature>/` 写规约（用 `markdownGongwen.*` 命名空间）。
 
 ---
 
-## Default feature activation
+## 默认渲染开关
 
-Let users enable or disable specific markdown features (headings, links, tables, emoji, etc.) by default.
+允许配置 Markdown 文件打开时默认开启还是关闭渲染。
 
-- Per-feature or per-category config under `markdownInlineEditor.*`; apply at decoration time, not parse time.
-- Disabled features render as raw; 3-state visibility (Rendered/Ghost/Raw) and reveal-on-select still work for enabled features.
-- Prefer grouping by category (headings, links, lists, code, emoji, tables) to keep settings manageable.
-- Avoid re-parsing on config change; apply at decoration layer.
-- Stay consistent with diff-view policy (raw by default in diffs).
-
----
-
-## Highlighting support
-
-Support `==text==` highlighting syntax with background styling and hidden markers.
-
-- Detect `==text==`, style with background color, hide markers; reveal raw on selection.
-- Non-standard extension (not GFM); breaks “works everywhere” principle; limited adoption.
-- Recommendation: remove from roadmap unless there is strong user demand.
-- Feasibility high, usefulness low, effort ~1 week.
+- 在 `markdownGongwen.defaultBehaviors` 下加 `decorations.enabledByDefault`（默认 `true`）
+- 打开文件/激活时生效；眼睛图标的按文件切换仍可覆盖
+- 可选优化：默认关闭时跳过解析，多文件场景省 CPU/内存
+- 与现有 `defaultBehaviors.diffView.applyDecorations` 命名对齐
 
 ---
 
-## Image UX improvements
+## 按功能分组的开关
 
-Improve image experience: click-to-open, richer hover, visual distinction, optional status and thumbnails.
+允许按类别（标题、链接、列表、代码、表格、Emoji）默认启用/禁用渲染。
 
-- Phase 1: make images clickable (alt text opens image in VS Code viewer).
-- Phase 2: hover shows dimensions, file size, path, “Open Image” button; constrain preview size (e.g. max 400px).
-- Phase 3: distinct style for images vs links (color, background, border).
-- Phase 4 (optional): status indicators (valid, missing, external, large).
-- Phase 5 (future): inline thumbnails with performance/caching considered; or thumbnail only on hover.
+- 配置作用在装饰层而非解析层，避免配置变化触发重新解析
+- 被禁用的功能显示原始 Markdown；三态可见性对启用的功能照常工作
+- 与差异视图策略保持一致（diff 默认原始）
 
 ---
 
-## Mentions and references styling
+## DOCX 导出增强（公文场景特有）
 
-**Implemented** — see [`docs/features/done/mentions-references.md`](./done/mentions-references.md) (inline styling, optional forge-aware links, settings `markdownInlineEditor.mentions.*`).
-
----
-
-## Ordered list auto-numbering
-
-Hide ordered list markers and show computed numbers (1, 2, 3…), including nested lists.
-
-- Hide `1.`, `2.`, etc.; compute numbers from position; support GFM `1)` as well as `1.`.
-- Handle nesting and out-of-order source numbering; reveal raw on selection.
-- Core GFM; competitive with markless; 2–3 weeks; reassess after core features.
-- Feasibility moderate, usefulness high, risk medium (edge cases).
+- Mermaid 图表导出为位图（当前导出为提示文字）
+- LaTeX 公式导出为 OMML 或位图（当前导出为源码文本）
+- 版记、发文机关标志等 GB/T 9704 版头/版记元素的 frontmatter 驱动生成
+- 多级标题编号自动生成（一、/（一）/1. /（1））
 
 ---
 
-## Per-file toggle state
+## 图片体验改进
 
-Enable or disable decorations per file instead of globally; state persists across sessions.
-
-- Store toggle state per file URI; add UI control; persist across VS Code sessions.
-- New files use default state; renamed files keep state (by URI or migration).
-- Competitive advantage (e.g. markless does not have it); good UX for mixed preferences.
-- Feasibility high, usefulness high, risk low, effort ~1 week.
+- 第一阶段：图片可点击（alt 文字点开在 VS Code 查看器中显示）
+- 第二阶段：悬停显示尺寸/大小/路径与"打开图片"按钮
+- 后续：图片与链接的视觉区分、状态指示、行内缩略图（性能优先评估）
 
 ---
 
-## Table column alignment (with markup)
+## 表格
 
-Keep table columns aligned when cells contain formatted text (bold, code, italic). Hidden markup changes rendered width and currently breaks alignment.
+完整 GFM 表格渲染：隐藏管道符、对齐样式、多行单元格、选中还原。
 
-- Measure rendered width of formatted cells (VS Code text measurement or font metrics); adjust column spacing to preserve alignment.
-- Handle mixed cells, multiple formatting in one cell, and left/center/right alignment.
-- Depends on tables feature; 1–2 weeks; feasibility moderate, usefulness high.
-- See: [GitHub issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21).
+- 隐藏 `|` 分隔符；渲染 `:---` / `:---:` / `---:` 对齐
+- 格式化文本（加粗/代码）导致的列宽错位需要文本测量方案，难度较高
+- 公文正文表格多，需求真实；边缘情况多，风险中等
 
 ---
 
-## Tables
+## 已实现（从本清单毕业）
 
-Full GFM table support: hide pipes, style alignment, support multi-line cells, reveal raw on selection.
-
-- Detect GFM tables; hide `|` delimiters; style alignment (`:---`, `:---:`, `---:`); support multi-line cells.
-- Preserve alignment when revealing raw; handle empty cells and inline formatting in cells.
-- Core GFM; high demand; competitive requirement; 2–3 weeks; feasibility high, risk medium (edge cases).
-
+- 提及与引用样式 → [done/mentions-references.md](done/mentions-references.md)
+- 有序列表自动编号 → 2026-07 自上游 #31 移植（`markdownGongwen.orderedLists.*`）
+- 按文件记忆渲染开关 → 已实现（workspaceState 持久化）

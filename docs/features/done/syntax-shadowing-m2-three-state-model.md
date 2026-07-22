@@ -164,7 +164,7 @@ Benefits:
 
 - The 3-state model provides three distinct visibility states for syntax markers:
   - **Rendered (default)**: Syntax markers hidden, only formatted content visible
-  - **Ghost**: Cursor on line but not inside construct - markers show at reduced opacity (configurable via `markdownInlineEditor.decorations.ghostFaintOpacity`, default: 0.3)
+  - **Ghost**: Cursor on line but not inside construct - markers show at reduced opacity (configurable via `markdownGongwen.decorations.ghostFaintOpacity`, default: 0.3)
   - **Raw**: Cursor/selection inside construct - markers fully visible for editing
 - State priority: Raw > Ghost > Rendered
 - Scope-based detection ensures precise state application based on cursor position within markdown constructs

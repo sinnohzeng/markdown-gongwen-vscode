@@ -31,8 +31,8 @@ Inline styling and optional linking for GitHub-flavored `@username`, `@org/team`
 
 ### Settings
 
-- **`markdownInlineEditor.mentions.enabled`** (default: `true`) — Master switch for detection and styling.
-- **`markdownInlineEditor.mentions.linksEnabled`** — `true` forces clickable link resolution on; `false` forces it off; **unset** uses forge detection (still allows styling; URLs use remote when available).
+- **`markdownGongwen.mentions.enabled`** (default: `true`) — Master switch for detection and styling.
+- **`markdownGongwen.mentions.linksEnabled`** — `true` forces clickable link resolution on; `false` forces it off; **unset** uses forge detection (still allows styling; URLs use remote when available).
 
 ### Context behavior
 
@@ -41,7 +41,7 @@ Inline styling and optional linking for GitHub-flavored `@username`, `@org/team`
 ## Acceptance Criteria
 
 - `@username`, `@org/team`, `#123`, `@user/repo#456` are styled (link-like) when `mentions.enabled` is true.
-- When linking is enabled and URLs resolve, mentions/refs are clickable (same interaction model as other document links: **Ctrl/Cmd+click** by default; optional **single-click** via `markdownInlineEditor.links.singleClickOpen`).
+- When linking is enabled and URLs resolve, mentions/refs are clickable (same interaction model as other document links: **Ctrl/Cmd+click** by default; optional **single-click** via `markdownGongwen.links.singleClickOpen`).
 - When `mentions.linksEnabled` is `false`, or a URL cannot be resolved (e.g. bare `#123` with no remote), styling may still apply where detection runs; links are not provided where resolution fails.
 - Email patterns and content inside code blocks are not styled as mentions/refs.
 - Selecting a mention/ref reveals raw markdown; deselecting restores the styled view.
