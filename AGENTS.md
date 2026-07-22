@@ -310,26 +310,27 @@ This runs:
    - Updates package.json version
    - Commits and tags release
 
-4. **Push (CRITICAL - Tags MUST be pushed):**
+4. **Push (CRITICAL - push ONLY the release tag, never `--follow-tags`/`--tags`):**
    ```bash
-   git push origin main --follow-tags
+   git push origin main
+   git push origin v<version>
    ```
    
-   **⚠️ IMPORTANT:** The `--follow-tags` flag is essential! Without it, tags won't be pushed and releases won't be processed by CI/CD.
+   **⚠️ IMPORTANT:** NEVER use `--follow-tags` or `--tags` for the release push. This clone has an `upstream` remote, and `--follow-tags` pushes every reachable annotated tag — including upstream's historical tags (`v1.3.2`–`v1.24.2`). Every pushed `v*` tag is treated as a release trigger by CI, so this would fire dozens of old-version releases (incident: 2026-07-22). If upstream tags exist locally again (e.g. after `git fetch upstream --tags`), delete them before pushing: `git tag -d <tag>`.
    
-   **Verify tags were pushed:**
+   **Verify the tag was pushed:**
    ```bash
    git ls-remote --tags origin | grep v<version>
    ```
    
-   If tags are missing, push them explicitly:
+   **If no "Build & quality" run starts within a minute** (push triggers have proven unreliable on this repo — the v2.0.x releases were all started manually), trigger it explicitly:
    ```bash
-   git push origin v<version>
+   gh workflow run "Build & quality" -R sinnohzeng/markdown-gongwen-vscode --ref main -f tag=v<version>
    ```
 
 5. **CI/CD:**
    - GitHub Actions automatically publishes to VS Code Marketplace and OpenVSX
-   - **Releases only process if tags are pushed to remote**
+   - **Releases are triggered by a `v*` tag push or by manual `workflow_dispatch` with the tag as input**
    - Check GitHub Actions to verify release jobs ran successfully
 
 See `docs/release-generation.md` for detailed documentation.

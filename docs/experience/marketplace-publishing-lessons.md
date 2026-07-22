@@ -42,6 +42,8 @@
 
 **解决**：使用 `gh workflow run` 命令手动触发 workflow dispatch。
 
+**补充（2026-07-22）**：Actions 早已启用、`workflow_dispatch` 正常，但 push 事件（推 main 分支、推 tag）至今不产生任何 run（`actions/runs?event=push` 为空），原因未查明。发版不要等 push 触发，直接手动 dispatch：`gh workflow run "Build & quality" --ref main -f tag=vX.Y.Z`。
+
 ## 5. git tag 的 lightweight vs annotated 问题
 
 **问题**：使用 `git push origin main --follow-tags` 推送后，tag 没有被推上去。
@@ -109,3 +111,17 @@ git filter-repo --invert-paths --path fonts/FZXBSJW.TTF --path test-preview.md -
 **解决**：`git rm -r --cached assets/mermaid` + 加入 `.gitignore`，并在 package.json 加 `"postinstall": "node scripts/copy-mermaid.js"`——本地 `npm install`、CI 的 `npm ci` 都会自动重建，F5 调试和 e2e 也不受影响。
 
 **教训**：判断一个目录该不该入库，问一句"它能不能由脚本从依赖里确定性重建"。能，就交给 postinstall。
+
+## 13. `--follow-tags` 推送会把上游历史标签全带上去（2026-07-22）
+
+**问题**：`git push origin main --follow-tags` 会把本地所有可达的 annotated tags 一起推到 origin。本克隆配了 upstream remote，fetch 下来的上游发布标签（v1.3.2–v1.24.2，共 57 个）全是 annotated tag；而 CI 对每个 `v*` tag push 都当作发布触发——相当于一次性触发几十个旧版本发布。
+
+**更隐蔽的是**：`--follow-tags` 恰恰不会推我们自己的发布标签——`scripts/release.js` 创建的 `vX.Y.Z` 是 lightweight tag，不在 `--follow-tags` 推送范围内（见 §5）。这条命令的实际效果是"该推的不推，不该推的全推"。
+
+**解决**：
+- 发布只显式推当前标签：`git push origin main && git push origin vX.Y.Z`
+- 若本地又 fetch 了上游标签，推送前清掉（只保留 origin 上已有的）：
+  ```bash
+  comm -23 <(git tag | sort) <(git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | grep -v '\^{}' | sort) | xargs git tag -d
+  ```
+- 推送后一分钟内没有 "Build & quality" run 就手动 dispatch（见 §4 补充）。

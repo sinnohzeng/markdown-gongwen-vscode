@@ -26,10 +26,17 @@ This script will:
 6. **Commit and tag**: Creates a commit with message `chore(release): vX.Y.Z` and creates the git tag `vX.Y.Z`
 7. **Provide instructions**: Shows next steps for pushing changes
 
-After running the script, push the changes:
+After running the script, push the changes — push ONLY the release tag, never `--follow-tags` or `--tags` (those would also push upstream's historical annotated tags, and every `v*` tag push is treated as a release trigger; see `docs/experience/marketplace-publishing-lessons.md` §13):
 
 ```bash
-git push origin main --follow-tags
+git push origin main
+git push origin vX.Y.Z
+```
+
+If no "Build & quality" run starts within a minute (push triggers have proven unreliable on this repo), trigger the release manually — this is the path used by all previous releases:
+
+```bash
+gh workflow run "Build & quality" --ref main -f tag=vX.Y.Z
 ```
 
 The automated script (`npm run release` or `node scripts/release.js`) is recommended as it:
