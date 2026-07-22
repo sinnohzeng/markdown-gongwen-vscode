@@ -6,7 +6,6 @@
  */
 import * as vscode from "vscode";
 import * as path from "path";
-import * as fs from "fs";
 import type { Root, Image, Content } from "mdast";
 
 // ── Output Channel（懒初始化）───────────────────
@@ -150,8 +149,15 @@ export function createExportDocxQuickCommand(context: vscode.ExtensionContext) {
     const outputPath = docPath.replace(/\.(md|markdown|mdx|mdc|markdoc)$/i, "") + ".docx";
     const outputUri = vscode.Uri.file(outputPath);
 
-    // 文件已存在：确认覆盖
-    if (fs.existsSync(outputPath)) {
+    // 文件已存在：确认覆盖。用 workspace.fs 而非 Node fs，
+    // 远程/虚拟工作区（Remote-SSH、WSL）下 Node fs 探测的是本地磁盘。
+    let exists = true;
+    try {
+      await vscode.workspace.fs.stat(outputUri);
+    } catch {
+      exists = false;
+    }
+    if (exists) {
       const overwrite = await vscode.window.showWarningMessage(
         `文件 ${path.basename(outputPath)} 已存在，是否覆盖？`,
         "覆盖",
@@ -166,19 +172,27 @@ export function createExportDocxQuickCommand(context: vscode.ExtensionContext) {
 
 // ── 核心导出流程 ────────────────────────────────
 
+interface ExportOutcome {
+  bytes: number;
+  warningCount: number;
+}
+
 async function doExport(
   document: vscode.TextDocument,
   outputUri: vscode.Uri,
   context: vscode.ExtensionContext,
 ): Promise<void> {
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: "导出公文 DOCX",
-      cancellable: true,
-    },
-    async (progress, token) => {
-      try {
+  // 成功/失败通知必须在 withProgress 结束后再弹：带按钮的通知要等用户
+  // 交互才 resolve，若在进度回调内 await，进度通知会一直挂住不消失。
+  let outcome: ExportOutcome | undefined;
+  try {
+    outcome = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "导出公文 DOCX",
+        cancellable: true,
+      },
+      async (progress, token): Promise<ExportOutcome | undefined> => {
         log(`开始导出: ${document.fileName} → ${outputUri.fsPath}`);
 
         // 1. 解析 Markdown
@@ -189,7 +203,7 @@ async function doExport(
         const ast = processor.parse(markdownText);
         log(`AST 解析完成: ${ast.children.length} 个顶层节点`);
 
-        if (token.isCancellationRequested) { log("用户取消"); return; }
+        if (token.isCancellationRequested) { log("用户取消"); return undefined; }
 
         // 2. 收集并解析图片
         progress.report({ message: "正在处理图片...", increment: 20 });
@@ -202,7 +216,7 @@ async function doExport(
           log(`  图片警告: [${w.reason}] ${w.url}`);
         }
 
-        if (token.isCancellationRequested) { log("用户取消"); return; }
+        if (token.isCancellationRequested) { log("用户取消"); return undefined; }
 
         // 3. 生成 DOCX Document
         progress.report({ message: "正在生成 DOCX...", increment: 30 });
@@ -210,52 +224,68 @@ async function doExport(
         const doc = exporter.convertToDocx(ast, images);
         log("DOCX Document 对象生成完成");
 
-        if (token.isCancellationRequested) { log("用户取消"); return; }
+        if (token.isCancellationRequested) { log("用户取消"); return undefined; }
 
         // 4. 打包并写入文件
         progress.report({ message: "正在写入文件...", increment: 30 });
         const buffer = await exporter.packToBuffer(doc);
-        fs.writeFileSync(outputUri.fsPath, buffer);
+        // 打包可能耗时数秒（图片多时）；此处再查一次取消，避免用户点了取消
+        // 后仍写盘 + 弹"已导出"成功通知，让取消看起来被忽略。
+        if (token.isCancellationRequested) { log("用户取消"); return undefined; }
+        await vscode.workspace.fs.writeFile(outputUri, buffer);
         log(`文件已写入: ${buffer.length} 字节`);
 
         // 5. 记住导出目录
         await context.workspaceState.update("lastExportDirectory", path.dirname(outputUri.fsPath));
 
-        // 6. 成功通知
-        const fileSize = (buffer.length / 1024).toFixed(1);
-        const sizeStr = buffer.length >= 1024 * 1024
-          ? `${(buffer.length / (1024 * 1024)).toFixed(1)} MB`
-          : `${fileSize} KB`;
+        progress.report({ increment: 10 });
+        return { bytes: buffer.length, warningCount: warnings.length };
+      },
+    );
+  } catch (err) {
+    logError("导出失败", err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const action = await vscode.window.showErrorMessage(
+      `导出失败: ${errMsg}`,
+      "查看日志",
+    );
+    if (action === "查看日志") {
+      getOutputChannel().show();
+    }
+    return;
+  }
 
-        let message = `已导出: ${path.basename(outputUri.fsPath)} (${sizeStr})`;
-        if (warnings.length > 0) {
-          message += `，${warnings.length} 张图片未加载`;
-        }
+  if (!outcome) return; // 用户取消，静默收尾
 
-        log(`导出成功: ${message}`);
+  // 成功通知（此时进度通知已自动关闭）
+  const sizeStr = outcome.bytes >= 1024 * 1024
+    ? `${(outcome.bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${(outcome.bytes / 1024).toFixed(1)} KB`;
 
-        const action = await vscode.window.showInformationMessage(
-          message,
-          "打开文件",
-          "在文件管理器中显示",
-        );
+  let message = `已导出: ${path.basename(outputUri.fsPath)} (${sizeStr})`;
+  if (outcome.warningCount > 0) {
+    message += `，${outcome.warningCount} 张图片未加载`;
+  }
 
-        if (action === "打开文件") {
-          await vscode.env.openExternal(outputUri);
-        } else if (action === "在文件管理器中显示") {
-          await vscode.commands.executeCommand("revealFileInOS", outputUri);
-        }
-      } catch (err) {
-        logError("导出失败", err);
-        const errMsg = err instanceof Error ? err.message : String(err);
-        const action = await vscode.window.showErrorMessage(
-          `导出失败: ${errMsg}`,
-          "查看日志",
-        );
-        if (action === "查看日志") {
-          getOutputChannel().show();
-        }
-      }
-    },
+  log(`导出成功: ${message}`);
+
+  const action = await vscode.window.showInformationMessage(
+    message,
+    "打开文件",
+    "在文件管理器中显示",
   );
+
+  // 单独捕获：文件可能在导出后被移动/删除，打开或定位失败不应抛未处理错误
+  try {
+    if (action === "打开文件") {
+      await vscode.env.openExternal(outputUri);
+    } else if (action === "在文件管理器中显示") {
+      await vscode.commands.executeCommand("revealFileInOS", outputUri);
+    }
+  } catch (err) {
+    logError("打开导出文件失败", err);
+    vscode.window.showErrorMessage(
+      `无法打开文件: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }

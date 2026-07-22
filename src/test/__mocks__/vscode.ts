@@ -71,11 +71,13 @@ export const Uri = {
     return {
       toString: () => value,
       scheme: scheme,
+      fsPath: value.replace(/^file:\/\//, ""),
     };
   },
   file: (path: string) => ({
     toString: () => `file://${path}`,
     scheme: "file",
+    fsPath: path,
   }),
   joinPath: (base: any, ...segments: string[]) => {
     const basePath = base.toString().replace("file://", "");
@@ -83,6 +85,7 @@ export const Uri = {
     return {
       toString: () => `file://${joined}`,
       scheme: "file",
+      fsPath: joined,
     };
   },
 };

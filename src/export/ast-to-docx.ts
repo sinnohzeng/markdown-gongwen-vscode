@@ -134,7 +134,7 @@ function convertNodes(
           result.push(convertTable(node as MdTable, images));
           break;
         case "list":
-          result.push(...convertList(node as List, images, 0));
+          result.push(...convertList(node as List, images, 0, ctx));
           break;
         case "blockquote":
           result.push(...convertBlockquote(node as Blockquote, images));
@@ -181,6 +181,7 @@ function convertNodes(
 // ── 标题 ────────────────────────────────────────
 
 function convertHeading(node: Heading, images: Map<string, ResolvedImage>): Paragraph {
+  // 公文标题层级到 H5（四级标题）为止；更深的 H6 回退到四级标题样式。
   const style = HEADING_MAP[node.depth] ?? HEADING_MAP[5];
   const runs = convertInlineNodes(node.children as PhrasingContent[], images, {
     font: style.font,
@@ -303,10 +304,13 @@ function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table 
 
 // ── 列表 ────────────────────────────────────────
 
+// 列表条目按公文正文段落排版：首行缩进 2 字符、回行顶格（不用 Word 的
+// "文本之前"左缩进），序号作为文字内容输出。嵌套层级靠加深首行缩进区分。
 function convertList(
   node: List,
   images: Map<string, ResolvedImage>,
   depth: number,
+  ctx: RunContext = {},
 ): Paragraph[] {
   const result: Paragraph[] = [];
   const ordered = node.ordered ?? false;
@@ -315,17 +319,18 @@ function convertList(
     for (const child of item.children as Content[]) {
       if (child.type === "paragraph") {
         const prefix = ordered ? `${(node.start ?? 1) + index}. ` : "• ";
-        const indent = FIRST_LINE_INDENT_TWIP + depth * 320; // 额外缩进
+        const firstLine = FIRST_LINE_INDENT_TWIP + depth * 320;
 
         const runs = convertInlineNodes(
           (child as MdParagraph).children as PhrasingContent[],
           images,
-          {},
+          ctx,
         );
 
         result.push(
           new Paragraph({
-            indent: { left: indent },
+            alignment: AlignmentType.JUSTIFIED,
+            indent: { firstLine },
             spacing: {
               line: LINE_SPACING_TWIP,
               lineRule: LineRuleType.EXACT,
@@ -333,13 +338,17 @@ function convertList(
               after: 0,
             },
             children: [
-              new TextRun({ text: prefix, font: FangSong, size: FONT_SIZE_HALF_PT.BODY }),
+              new TextRun({
+                text: prefix,
+                font: ctx.font ?? FangSong,
+                size: ctx.size ?? FONT_SIZE_HALF_PT.BODY,
+              }),
               ...runs,
             ],
           }),
         );
       } else if (child.type === "list") {
-        result.push(...convertList(child as List, images, depth + 1));
+        result.push(...convertList(child as List, images, depth + 1, ctx));
       }
     }
   });
@@ -349,6 +358,8 @@ function convertList(
 
 // ── 引用块 ──────────────────────────────────────
 
+// 引用块按正文版式排版（首行缩进、两端对齐、无底纹），文字改用楷体与正文
+// 区分——中文公文排版不使用斜体。
 function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>): Paragraph[] {
   const result: Paragraph[] = [];
 
@@ -357,22 +368,24 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
       const runs = convertInlineNodes(
         (child as MdParagraph).children as PhrasingContent[],
         images,
-        { italic: true },
+        { font: KaiTi },
       );
 
       result.push(
         new Paragraph({
-          indent: { left: FIRST_LINE_INDENT_TWIP },
+          alignment: AlignmentType.JUSTIFIED,
+          indent: { firstLine: FIRST_LINE_INDENT_TWIP },
           spacing: {
             line: LINE_SPACING_TWIP,
             lineRule: LineRuleType.EXACT,
+            before: 0,
+            after: 0,
           },
-          shading: { type: ShadingType.CLEAR, fill: "F5F5F5" },
           children: runs,
         }),
       );
     } else {
-      for (const item of convertNodes([child], images, { italic: true })) {
+      for (const item of convertNodes([child], images, { font: KaiTi })) {
         if (item instanceof Paragraph) result.push(item);
       }
     }

@@ -44,7 +44,7 @@ export function createDocumentStyles(): IStylesOptions {
     keepNext: true,
   };
 
-  // 标题 5/6/7 及更低级别：三号FangSong，不加粗（标准未明确规定，统一设定）
+  // 四级标题（Markdown H5）及更深级别（H6 回退到此）：三号 FangSong 不加粗
   const lowerHeadingStyle = {
     run: {
       font: FangSong,
@@ -116,28 +116,9 @@ export function createDocumentStyles(): IStylesOptions {
         },
         paragraph: headingParagraph,
       },
-      // ── 四级标题（Markdown H5）── FangSong 三号
+      // ── 四级标题（Markdown H5，更深的 H6 回退到此）── FangSong 三号
       heading4: lowerHeadingStyle,
-      // ── 标题 5/6（标准未规定，统一三号FangSong不加粗）
-      heading5: lowerHeadingStyle,
-      heading6: lowerHeadingStyle,
     },
-    // Heading 7：docx 库 default 不支持 heading7，用 paragraphStyles 补充
-    paragraphStyles: [
-      {
-        id: "Heading7",
-        name: "heading 7",
-        basedOn: "Normal",
-        next: "Normal",
-        quickFormat: true,
-        run: {
-          font: FangSong,
-          size: FONT_SIZE_HALF_PT.HEADING,
-          color: "000000",
-        },
-        paragraph: headingParagraph,
-      },
-    ],
     // ── "强调"字符样式 ── KaiTi + Times New Roman 三号，不加粗
     characterStyles: [
       {
