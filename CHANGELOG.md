@@ -5,15 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.0.2](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.0.1..v2.0.2) - 2026-04-09
+## [2.1.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.0.2..v2.1.0) - 2026-07-22
 
-### Fixed
+### Added
 
-- 所有标题启用"与下段同页"（keepNext），防止标题孤悬页尾
+- 移植上游 v1.24.2 有价值改动，配置改动即时生效 - ([07b1934](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/07b193439b4a4dfb07d7c89d9e383c1528ea5dd3))
 
 ### Changed
 
-- 项目显示名称改为 Markdown Gongwen 公文，方便英文搜索
+- 清理技术债，插件包从 9.4 MB 降到 2.4 MB - ([ff64438](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ff64438227f5b56a7322a66472688945244aa25e))
+- 重写商店描述，清偿文档债 - ([7cf1fa8](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/7cf1fa8a99d83929a29a98bce5ed9ddff4d81254))
+
+### Fixed
+
+- **(export)** 引用块改楷体正文、列表保持首行缩进、修复导出通知与取消 - ([491d28d](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/491d28df158ac2f55d5dda39673fdf639064a44d))
+- **(mermaid)** 渲染视图改懒初始化，中文化占位说明 - ([b06884a](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/b06884aae09e472e033de1a9f713a3795e2931de))
+
+## [2.0.2](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.0.1..v2.0.2) - 2026-04-10
+
+### Changed
+
+- 完善发布教程和经验文档，同步本次发布全流程踩坑记录 - ([0162666](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/0162666ec783bd33985073ed39f6e30fbe0ced8d))
+
+### Fixed
+
+- **(export)** 标题启用"与下段同页"，改名 Markdown Gongwen 公文 - ([31fe29c](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/31fe29c326de48636d6bfcf6d8f32314e8cbd01b))
 
 ## [2.0.1](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.0.0..v2.0.1) - 2026-04-04
 
@@ -59,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 思源宋体优先级调至字体栈首位，确保已安装时优先使用 - ([1c38f4b](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/1c38f4b89a23f78f1ba25471ac33ce5ae4258131))
 
-## [1.0.0] - 2026-04-03
+## [1.0.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.3.1..v1.0.0) - 2026-04-03
 
 ### Added
 
@@ -105,7 +121,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **(assets)** update extension icon - ([35ed512](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/35ed512426b093562fdb4d4965c539ec2382ca88))
 - **(build)** remove Makefile and streamline build/release with npm scripts - ([48fafba](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/48fafba43618071f9a63fb8d0f6b19a448b9302c))
 - **(bundle)** exclude TypeScript declaration files from package - ([ca92858](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ca928583a63988c42818d9423aa2ccc392efa1bd))
-- **(ci)** add clarifying comments for cd job conditions - ([fe8733e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/fe8733e427c8e18c8e3ae4af784171a21ed44850))
 - **(ci)** split CD jobs into separate vsce and ovsx jobs - ([20da28a](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/20da28af749f0628e3506248cbabeb33ad36939a))
 - **(ci)** trigger CI build - ([086a62a](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/086a62ad7b4677681fd67be2b1dab439be788b91))
 - **(ci)** update CI workflow and add release job - ([5c87d00](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/5c87d00a1da8ab4d6bf4f70acb261a26273fb714))
@@ -140,7 +155,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **(markdown)** add global toggle for default decorator rendering behavior - ([21ceb7f](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/21ceb7f26459c37d7eb4b314810d17902adf710b))
 - **(mentions)** README, FAQ, and feature docs for mentions/refs - ([4c84ad6](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/4c84ad628ae3baf734ef4567574231e27bde656c))
 - **(mermaid)** implement Phase 1 performance improvements - ([df25b4a](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/df25b4af5252c47db7d414fce84c5e42e72d4c3c))
-- **(parser)** implement phase 1 optimizations - ([4278842](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/4278842c8357013dfd7e7693c299ce9765624124))
 - **(parser)** implement lazy loading for emoji map and improve test coverage - ([559d177](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/559d177cd55dacb28b71e37026eb1742031002b9))
 - **(position-mapping)** extract shared position mapping utility - ([5fd162d](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/5fd162dd99bd6f7692f51c869e95a040ae581b61))
 - **(readme)** add video demos section and update demo gif - ([2d4cdb5](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/2d4cdb511e81defd1af6e70ec03df39f160dcbae))
@@ -157,14 +171,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **(speckit)** add constitution, product spec, implementation plan, and tasks - ([ba2429e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ba2429e77f5eabbed1b0d7e33b9352a3e3c3f057))
 - **(specs)** add 004-code-block-math-environments spec and design artifacts - ([9808207](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9808207ec4ae4a6de4426ab819c7a8a80abdcdfb))
 - **(test)** update test report paths to use dist directory - ([fb07dec](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/fb07dec44a23570daa3b3ae7c407343b8c904278))
-- improve README structure and add @docs agent - ([a905b59](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/a905b597345ad1e1edba9e1b13d6cb7aee404987))
-- remove Open VSX publishing from deploy script - ([0992e55](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/0992e55c1a88bb0575a2e1ca1778276f8ec15554))
-- update version and readme.md with example videos/images - ([7bc34be](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/7bc34be463b732e099980d15a0f3de4cce1413e6))
-- bump version to 1.1.3 - ([03d35ac](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/03d35acbfe550c38d954816079c0d5f988b4da40))
-- add MP4 video format and bump version to 1.1.4 - ([709ab2d](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/709ab2dee25eb1ff63df601ca37a9c547ed08d7b))
-- replace video files with optimized GIF - ([ff94da1](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ff94da177b5c4a9f4028f59602ee9278b738b354))
-- bump version to 1.1.5 - ([1c08c2b](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/1c08c2b443ad4f879c0e73c082dfa5a482a19645))
-- implement high-impact performance optimizations - ([9396d9e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9396d9e6a9a25ba8ccd449982994de68681612d7))
 - add comprehensive CONTRIBUTING.md guide - ([723b5a7](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/723b5a78d93c9dfcc174d069ecebbfe1f1339270))
 - bump version to 1.3.2 - ([43f55f5](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/43f55f534e844e03435a891c55b68af52b424c6a))
 - bump version to 1.3.5 - ([4c1042b](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/4c1042b87934fa5c82f541df9827653854ab601f))
@@ -242,9 +248,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **(build)** bundle runtime deps for packaged extension - ([9365306](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9365306eff07e061818a20867e959cfd948b2aa5))
 - **(build)** exclude sourcemaps and dev config from extension package - ([9199798](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9199798a8501e42481ba7526da3d0d16463b6f2d))
-- **(ci)** remove Open VSX publishing from deploy workflow - ([7c6d04e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/7c6d04e8cef41b7f4953ddcf739c2676a704e4ae))
 - **(ci)** use npx vsce instead of global vsce command - ([280baed](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/280baed95c812611fce97f0ae3dd05c471a7a34d))
 - **(ci)** downgrade VS Code engines and fix Jest test script - ([317bd24](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/317bd240471651eb8359751cf5f3aead9bf08b34))
 - **(ci)** remove ci dependency from release jobs - ([ac663dd](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ac663dd2ee1f37d8e8a852c69261875f8838603c))
@@ -300,3 +304,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **(codeql)** upgrade to codeql-action v4 and document default-setup conflict - ([eec88f0](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/eec88f0565a007ce85fc6eaad18586f5353e6d2c))
 - update GitHub Actions to use latest checkout and setup-node versions - ([8ed97ad](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/8ed97ad12acd737e6804a286017faf9058d38fa6))
 - add npm-audit workflow for dependency vulnerability badge - ([01c8b4a](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/01c8b4a4b2bac6e827289d1f7a24f5b19619ea45))
+
+## [1.3.1](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.3.0..v1.3.1) - 2025-12-19
+
+### Fixed
+
+- **(build)** bundle runtime deps for packaged extension - ([9365306](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9365306eff07e061818a20867e959cfd948b2aa5))
+
+## [1.3.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.2.0..v1.3.0) - 2025-12-19
+
+### Changed
+
+- **(parser)** implement phase 1 optimizations - ([4278842](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/4278842c8357013dfd7e7693c299ce9765624124))
+
+## [1.2.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.1.5..v1.2.0) - 2025-12-19
+
+### Changed
+
+- implement high-impact performance optimizations - ([9396d9e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9396d9e6a9a25ba8ccd449982994de68681612d7))
+
+## [1.1.5](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.1.4..v1.1.5) - 2025-12-19
+
+### Changed
+
+- replace video files with optimized GIF - ([ff94da1](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ff94da177b5c4a9f4028f59602ee9278b738b354))
+- bump version to 1.1.5 - ([1c08c2b](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/1c08c2b443ad4f879c0e73c082dfa5a482a19645))
+
+## [1.1.4](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.1.3..v1.1.4) - 2025-12-19
+
+### Changed
+
+- add MP4 video format and bump version to 1.1.4 - ([709ab2d](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/709ab2dee25eb1ff63df601ca37a9c547ed08d7b))
+
+## [1.1.3](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v1.1.1..v1.1.3) - 2025-12-19
+
+### Changed
+
+- bump version to 1.1.3 - ([03d35ac](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/03d35acbfe550c38d954816079c0d5f988b4da40))
+
+### Fixed
+
+- **(ci)** remove Open VSX publishing from deploy workflow - ([7c6d04e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/7c6d04e8cef41b7f4953ddcf739c2676a704e4ae))
+
+## [1.1.1] - 2025-12-19
+
+### Changed
+
+- **(ci)** add clarifying comments for cd job conditions - ([fe8733e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/fe8733e427c8e18c8e3ae4af784171a21ed44850))
+- improve README structure and add @docs agent - ([a905b59](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/a905b597345ad1e1edba9e1b13d6cb7aee404987))
+- remove Open VSX publishing from deploy script - ([0992e55](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/0992e55c1a88bb0575a2e1ca1778276f8ec15554))
+- update version and readme.md with example videos/images - ([7bc34be](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/7bc34be463b732e099980d15a0f3de4cce1413e6))
