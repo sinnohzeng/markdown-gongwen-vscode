@@ -1,3 +1,5 @@
+import * as nodeFs from "fs";
+
 // Mock VS Code API for testing
 class MockRange {
   constructor(
@@ -237,6 +239,17 @@ export class WorkspaceEdit {
 }
 
 export const workspace = {
+  /** 最小 FileSystem 实现：委托 Node fs，覆盖单测中的本地读写场景 */
+  fs: {
+    stat: async (uri: { fsPath: string }) => {
+      const st = await nodeFs.promises.stat(uri.fsPath);
+      return { type: st.isFile() ? 1 : 2, size: st.size };
+    },
+    readFile: async (uri: { fsPath: string }) => nodeFs.promises.readFile(uri.fsPath),
+    writeFile: async (uri: { fsPath: string }, content: Uint8Array) => {
+      await nodeFs.promises.writeFile(uri.fsPath, content);
+    },
+  },
   onDidChangeTextDocument: () => ({ dispose: () => {} }),
   onDidChangeConfiguration: () => ({ dispose: () => {} }),
   onDidRenameFiles: () => ({ dispose: () => {} }),

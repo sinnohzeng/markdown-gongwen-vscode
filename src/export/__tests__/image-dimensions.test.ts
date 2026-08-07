@@ -34,8 +34,8 @@ function jpegBuffer(width: number, height: number): Buffer {
 
 function fakeIo(files: Record<string, Buffer>): ImageIo {
   return {
-    existsSync: (p: string) => p in files,
-    readFileSync: (p: string) => {
+    exists: (p: string) => p in files,
+    readFile: (p: string) => {
       if (!(p in files)) throw new Error(`ENOENT: ${p}`);
       return files[p];
     },
@@ -57,22 +57,22 @@ describe("readImageDimensions", () => {
 });
 
 describe("readImageBuffer / dimensionsForPath", () => {
-  it("文件不存在返回 undefined", () => {
+  it("文件不存在返回 undefined", async () => {
     const io = fakeIo({});
-    expect(readImageBuffer("/nope.png", io)).toBeUndefined();
-    expect(dimensionsForPath("/nope.png", io)).toBeUndefined();
+    expect(await readImageBuffer("/nope.png", io)).toBeUndefined();
+    expect(await dimensionsForPath("/nope.png", io)).toBeUndefined();
   });
 
-  it("尺寸正常读取", () => {
+  it("尺寸正常读取", async () => {
     const io = fakeIo({ "/a.png": pngBuffer(300, 200) });
-    const r = dimensionsForPath("/a.png", io);
+    const r = await dimensionsForPath("/a.png", io);
     expect(r).toMatchObject({ width: 300, height: 200 });
     expect(r?.buffer.length).toBe(24);
   });
 
-  it("无法解析尺寸时使用 IMAGE 回退值（超版心时等比缩放）", () => {
+  it("无法解析尺寸时使用 IMAGE 回退值（超版心时等比缩放）", async () => {
     const io = fakeIo({ "/b.bin": Buffer.alloc(64, 0x41) }); // 'A'×64，非 PNG/JPEG
-    const r = dimensionsForPath("/b.bin", io);
+    const r = await dimensionsForPath("/b.bin", io);
     const scale = Math.min(1, PRINT_AREA_WIDTH_EMU / (IMAGE.FALLBACK_WIDTH_PX * EMU_PER_PX));
     expect(r).toMatchObject({
       width: Math.round(IMAGE.FALLBACK_WIDTH_PX * scale),
@@ -80,21 +80,21 @@ describe("readImageBuffer / dimensionsForPath", () => {
     });
   });
 
-  it("超宽图片等比缩放到版心宽度", () => {
+  it("超宽图片等比缩放到版心宽度", async () => {
     const maxPx = Math.floor(PRINT_AREA_WIDTH_EMU / EMU_PER_PX);
     const io = fakeIo({ "/wide.png": pngBuffer(maxPx * 2, 1000) });
-    const r = dimensionsForPath("/wide.png", io);
+    const r = await dimensionsForPath("/wide.png", io);
     expect(r?.width).toBeLessThanOrEqual(maxPx + 1); // 四舍五入误差 ±1
     // 等比：高度按同比例缩放（1000 × scale ≈ 500，四舍五入误差 ±1）
     expect(r?.height).toBeGreaterThanOrEqual(499);
     expect(r?.height).toBeLessThanOrEqual(501);
   });
 
-  it("读取失败抛出原始错误（不吞）", () => {
+  it("读取失败抛出原始错误（不吞）", async () => {
     const io: ImageIo = {
-      existsSync: () => true,
-      readFileSync: () => { throw new Error("EACCES: permission denied"); },
+      exists: () => true,
+      readFile: () => { throw new Error("EACCES: permission denied"); },
     };
-    expect(() => readImageBuffer("/locked.png", io)).toThrow("EACCES");
+    await expect(readImageBuffer("/locked.png", io)).rejects.toThrow("EACCES");
   });
 });

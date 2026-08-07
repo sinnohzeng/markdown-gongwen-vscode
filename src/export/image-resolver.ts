@@ -6,9 +6,8 @@
  * 每张图片独立 try/catch，单张失败不中断整体导出，失败原因透明携带。
  */
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
-import { dimensionsForPath, type ResolvedImage } from "./image-dimensions";
+import { dimensionsForPath, type ImageIo, type ResolvedImage } from "./image-dimensions";
 
 export type { ResolvedImage } from "./image-dimensions";
 
@@ -17,10 +16,19 @@ export interface ImageWarning {
   reason: string;
 }
 
-/** Node fs 作为 ImageIo 注入纯模块 */
-const nodeIo = {
-  existsSync: (p: string) => fs.existsSync(p),
-  readFileSync: (p: string) => fs.readFileSync(p),
+/** 基于 vscode.workspace.fs 的 ImageIo 实现：Remote-SSH / WSL 等场景下
+ * 通过 VS Code 文件系统提供方读取，而不是 Node fs 直读本地磁盘
+ *（后者会把远程文件当"不存在"静默丢图）。 */
+const workspaceIo: ImageIo = {
+  exists: async (p: string) => {
+    try {
+      await vscode.workspace.fs.stat(vscode.Uri.file(p));
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  readFile: async (p: string) => Buffer.from(await vscode.workspace.fs.readFile(vscode.Uri.file(p))),
 };
 
 /**
@@ -63,7 +71,7 @@ export async function resolveImages(
         continue;
       }
 
-      const entry = dimensionsForPath(resolved, nodeIo);
+      const entry = await dimensionsForPath(resolved, workspaceIo);
       if (!entry) {
         warnings.push({ url: trimmed, reason: "not-found" });
         continue;

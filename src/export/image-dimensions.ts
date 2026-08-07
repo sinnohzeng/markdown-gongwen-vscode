@@ -6,10 +6,11 @@
  */
 import { PAGE, IMAGE } from "./constants";
 
-/** 参数化的文件 IO（生产环境注入 Node fs，测试注入 fake） */
+/** 参数化的文件 IO（生产环境注入 vscode.workspace.fs 实现，测试注入 fake）。
+ * 方法允许同步或异步返回，统一在消费端 await。 */
 export interface ImageIo {
-  existsSync(path: string): boolean;
-  readFileSync(path: string): Buffer;
+  exists(path: string): boolean | Promise<boolean>;
+  readFile(path: string): Buffer | Promise<Buffer>;
 }
 
 export interface ResolvedImage {
@@ -59,17 +60,17 @@ export function readImageDimensions(buffer: Buffer): [number, number] | undefine
 }
 
 /** 读取图片文件 buffer；文件不存在返回 undefined，读取失败抛原始错误（不吞） */
-export function readImageBuffer(path: string, io: ImageIo): Buffer | undefined {
-  if (!io.existsSync(path)) return undefined;
-  return io.readFileSync(path);
+export async function readImageBuffer(path: string, io: ImageIo): Promise<Buffer | undefined> {
+  if (!(await io.exists(path))) return undefined;
+  return io.readFile(path);
 }
 
 /**
  * 读取图片并解析尺寸：超宽时等比缩放到版心宽度 156mm，
  * 无法从文件头解析尺寸时使用 IMAGE 回退值。
  */
-export function dimensionsForPath(path: string, io: ImageIo): ResolvedImage | undefined {
-  const buffer = readImageBuffer(path, io);
+export async function dimensionsForPath(path: string, io: ImageIo): Promise<ResolvedImage | undefined> {
+  const buffer = await readImageBuffer(path, io);
   if (!buffer) return undefined;
 
   const dims = readImageDimensions(buffer);
