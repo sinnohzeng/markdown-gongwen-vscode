@@ -23,7 +23,34 @@ import {
   FIRST_LINE_INDENT_TWIP,
   CAPTION_SPACING_TWIP,
   XiaoBiaoSong, HeiTi, KaiTi, FangSong, SongTi, CaptionFont,
+  type FontSpec,
 } from "./constants";
+
+// ── 标题级别单一权威源 ──────────────────────────
+//
+// Markdown 标题层级（H1-H5）→ GB/T 9704 样式的唯一映射表。
+// 文档样式（createDocumentStyles）与转换层（ast-to-docx 的
+// HEADING_MAP）都从此表派生，防止双源漂移。
+
+export interface HeadingLevelSpec {
+  /** Word 内建样式 ID */
+  styleId: string;
+  font: FontSpec;
+  bold: boolean;
+}
+
+export const HEADING_LEVEL_SPEC: Record<number, HeadingLevelSpec> = {
+  /** 公文标题 — 方正小标宋 二号 */
+  1: { styleId: "Title",    font: XiaoBiaoSong, bold: false },
+  /** 一级标题 — 黑体 三号 */
+  2: { styleId: "Heading1", font: HeiTi,        bold: false },
+  /** 二级标题 — 楷体 三号 */
+  3: { styleId: "Heading2", font: KaiTi,        bold: false },
+  /** 三级标题 — 仿宋加粗 三号 */
+  4: { styleId: "Heading3", font: FangSong,     bold: true },
+  /** 四级标题 — 仿宋 三号（更深的 H6 回退到此） */
+  5: { styleId: "Heading4", font: FangSong,     bold: false },
+};
 
 // ── 文档默认样式 ────────────────────────────────
 
@@ -45,15 +72,23 @@ export function createDocumentStyles(): IStylesOptions {
     keepNext: true,
   };
 
-  // 四级标题（Markdown H5）及更深级别（H6 回退到此）：三号 FangSong 不加粗
-  const lowerHeadingStyle = {
-    run: {
-      font: FangSong,
-      size: FONT_SIZE_HALF_PT.HEADING,
-      color: "000000",
-    },
-    paragraph: headingParagraph,
-  };
+  // heading1-4 全部从 HEADING_LEVEL_SPEC 派生（key 为样式 ID 小写）
+  const headingStyles = Object.fromEntries(
+    Object.entries(HEADING_LEVEL_SPEC)
+      .filter(([, spec]) => spec.styleId !== "Title")
+      .map(([, spec]) => [
+        spec.styleId.toLowerCase(),
+        {
+          run: {
+            font: spec.font,
+            size: FONT_SIZE_HALF_PT.HEADING,
+            ...(spec.bold ? { bold: true } : {}),
+            color: "000000",
+          },
+          paragraph: headingParagraph,
+        },
+      ]),
+  );
 
   return {
     default: {
@@ -89,50 +124,8 @@ export function createDocumentStyles(): IStylesOptions {
           keepNext: true,
         },
       },
-      // ── 一级标题（Markdown H2）── HeiTi 三号
-      heading1: {
-        run: {
-          font: HeiTi,
-          size: FONT_SIZE_HALF_PT.HEADING,
-          color: "000000",
-        },
-        paragraph: headingParagraph,
-      },
-      // ── 二级标题（Markdown H3）── KaiTi 三号
-      heading2: {
-        run: {
-          font: KaiTi,
-          size: FONT_SIZE_HALF_PT.HEADING,
-          color: "000000",
-        },
-        paragraph: headingParagraph,
-      },
-      // ── 三级标题（Markdown H4）── FangSong加粗 三号
-      heading3: {
-        run: {
-          font: FangSong,
-          size: FONT_SIZE_HALF_PT.HEADING,
-          bold: true,
-          color: "000000",
-        },
-        paragraph: headingParagraph,
-      },
-      // ── 四级标题（Markdown H5，更深的 H6 回退到此）── FangSong 三号
-      heading4: lowerHeadingStyle,
+      ...headingStyles,
     },
-    // ── "强调"字符样式 ── KaiTi + Times New Roman 三号，不加粗
-    characterStyles: [
-      {
-        id: "Strong",
-        name: "Strong",
-        run: {
-          font: KaiTi,  // eastAsia: KaiTi, ascii: Times New Roman
-          size: FONT_SIZE_HALF_PT.HEADING,
-          bold: false,
-          color: "000000",
-        },
-      },
-    ],
   };
 }
 

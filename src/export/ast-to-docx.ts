@@ -23,7 +23,7 @@ import {
 import type { ResolvedImage } from "./image-dimensions";
 import {
   FONT_SIZE_HALF_PT,
-  XiaoBiaoSong, HeiTi, KaiTi, FangSong, CodeFont,
+  HeiTi, KaiTi, FangSong, CodeFont,
   FIRST_LINE_INDENT_TWIP,
   LINE_SPACING_TWIP,
   CODE_LINE_SPACING_TWIP,
@@ -31,7 +31,7 @@ import {
   TABLE as TABLE_CONST,
   type FontSpec,
 } from "./constants";
-import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph } from "./gbt9704-styles";
+import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph, HEADING_LEVEL_SPEC, type HeadingLevelSpec } from "./gbt9704-styles";
 import { buildCaptionText } from "./caption";
 
 // ── 类型 ────────────────────────────────────────
@@ -45,22 +45,18 @@ type DocxChild = Paragraph | Table;
 //   Markdown H4 → Heading3（三级标题 仿宋加粗）
 //   Markdown H5 → Heading4（四级标题 仿宋）
 
-interface HeadingStyle {
-  styleId: string;
-  font: FontSpec;
-  bold: boolean;
+interface HeadingStyle extends HeadingLevelSpec {
   size: number;
 }
 
 // 标题不设首行缩进——公文中标题编号（一、/（一）/1.）是文字内容的一部分，
 // 缩进由 Markdown 文本本身的空格控制，不由 Word 段落样式控制。
-const HEADING_MAP: Record<number, HeadingStyle> = {
-  1: { styleId: "Title",    font: XiaoBiaoSong,      bold: false, size: FONT_SIZE_HALF_PT.TITLE },
-  2: { styleId: "Heading1", font: HeiTi, bold: false, size: FONT_SIZE_HALF_PT.HEADING },
-  3: { styleId: "Heading2", font: KaiTi, bold: false, size: FONT_SIZE_HALF_PT.HEADING },
-  4: { styleId: "Heading3", font: FangSong,        bold: true,  size: FONT_SIZE_HALF_PT.HEADING },
-  5: { styleId: "Heading4", font: FangSong,        bold: false, size: FONT_SIZE_HALF_PT.HEADING },
-};
+const HEADING_MAP: Record<number, HeadingStyle> = Object.fromEntries(
+  Object.entries(HEADING_LEVEL_SPEC).map(([level, spec]) => [
+    Number(level),
+    { ...spec, size: spec.styleId === "Title" ? FONT_SIZE_HALF_PT.TITLE : FONT_SIZE_HALF_PT.HEADING },
+  ]),
+);
 
 // ── 公开入口 ────────────────────────────────────
 
@@ -269,6 +265,13 @@ function plainTextOf(nodes: PhrasingContent[]): string {
 
 // ── 图片 ────────────────────────────────────────
 
+/** 未嵌入图片引用的公共占位文案与样式（块级与内联共用，防文案漂移） */
+function imagePlaceholderRun(url: string): TextRun {
+  const isRemote = url.startsWith("http://") || url.startsWith("https://");
+  const text = isRemote ? `[远程图片: ${url}]` : `[图片未找到: ${url}]`;
+  return new TextRun({ text, color: "000000", italics: true, font: FangSong, size: FONT_SIZE_HALF_PT.BODY });
+}
+
 function convertImageParagraph(
   node: Image,
   images: Map<string, ResolvedImage>,
@@ -277,17 +280,10 @@ function convertImageParagraph(
   const resolved = images.get(node.url);
 
   if (!resolved) {
-    // 占位文字
-    const isRemote = node.url.startsWith("http://") || node.url.startsWith("https://");
-    const text = isRemote
-      ? `[远程图片: ${node.url}]`
-      : `[图片未找到: ${node.url}]`;
-    const color = "000000";
-
     return new Paragraph({
       alignment: AlignmentType.CENTER,
       keepNext: keepNext || undefined,
-      children: [new TextRun({ text, color, italics: true, font: FangSong, size: FONT_SIZE_HALF_PT.BODY })],
+      children: [imagePlaceholderRun(node.url)],
     });
   }
 
@@ -304,7 +300,7 @@ function convertImageParagraph(
   });
 }
 
-// ── 表格（三线表）───────────────────────────────
+// ── 表格（全框线）───────────────────────────────
 
 function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table {
   const rows = node.children as MdTableRow[];
@@ -454,13 +450,13 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
 
   // Mermaid 代码块：灰色提示
   if (lang.toLowerCase() === "mermaid") {
-    fidelitySink?.push(`Mermaid 图表${where}：以占位文字呈现`);
+    fidelitySink?.push(`Mermaid 图表${where}：以占位文字呈现，源码附后`);
     return [
       new Paragraph({
         shading: { type: ShadingType.CLEAR, fill: "F0F0F0" },
         children: [
           new TextRun({
-            text: "[图表请在 VS Code 中预览]",
+            text: "[图表：Mermaid 图表未随文档导出，请见源 Markdown]",
             color: "000000",
             italics: true,
             font: FangSong,
@@ -468,6 +464,21 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
           }),
         ],
       }),
+      // 附上图表源码，便于收件人对照或回源文档粘贴
+      ...node.value.split("\n").map(
+        (line) =>
+          new Paragraph({
+            shading: { type: ShadingType.CLEAR, fill: "F5F5F5" },
+            spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
+            children: [
+              new TextRun({
+                text: line || " ",
+                font: CodeFont,
+                size: FONT_SIZE_HALF_PT.CODE,
+              }),
+            ],
+          }),
+      ),
     ];
   }
 
@@ -609,16 +620,7 @@ function convertInlineNodes(
               }),
             );
           } else {
-            const isRemote = imgNode.url.startsWith("http");
-            result.push(
-              new TextRun({
-                text: isRemote ? `[远程图片]` : `[图片]`,
-                color: "000000",
-                italics: true,
-                font: FangSong,
-                size: ctx.size ?? FONT_SIZE_HALF_PT.BODY,
-              }),
-            );
+            result.push(imagePlaceholderRun(imgNode.url));
           }
           break;
         }

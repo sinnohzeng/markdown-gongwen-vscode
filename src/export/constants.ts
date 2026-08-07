@@ -117,9 +117,7 @@ export const CodeFont: FontSpec = { eastAsia: "SimSun", ascii: "Consolas", hAnsi
 // ── 表格样式 ────────────────────────────────────
 
 export const TABLE = {
-  /** 顶/底边框粗细（1/8 pt 为单位，1.5pt = 12） */
-  OUTER_BORDER_SIZE: 12,
-  /** 内部水平线（0.5pt = 4） */
+  /** 边框粗细（0.5pt = 4） */
   INNER_BORDER_SIZE: 4,
   BORDER_COLOR: "000000",
 } as const;

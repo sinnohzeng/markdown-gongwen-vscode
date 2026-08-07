@@ -67,19 +67,21 @@ function getProcessor(): { parse: (text: string) => Root } {
 // ── 提取 AST 中所有图片 URL ─────────────────────
 
 function collectImageUrls(node: Content | Root): string[] {
-  const urls: string[] = [];
+  const urls = new Set<string>();
 
-  if (node.type === "image") {
-    urls.push((node as Image).url);
-  }
-
-  if ("children" in node && Array.isArray(node.children)) {
-    for (const child of node.children as Content[]) {
-      urls.push(...collectImageUrls(child));
+  const walk = (n: Content | Root): void => {
+    if (n.type === "image") {
+      urls.add((n as Image).url);
     }
-  }
+    if ("children" in n && Array.isArray(n.children)) {
+      for (const child of n.children as Content[]) {
+        walk(child);
+      }
+    }
+  };
 
-  return urls;
+  walk(node);
+  return [...urls]; // 去重：同一图片被引用多次只读取一次
 }
 
 // ── 导出命令（带保存对话框）─────────────────────
@@ -96,6 +98,12 @@ export function createExportDocxCommand(context: vscode.ExtensionContext) {
     const langId = editor.document.languageId;
     if (!["markdown", "md", "mdx", "skill", "markdoc", "mdc", "juliamarkdown", "rmarkdown"].includes(langId)) {
       vscode.window.showWarningMessage("请在 Markdown 文件中使用此命令。");
+      return;
+    }
+
+    // Untitled 守卫：磁盘上没有文件，图片相对路径无法解析
+    if (editor.document.isUntitled) {
+      vscode.window.showWarningMessage("未命名文档无法导出，请先保存文件再导出。");
       return;
     }
 
@@ -143,6 +151,12 @@ export function createExportDocxQuickCommand(context: vscode.ExtensionContext) {
     const langId = editor.document.languageId;
     if (!["markdown", "md", "mdx", "skill", "markdoc", "mdc", "juliamarkdown", "rmarkdown"].includes(langId)) {
       vscode.window.showWarningMessage("请在 Markdown 文件中使用此命令。");
+      return;
+    }
+
+    // Untitled 守卫：磁盘上没有文件，无法确定输出路径与图片相对路径
+    if (editor.document.isUntitled) {
+      vscode.window.showWarningMessage("未命名文档无法导出，请先保存文件再导出。");
       return;
     }
 
