@@ -21,7 +21,8 @@ import {
   FONT_SIZE_HALF_PT,
   LINE_SPACING_TWIP,
   FIRST_LINE_INDENT_TWIP,
-  XiaoBiaoSong, HeiTi, KaiTi, FangSong, SongTi,
+  CAPTION_SPACING_TWIP,
+  XiaoBiaoSong, HeiTi, KaiTi, FangSong, SongTi, CaptionFont,
 } from "./constants";
 
 // ── 文档默认样式 ────────────────────────────────
@@ -133,6 +134,33 @@ export function createDocumentStyles(): IStylesOptions {
       },
     ],
   };
+}
+
+// ── 图表题注段 ──────────────────────────────────
+//
+// GB/T 7713 族：表题在表上、图题在图下，均与图表同页不拆分、
+// 居中、黑体小四（数字/字母 Times New Roman），上下约半行距。
+//
+// 同页控制的等价实现：docx 库的段落属性只暴露 keepNext，不暴露
+// keepWithPrevious。"题注与前一段（图）同页"与"前一段与题注同页"
+// 语义等价，故表题在题注段上设 keepNext、图题在图片段上设 keepNext。
+
+/** 题注段通用属性：居中、黑体小四、上下各约半行距，无首行缩进。
+ * keepNext 用于表题（与下方表格同页）。 */
+export function createCaptionParagraph(text: string, keepNext = false): Paragraph {
+  return new Paragraph({
+    alignment: AlignmentType.CENTER,
+    keepNext: keepNext || undefined,
+    spacing: { before: CAPTION_SPACING_TWIP, after: CAPTION_SPACING_TWIP },
+    children: [
+      new TextRun({
+        text,
+        font: CaptionFont,
+        size: FONT_SIZE_HALF_PT.CAPTION,
+        color: "000000",
+      }),
+    ],
+  });
 }
 
 // ── 页面布局（Section Properties）───────────────

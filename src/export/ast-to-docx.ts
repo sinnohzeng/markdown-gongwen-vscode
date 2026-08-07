@@ -29,7 +29,7 @@ import {
   TABLE as TABLE_CONST,
   type FontSpec,
 } from "./constants";
-import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter } from "./gbt9704-styles";
+import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph } from "./gbt9704-styles";
 
 // ── 类型 ────────────────────────────────────────
 
@@ -117,7 +117,8 @@ function convertNodes(
 ): DocxChild[] {
   const result: DocxChild[] = [];
 
-  for (const node of nodes) {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
     try {
       // 跳过 frontmatter
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- remark-frontmatter 注入的 "toml" 节点不在标准 mdast 类型中
@@ -128,7 +129,7 @@ function convertNodes(
           result.push(convertHeading(node as Heading, images));
           break;
         case "paragraph":
-          result.push(convertParagraph(node as MdParagraph, images, ctx));
+          result.push(...convertParagraph(node as MdParagraph, images, ctx, nodes[i + 1]));
           break;
         case "table":
           result.push(convertTable(node as MdTable, images));
@@ -201,30 +202,88 @@ function convertParagraph(
   node: MdParagraph,
   images: Map<string, ResolvedImage>,
   ctx: RunContext,
-): Paragraph {
-  // 如果段落只包含一张图片，单独处理
+  nextNode?: Content,
+): DocxChild[] {
+  // 表题：紧邻表格上方的段落匹配"表N 标题"时，渲染为表上居中题注段，
+  // 不再作为普通正文输出（GB/T 7713.1-2006、CY/T 170-2019 4.2.1.2）
+  if (nextNode?.type === "table") {
+    const caption = buildCaptionText(plainTextOf(node.children as PhrasingContent[]), "表");
+    if (caption) {
+      return [createCaptionParagraph(caption, true)];
+    }
+  }
+
+  // 如果段落只包含一张图片，单独处理；alt 匹配"图N"时图下追加图题
   if (node.children.length === 1 && node.children[0].type === "image") {
-    return convertImageParagraph(node.children[0] as Image, images);
+    const image = node.children[0] as Image;
+    const caption = buildCaptionText(image.alt ?? "", "图");
+    if (caption) {
+      // 图题在图下方（GB/T 7713.2-2022 5.4.3）。docx 库不暴露
+      // keepWithPrevious，等价地在图片段上设 keepNext，保证图题与图同页
+      return [convertImageParagraph(image, images, true), createCaptionParagraph(caption)];
+    }
+    return [convertImageParagraph(image, images)];
   }
 
   const runs = convertInlineNodes(node.children as PhrasingContent[], images, ctx);
 
-  return new Paragraph({
-    alignment: AlignmentType.JUSTIFIED,
-    indent: { firstLine: FIRST_LINE_INDENT_TWIP },
-    spacing: {
-      line: LINE_SPACING_TWIP,
-      lineRule: LineRuleType.EXACT,
-      before: 0,
-      after: 0,
-    },
-    children: runs,
-  });
+  return [
+    new Paragraph({
+      alignment: AlignmentType.JUSTIFIED,
+      indent: { firstLine: FIRST_LINE_INDENT_TWIP },
+      spacing: {
+        line: LINE_SPACING_TWIP,
+        lineRule: LineRuleType.EXACT,
+        before: 0,
+        after: 0,
+      },
+      children: runs,
+    }),
+  ];
+}
+
+// ── 图表题注 ────────────────────────────────────
+//
+// GB/T 7713.2-2022 5.2.4/5.4.3：编号大流水"图1""表1"，编号与题注文字
+// 之间空 1 个汉字（全角空格），题注末尾不加标点。
+
+const CAPTION_NUMBER_PATTERN: Record<"图" | "表", RegExp> = {
+  图: /^图\s*(\d+)([\s\S]*)$/,
+  表: /^表\s*(\d+)([\s\S]*)$/,
+};
+
+/** 提取内联节点的纯文本拼接（表题匹配用） */
+function plainTextOf(nodes: PhrasingContent[]): string {
+  let out = "";
+  for (const n of nodes) {
+    if ("value" in n && typeof (n as { value: unknown }).value === "string") {
+      out += (n as { value: string }).value;
+    } else if ("children" in n && Array.isArray((n as { children: PhrasingContent[] }).children)) {
+      out += plainTextOf((n as { children: PhrasingContent[] }).children);
+    }
+  }
+  return out;
+}
+
+/**
+ * 题注行匹配"图N/表N"时返回渲染后的题注文字，否则返回 null。
+ * 编号与题注间统一为 1 个汉字空；末尾不追加标点。
+ */
+function buildCaptionText(raw: string, kind: "图" | "表"): string | null {
+  const m = CAPTION_NUMBER_PATTERN[kind].exec(raw.trim());
+  if (!m) return null;
+  const number = `${kind}${m[1]}`;
+  const title = m[2].trim();
+  return title ? `${number}\u3000${title}` : number;
 }
 
 // ── 图片 ────────────────────────────────────────
 
-function convertImageParagraph(node: Image, images: Map<string, ResolvedImage>): Paragraph {
+function convertImageParagraph(
+  node: Image,
+  images: Map<string, ResolvedImage>,
+  keepNext = false,
+): Paragraph {
   const resolved = images.get(node.url);
 
   if (!resolved) {
@@ -237,12 +296,14 @@ function convertImageParagraph(node: Image, images: Map<string, ResolvedImage>):
 
     return new Paragraph({
       alignment: AlignmentType.CENTER,
+      keepNext: keepNext || undefined,
       children: [new TextRun({ text, color, italics: true, font: FangSong, size: FONT_SIZE_HALF_PT.BODY })],
     });
   }
 
   return new Paragraph({
     alignment: AlignmentType.CENTER,
+    keepNext: keepNext || undefined,
     children: [
       new ImageRun({
         data: resolved.buffer,

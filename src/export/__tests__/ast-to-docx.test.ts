@@ -7,7 +7,8 @@
 import JSZip from "jszip";
 import type { Root, Content } from "mdast";
 import { convertToDocx, packToBuffer } from "../ast-to-docx";
-import { FIRST_LINE_INDENT_TWIP } from "../constants";
+import { CAPTION_SPACING_TWIP, FIRST_LINE_INDENT_TWIP } from "../constants";
+import type { ResolvedImage } from "../image-resolver";
 
 // ── 工具 ────────────────────────────────────────
 
@@ -23,8 +24,11 @@ function paragraph(...children: Content[]): Content {
   return { type: "paragraph", children } as unknown as Content;
 }
 
-async function toDocumentXml(ast: Root): Promise<string> {
-  const doc = convertToDocx(ast, new Map());
+async function toDocumentXml(
+  ast: Root,
+  images: Map<string, ResolvedImage> = new Map(),
+): Promise<string> {
+  const doc = convertToDocx(ast, images);
   const buffer = await packToBuffer(doc);
   const zip = await JSZip.loadAsync(buffer);
   const file = zip.file("word/document.xml");
@@ -260,5 +264,161 @@ describe("既有导出行为回归", () => {
   it("空文档兜底生成一个空段落", async () => {
     const xml = await toDocumentXml(root());
     expect(xml).toContain("<w:p");
+  });
+});
+
+// ── 图表题注（GB/T 7713 族）─────────────────────
+
+function imageNode(url: string, alt: string): Content {
+  return { type: "image", url, alt, title: null } as unknown as Content;
+}
+
+function tableNode(): Content {
+  return {
+    type: "table",
+    children: [
+      {
+        type: "tableRow",
+        children: [
+          { type: "tableCell", children: [text("项目")] },
+          { type: "tableCell", children: [text("金额")] },
+        ],
+      },
+    ],
+  } as unknown as Content;
+}
+
+/** 统计子串出现次数 */
+function countOf(xml: string, needle: string): number {
+  return xml.split(needle).length - 1;
+}
+
+describe("图题（独占段图片 alt 匹配图N）", () => {
+  const figAst = root(paragraph(imageNode("./arch.png", "图1 总体架构")));
+
+  it("图题段位于图片段之后", async () => {
+    const xml = await toDocumentXml(figAst);
+    const imgIdx = xml.indexOf("图片未找到: ./arch.png");
+    const capIdx = xml.indexOf("图1\u3000总体架构");
+    expect(imgIdx).toBeGreaterThan(-1);
+    expect(capIdx).toBeGreaterThan(imgIdx);
+  });
+
+  it("已解析图片同样追加图题（图段含 w:drawing）", async () => {
+    const images = new Map<string, ResolvedImage>([
+      ["./arch.png", { buffer: Buffer.alloc(8), width: 10, height: 10 }],
+    ]);
+    const xml = await toDocumentXml(figAst, images);
+    expect(xml).toContain("<w:drawing>");
+    expect(xml.indexOf("<w:drawing>")).toBeLessThan(xml.indexOf("图1\u3000总体架构"));
+  });
+
+  it("图题居中", async () => {
+    const xml = await toDocumentXml(figAst);
+    const p = paragraphContaining(xml, "图1\u3000总体架构");
+    expect(p).toContain('<w:jc w:val="center"/>');
+  });
+
+  it("图题黑体 + 数字 Times New Roman + 小四 12pt", async () => {
+    const xml = await toDocumentXml(figAst);
+    const p = paragraphContaining(xml, "图1\u3000总体架构");
+    expect(p).toContain('w:eastAsia="SimHei"');
+    expect(p).toContain('w:ascii="Times New Roman"');
+    expect(p).toContain('<w:sz w:val="24"/>');
+  });
+
+  it("图片段设 keepNext，保证图题与图同页", async () => {
+    const xml = await toDocumentXml(figAst);
+    const p = paragraphContaining(xml, "图片未找到: ./arch.png");
+    expect(p).toContain("<w:keepNext/>");
+  });
+
+  it("编号与题注间为 1 个汉字空，末尾无标点", async () => {
+    const xml = await toDocumentXml(figAst);
+    expect(xml).toContain("图1\u3000总体架构");
+    expect(xml).not.toContain("图1 总体架构"); // 半角空格被归一为全角
+  });
+
+  it("题注段上下各约半行距，无首行缩进", async () => {
+    const xml = await toDocumentXml(figAst);
+    const p = paragraphContaining(xml, "图1\u3000总体架构");
+    expect(p).toContain(`w:before="${CAPTION_SPACING_TWIP}"`);
+    expect(p).toContain(`w:after="${CAPTION_SPACING_TWIP}"`);
+    expect(p).not.toMatch(/w:firstLine=/);
+  });
+
+  it("alt 不匹配图N 的图片不产题注（装饰图不受影响）", async () => {
+    const ast = root(paragraph(imageNode("./deco.png", "装饰花纹")));
+    const xml = await toDocumentXml(ast);
+    expect(xml).toContain("图片未找到: ./deco.png");
+    expect(xml).not.toContain("SimHei");
+    expect(xml).not.toMatch(/<w:keepNext\/>/);
+    // 只有一个段落（占位文字），无题注段
+    expect((xml.match(/<w:p\b/g) ?? []).length).toBe(1);
+  });
+
+  it("行内混排图片不产题注", async () => {
+    const ast = root(paragraph(imageNode("./arch.png", "图1 总体架构"), text("正文混排")));
+    const xml = await toDocumentXml(ast);
+    expect(xml).toContain("正文混排");
+    expect(xml).not.toContain("图1\u3000总体架构");
+  });
+});
+
+describe("表题（表格上方独立段匹配表N）", () => {
+  const tblAst = root(paragraph(text("表1 五年成本对照")), tableNode());
+
+  it("表题段位于表格之前", async () => {
+    const xml = await toDocumentXml(tblAst);
+    const capIdx = xml.indexOf("表1\u3000五年成本对照");
+    const tblIdx = xml.indexOf("<w:tbl>");
+    expect(capIdx).toBeGreaterThan(-1);
+    expect(tblIdx).toBeGreaterThan(-1);
+    expect(capIdx).toBeLessThan(tblIdx);
+  });
+
+  it("表题居中、黑体小四、数字 Times New Roman", async () => {
+    const xml = await toDocumentXml(tblAst);
+    const p = paragraphContaining(xml, "表1\u3000五年成本对照");
+    expect(p).toContain('<w:jc w:val="center"/>');
+    expect(p).toContain('w:eastAsia="SimHei"');
+    expect(p).toContain('w:ascii="Times New Roman"');
+    expect(p).toContain('<w:sz w:val="24"/>');
+  });
+
+  it("表题段 keepNext 与表同页", async () => {
+    const xml = await toDocumentXml(tblAst);
+    const p = paragraphContaining(xml, "表1\u3000五年成本对照");
+    expect(p).toContain("<w:keepNext/>");
+  });
+
+  it("编号与题注间为 1 个汉字空，末尾无标点", async () => {
+    const xml = await toDocumentXml(tblAst);
+    expect(xml).toContain("表1\u3000五年成本对照");
+  });
+
+  it("表题段不重复输出为普通正文", async () => {
+    const xml = await toDocumentXml(tblAst);
+    expect(countOf(xml, "表1\u3000五年成本对照")).toBe(1);
+    const p = paragraphContaining(xml, "表1\u3000五年成本对照");
+    expect(p).not.toMatch(/w:firstLine=/); // 无正文首行缩进
+    expect(p).not.toContain('w:eastAsia="FangSong"');
+  });
+
+  it("题注段上下各约半行距", async () => {
+    const xml = await toDocumentXml(tblAst);
+    const p = paragraphContaining(xml, "表1\u3000五年成本对照");
+    expect(p).toContain(`w:before="${CAPTION_SPACING_TWIP}"`);
+    expect(p).toContain(`w:after="${CAPTION_SPACING_TWIP}"`);
+  });
+
+  it("“表N”段后不跟表格时按普通正文输出", async () => {
+    const ast = root(paragraph(text("表1 五年成本对照")));
+    const xml = await toDocumentXml(ast);
+    const p = paragraphContaining(xml, "表1 五年成本对照");
+    expect(p).toContain('w:eastAsia="FangSong"');
+    expect(p).toContain(`w:firstLine="${FIRST_LINE_INDENT_TWIP}"`);
+    expect(p).not.toContain("<w:keepNext/>");
+    expect(xml).not.toContain("SimHei");
   });
 });

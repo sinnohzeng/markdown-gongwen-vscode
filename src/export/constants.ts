@@ -33,6 +33,8 @@ export const FONT_SIZE_PT = {
   PAGE_NUMBER: 14,
   /** 四号（表格单元格） */
   TABLE_CELL: 14,
+  /** 小四（图表题注，GB/T 7713.2 附录B：小于或等于正文、重于表内文字） */
+  CAPTION: 12,
 } as const;
 
 /** docx 库 `size` 字段使用半磅为单位 */
@@ -42,6 +44,7 @@ export const FONT_SIZE_HALF_PT = {
   BODY: (FONT_SIZE_PT.BODY * 2) as 32,
   PAGE_NUMBER: (FONT_SIZE_PT.PAGE_NUMBER * 2) as 28,
   TABLE_CELL: (FONT_SIZE_PT.TABLE_CELL * 2) as 28,
+  CAPTION: (FONT_SIZE_PT.CAPTION * 2) as 24,
 } as const;
 
 // ── 行距 & 段落 ─────────────────────────────────
@@ -52,6 +55,8 @@ export const LINE_SPACING_PT = 28;
 export const LINE_SPACING_TWIP = LINE_SPACING_PT * 20;
 /** 首行缩进 2 字符 = 2 × 16pt × 20 = 640 twip */
 export const FIRST_LINE_INDENT_TWIP = 2 * FONT_SIZE_PT.BODY * 20;
+/** 题注段上下间距约半行 = 560 / 2 = 280 twip */
+export const CAPTION_SPACING_TWIP = Math.round(LINE_SPACING_TWIP / 2);
 
 export const CHARS_PER_LINE = 28;
 export const LINES_PER_PAGE = 22;
@@ -82,6 +87,9 @@ export const KaiTi: FontSpec = { eastAsia: "KaiTi", ascii: "Arial", hAnsi: "Aria
 
 /** 仿宋 FangSong + Times New Roman — 正文、三/四级标题 */
 export const FangSong: FontSpec = { eastAsia: "FangSong", ascii: "Times New Roman", hAnsi: "Times New Roman" };
+
+/** 黑体 SimHei + Times New Roman — 图表题注（GB/T 7713.2：题注用黑体，数字/字母用 Times New Roman） */
+export const CaptionFont: FontSpec = { eastAsia: "SimHei", ascii: "Times New Roman", hAnsi: "Times New Roman" };
 
 /** 宋体 SimSun + Times New Roman — 页码 */
 export const SongTi: FontSpec = { eastAsia: "SimSun", ascii: "Times New Roman", hAnsi: "Times New Roman" };
