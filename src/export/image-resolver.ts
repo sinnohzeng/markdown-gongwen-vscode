@@ -7,7 +7,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { PAGE } from "./constants";
+import { PAGE, IMAGE } from "./constants";
 
 export interface ResolvedImage {
   buffer: Buffer;
@@ -101,8 +101,8 @@ export async function resolveImages(
 
       const buffer = fs.readFileSync(resolved);
       const dims = readImageDimensions(buffer);
-      let width = dims?.[0] ?? 600;
-      let height = dims?.[1] ?? 400;
+      let width = dims?.[0] ?? IMAGE.FALLBACK_WIDTH_PX;
+      let height = dims?.[1] ?? IMAGE.FALLBACK_HEIGHT_PX;
 
       // 等比缩放：宽度超过版心时缩小
       const widthEmu = width * 9525; // px → EMU (1 px = 9525 EMU at 96 DPI)
@@ -113,8 +113,9 @@ export async function resolveImages(
       }
 
       images.set(url, { buffer, width, height });
-    } catch {
-      warnings.push({ url: trimmed, reason: "read-error" });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      warnings.push({ url: trimmed, reason: `read-error: ${detail}` });
     }
   }
 

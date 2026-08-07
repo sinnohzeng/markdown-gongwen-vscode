@@ -37,6 +37,9 @@ export const FONT_SIZE_PT = {
   CAPTION: 12,
 } as const;
 
+/** 代码块使用五号（10pt），小于正文以示层级 */
+export const CODE_FONT_SIZE_PT = 10;
+
 /** docx 库 `size` 字段使用半磅为单位 */
 export const FONT_SIZE_HALF_PT = {
   TITLE: (FONT_SIZE_PT.TITLE * 2) as 44,
@@ -45,6 +48,7 @@ export const FONT_SIZE_HALF_PT = {
   PAGE_NUMBER: (FONT_SIZE_PT.PAGE_NUMBER * 2) as 28,
   TABLE_CELL: (FONT_SIZE_PT.TABLE_CELL * 2) as 28,
   CAPTION: (FONT_SIZE_PT.CAPTION * 2) as 24,
+  CODE: CODE_FONT_SIZE_PT * 2,
 } as const;
 
 // ── 行距 & 段落 ─────────────────────────────────
@@ -57,6 +61,19 @@ export const LINE_SPACING_TWIP = LINE_SPACING_PT * 20;
 export const FIRST_LINE_INDENT_TWIP = 2 * FONT_SIZE_PT.BODY * 20;
 /** 题注段上下间距约半行 = 560 / 2 = 280 twip */
 export const CAPTION_SPACING_TWIP = Math.round(LINE_SPACING_TWIP / 2);
+/** 代码块固定行距 15pt × 20 = 300 twip（代码行较密） */
+export const CODE_LINE_SPACING_TWIP = 300;
+/** 列表嵌套每层加深的首行缩进 = 1 字符 = 16pt × 20 = 320 twip */
+export const LIST_NEST_INDENT_TWIP = FONT_SIZE_PT.BODY * 20;
+
+// ── 图片 ─────────────────────────────────────────
+
+export const IMAGE = {
+  /** 无法从文件头解析尺寸时的回退宽度（px，96 DPI） */
+  FALLBACK_WIDTH_PX: 600,
+  /** 无法从文件头解析尺寸时的回退高度（px，96 DPI） */
+  FALLBACK_HEIGHT_PX: 400,
+} as const;
 
 export const CHARS_PER_LINE = 28;
 export const LINES_PER_PAGE = 22;

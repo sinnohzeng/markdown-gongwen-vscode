@@ -81,13 +81,25 @@
       "editor/title": [
         {
           "command": "gongwen.toggleDecorations",
-          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == skill || editorLangId == markdoc || editorLangId == mdc || editorLangId == juliamarkdown || editorLangId == rmarkdown",
+          "when": "editorLangId == 'markdown' || editorLangId == 'mdx' || editorLangId == 'skill' || editorLangId == 'markdoc' || editorLangId == 'mdc' || editorLangId == 'juliamarkdown' || editorLangId == 'rmarkdown'",
           "group": "navigation"
         },
         {
           "command": "gongwen.exportDocx",
-          "when": "editorLangId == 'markdown'",
+          "when": "editorLangId == 'markdown' || editorLangId == 'mdx' || editorLangId == 'skill' || editorLangId == 'markdoc' || editorLangId == 'mdc' || editorLangId == 'juliamarkdown' || editorLangId == 'rmarkdown'",
           "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "gongwen.exportDocx",
+          "when": "editorLangId == 'markdown' || editorLangId == 'mdx' || editorLangId == 'skill' || editorLangId == 'markdoc' || editorLangId == 'mdc' || editorLangId == 'juliamarkdown' || editorLangId == 'rmarkdown'",
+          "group": "gongwen@1"
+        },
+        {
+          "command": "gongwen.exportDocxQuick",
+          "when": "editorLangId == 'markdown' || editorLangId == 'mdx' || editorLangId == 'skill' || editorLangId == 'markdoc' || editorLangId == 'mdc' || editorLangId == 'juliamarkdown' || editorLangId == 'rmarkdown'",
+          "group": "gongwen@2"
         }
       ]
     },
@@ -116,7 +128,7 @@
         "markdownGongwen.defaultBehaviors.diffView.applyDecorations": {
           "type": "boolean",
           "default": false,
-          "description": "Apply decorators in diff view",
+          "description": "在差异（diff）视图中应用行内渲染",
           "markdownDescription": "在差异（diff）视图中应用行内渲染。默认关闭：评审改动时显示原始语法更清晰。"
         },
         "markdownGongwen.decorations.ghostFaintOpacity": {
@@ -124,7 +136,7 @@
           "default": 0.3,
           "minimum": 0,
           "maximum": 1,
-          "description": "Opacity for ghost faint decorations",
+          "description": "光标所在行语法标记的透明度",
           "markdownDescription": "光标所在行的语法标记透明度（0.0 完全透明 – 1.0 完全显示），默认 `0.3`。"
         },
         "markdownGongwen.decorations.frontmatterDelimiterOpacity": {
@@ -132,7 +144,7 @@
           "default": 0.3,
           "minimum": 0,
           "maximum": 1,
-          "description": "Opacity for frontmatter delimiters",
+          "description": "frontmatter 分隔线的透明度",
           "markdownDescription": "frontmatter 分隔线（`---`）的透明度（0.0 – 1.0），默认 `0.3`。"
         },
         "markdownGongwen.decorations.codeBlockLanguageOpacity": {
@@ -140,7 +152,7 @@
           "default": 0.3,
           "minimum": 0,
           "maximum": 1,
-          "description": "Opacity for code block language identifiers",
+          "description": "代码块语言标识的透明度",
           "markdownDescription": "代码块语言标识的透明度（0.0 – 1.0），默认 `0.3`。"
         },
         "markdownGongwen.links.showEmoji": {
@@ -152,19 +164,19 @@
         "markdownGongwen.links.singleClickOpen": {
           "type": "boolean",
           "default": false,
-          "description": "Open links and images with single click",
+          "description": "单击即可打开链接和图片",
           "markdownDescription": "单击即可打开链接和图片（无需 Ctrl+单击）。默认关闭：开启可能干扰文本选择。"
         },
         "markdownGongwen.emojis.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Render emoji shortcodes (e.g., :smile:)",
+          "description": "行内渲染 Emoji 短代码（如 :smile:）",
           "markdownDescription": "行内渲染 Emoji 短代码（如 `:smile:`）。关闭后短代码按纯文本显示。"
         },
         "markdownGongwen.math.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Render LaTeX math inline ($...$ and $$...$$)",
+          "description": "行内渲染 LaTeX 公式（$...$ 与 $$...$$）",
           "markdownDescription": "行内渲染 LaTeX 公式（`$...$` 与 `$$...$$`）。关闭后公式定界符按纯文本显示。"
         },
         "markdownGongwen.orderedLists.autoNumber": {
@@ -182,254 +194,254 @@
         "markdownGongwen.mentions.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable GitHub-style mentions and issue reference styling",
+          "description": "启用 GitHub 风格 @提及 与 #引用 的行内样式",
           "markdownDescription": "启用 GitHub 风格 @提及 与 #引用 的检测和行内样式（如 @username、@org/team、#123）。"
         },
         "markdownGongwen.mentions.linksEnabled": {
           "type": "boolean",
-          "description": "Override clickable mention and issue reference links",
+          "description": "覆盖 @提及 和 #引用 的可点击链接行为",
           "markdownDescription": "覆盖 @提及 和 #引用 的可点击链接行为：`true` 强制开启、`false` 强制关闭；留空（不设置）则跟随 git 远程自动检测。"
         },
         "markdownGongwen.colors.heading1": {
           "type": "string",
-          "description": "Hex color for level-1 headings",
+          "description": "一级标题颜色（十六进制）",
           "format": "color",
           "markdownDescription": "一级标题颜色（十六进制，如 `#e06c75`）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.heading2": {
           "type": "string",
-          "description": "Hex color for level-2 headings",
+          "description": "二级标题颜色（十六进制）",
           "format": "color",
           "markdownDescription": "二级标题颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.heading3": {
           "type": "string",
-          "description": "Hex color for level-3 headings",
+          "description": "三级标题颜色（十六进制）",
           "format": "color",
           "markdownDescription": "三级标题颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.heading4": {
           "type": "string",
-          "description": "Hex color for level-4 headings",
+          "description": "四级标题颜色（十六进制）",
           "format": "color",
           "markdownDescription": "四级标题颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.heading5": {
           "type": "string",
-          "description": "Hex color for level-5 headings",
+          "description": "五级标题颜色（十六进制）",
           "format": "color",
           "markdownDescription": "五级标题颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.heading6": {
           "type": "string",
-          "description": "Hex color for level-6 headings",
+          "description": "六级标题颜色（十六进制）",
           "format": "color",
           "markdownDescription": "六级标题颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.link": {
           "type": "string",
-          "description": "Hex color for link text",
+          "description": "链接文字颜色（十六进制）",
           "format": "color",
           "markdownDescription": "链接文字颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.listMarker": {
           "type": "string",
-          "description": "Hex color for list markers",
+          "description": "列表标记颜色（十六进制）",
           "format": "color",
           "markdownDescription": "列表标记颜色（无序与有序，十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.inlineCode": {
           "type": "string",
-          "description": "Hex color for inline code",
+          "description": "行内代码文字颜色（十六进制）",
           "format": "color",
           "markdownDescription": "行内代码文字颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.inlineCodeBackground": {
           "type": "string",
-          "description": "Hex color for inline code background",
+          "description": "行内代码背景色（十六进制）",
           "format": "color",
           "markdownDescription": "行内代码背景色（十六进制）。留空使用主题自适应默认值。"
         },
         "markdownGongwen.colors.emphasis": {
           "type": "string",
-          "description": "Hex color for emphasis (bold/italic)",
+          "description": "强调（粗体/斜体）颜色（十六进制）",
           "format": "color",
           "markdownDescription": "强调（粗体/斜体）颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.blockquote": {
           "type": "string",
-          "description": "Hex color for blockquote",
+          "description": "引用块颜色（十六进制）",
           "format": "color",
           "markdownDescription": "引用块标记与文字颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.image": {
           "type": "string",
-          "description": "Hex color for image link text",
+          "description": "图片链接文字颜色（十六进制）",
           "format": "color",
           "markdownDescription": "图片链接文字/占位符颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.horizontalRule": {
           "type": "string",
-          "description": "Hex color for horizontal rule line",
+          "description": "分割线颜色（十六进制）",
           "format": "color",
           "markdownDescription": "分割线颜色（十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.colors.checkbox": {
           "type": "string",
-          "description": "Hex color for checkbox (unchecked and checked)",
+          "description": "任务列表复选框颜色（十六进制）",
           "format": "color",
           "markdownDescription": "任务列表复选框颜色（未勾选与勾选，十六进制）。留空跟随当前编辑器主题。"
         },
         "markdownGongwen.fonts.heading1.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for level-1 headings",
+          "description": "一级标题的 CSS 字体族",
           "markdownDescription": "一级标题的 CSS 字体族（如 `Arial, SimHei, sans-serif`）。中英文混排时英文字体在前。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.heading1.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for level-1 headings",
+          "description": "一级标题的 CSS 字重",
           "markdownDescription": "一级标题的 CSS 字重（`normal`、`bold`、`100`–`900`）。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading1.fontSize": {
           "type": "string",
           "default": "",
-          "description": "CSS font-size for level-1 headings",
+          "description": "一级标题的 CSS 字号",
           "markdownDescription": "一级标题的 CSS 字号（如 `180%`、`22pt`、`1.4em`）。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading2.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for level-2 headings",
+          "description": "二级标题的 CSS 字体族",
           "markdownDescription": "二级标题的 CSS 字体族（如 `Arial, KaiTi, serif`）。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.heading2.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for level-2 headings",
+          "description": "二级标题的 CSS 字重",
           "markdownDescription": "二级标题的 CSS 字重。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading2.fontSize": {
           "type": "string",
           "default": "",
-          "description": "CSS font-size for level-2 headings",
+          "description": "二级标题的 CSS 字号",
           "markdownDescription": "二级标题的 CSS 字号。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading3.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for level-3 headings",
+          "description": "三级标题的 CSS 字体族",
           "markdownDescription": "三级标题的 CSS 字体族（如 `\"Times New Roman\", KaiTi, serif`）。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.heading3.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for level-3 headings",
+          "description": "三级标题的 CSS 字重",
           "markdownDescription": "三级标题的 CSS 字重。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading3.fontSize": {
           "type": "string",
           "default": "",
-          "description": "CSS font-size for level-3 headings",
+          "description": "三级标题的 CSS 字号",
           "markdownDescription": "三级标题的 CSS 字号。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading4.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for level-4 headings",
+          "description": "四级标题的 CSS 字体族",
           "markdownDescription": "四级标题的 CSS 字体族。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.heading4.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for level-4 headings",
+          "description": "四级标题的 CSS 字重",
           "markdownDescription": "四级标题的 CSS 字重。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading4.fontSize": {
           "type": "string",
           "default": "",
-          "description": "CSS font-size for level-4 headings",
+          "description": "四级标题的 CSS 字号",
           "markdownDescription": "四级标题的 CSS 字号。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading5.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for level-5 headings",
+          "description": "五级标题的 CSS 字体族",
           "markdownDescription": "五级标题的 CSS 字体族。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.heading5.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for level-5 headings",
+          "description": "五级标题的 CSS 字重",
           "markdownDescription": "五级标题的 CSS 字重。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading5.fontSize": {
           "type": "string",
           "default": "",
-          "description": "CSS font-size for level-5 headings",
+          "description": "五级标题的 CSS 字号",
           "markdownDescription": "五级标题的 CSS 字号。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading6.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for level-6 headings",
+          "description": "六级标题的 CSS 字体族",
           "markdownDescription": "六级标题的 CSS 字体族。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.heading6.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for level-6 headings",
+          "description": "六级标题的 CSS 字重",
           "markdownDescription": "六级标题的 CSS 字重。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading6.fontSize": {
           "type": "string",
           "default": "",
-          "description": "CSS font-size for level-6 headings",
+          "description": "六级标题的 CSS 字号",
           "markdownDescription": "六级标题的 CSS 字号。留空使用插件默认。"
         },
         "markdownGongwen.fonts.emphasis.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for bold/italic emphasis",
+          "description": "粗体/斜体强调的 CSS 字体族",
           "markdownDescription": "粗体/斜体强调的 CSS 字体族。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.emphasis.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight override for bold emphasis",
+          "description": "粗体强调的 CSS 字重覆盖",
           "markdownDescription": "粗体强调的 CSS 字重覆盖（如 `900` 表示特粗）。留空使用默认 `bold`。"
         },
         "markdownGongwen.fonts.body.fontFamily": {
           "type": "string",
           "default": "",
-          "description": "CSS font-family for body/paragraph text",
+          "description": "正文的 CSS 字体族",
           "markdownDescription": "正文的 CSS 字体族（如 `\"Times New Roman\", \"Source Han Serif SC\", serif`）。字体需系统已安装。留空使用编辑器默认。"
         },
         "markdownGongwen.fonts.body.fontWeight": {
           "type": "string",
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
-          "description": "CSS font-weight for body/paragraph text",
+          "description": "正文的 CSS 字重",
           "markdownDescription": "正文的 CSS 字重（如 `300` 表示细体）。留空使用默认。"
         },
         "markdownGongwen.fonts.body.fontSize": {
           "type": "string",
           "default": "",
-          "description": "正文字号 / CSS font-size for body text",
+          "description": "正文的 CSS 字号",
           "markdownDescription": "正文的 CSS 字号（如 `105%`、`16px`）。默认 `105%`——比编辑器默认略大，提升中文可读性。留空使用插件默认。"
         },
         "markdownGongwen.fonts.body.lineHeight": {
           "type": "string",
           "default": "",
-          "description": "正文行高 / CSS line-height for body text",
+          "description": "正文的 CSS 行高",
           "markdownDescription": "正文的 CSS 行高（如 `1.8`、`28px`），默认 `1.8`。**注意**：此项只影响行内文字垂直位置；真正的编辑器行距需在 VS Code 设置中改 `editor.lineHeight`（字号 150%+ 时建议 `2.2` 以上）。留空使用插件默认。"
         }
       }
@@ -449,8 +461,8 @@
     "clean": "rimraf dist",
     "copy:mermaid": "node scripts/copy-mermaid.js",
     "compile": "tsc --project tsconfig.build.json",
-    "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outfile=dist/extension.js --sourcemap",
-    "bundle:prod": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node18 --external:vscode --outfile=dist/extension.js",
+    "bundle": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node22 --external:vscode --outfile=dist/extension.js --sourcemap",
+    "bundle:prod": "esbuild src/extension.ts --bundle --platform=node --format=cjs --target=node22 --external:vscode --outfile=dist/extension.js",
     "package": "vsce package --out dist/extension.vsix",
     "build": "npm run copy:mermaid && npm run compile && npm run bundle:prod && npm run package",
     "build:dev": "npm run compile && npm run bundle && npm run package",

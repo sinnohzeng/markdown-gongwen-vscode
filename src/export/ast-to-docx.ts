@@ -26,6 +26,8 @@ import {
   XiaoBiaoSong, HeiTi, KaiTi, FangSong, CodeFont,
   FIRST_LINE_INDENT_TWIP,
   LINE_SPACING_TWIP,
+  CODE_LINE_SPACING_TWIP,
+  LIST_NEST_INDENT_TWIP,
   TABLE as TABLE_CONST,
   type FontSpec,
 } from "./constants";
@@ -64,12 +66,16 @@ const HEADING_MAP: Record<number, HeadingStyle> = {
 /**
  * 将 mdast AST 转换为 docx Document 对象。
  * 纯函数，无副作用。
+ *
+ * @param fidelitySink 可选收集器：被降级呈现（占位/源码文本）的内容会
+ *   以一行人类可读描述 push 进来，供导出完成后告知用户。
  */
 export function convertToDocx(
   ast: Root,
   resolvedImages: Map<string, ResolvedImage>,
+  fidelitySink?: string[],
 ): Document {
-  const children = convertNodes(ast.children, resolvedImages, {});
+  const children = convertNodes(ast.children, resolvedImages, {}, fidelitySink);
 
   // 空文档保护：至少一个空段落
   if (children.length === 0) {
@@ -114,15 +120,15 @@ function convertNodes(
   nodes: Content[],
   images: Map<string, ResolvedImage>,
   ctx: RunContext,
+  fidelitySink?: string[],
 ): DocxChild[] {
   const result: DocxChild[] = [];
 
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
     try {
-      // 跳过 frontmatter
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- remark-frontmatter 注入的 "toml" 节点不在标准 mdast 类型中
-      if (node.type === "yaml" || (node.type as any) === "toml") continue;
+      // 跳过 frontmatter（"toml" 节点由 remark-frontmatter 注入，不在标准 mdast 类型联合中）
+      if (node.type === "yaml" || (node as { type: string }).type === "toml") continue;
 
       switch (node.type) {
         case "heading":
@@ -141,7 +147,7 @@ function convertNodes(
           result.push(...convertBlockquote(node as Blockquote, images));
           break;
         case "code":
-          result.push(...convertCodeBlock(node as Code));
+          result.push(...convertCodeBlock(node as Code, fidelitySink));
           break;
         case "thematicBreak":
           result.push(convertThematicBreak());
@@ -159,8 +165,9 @@ function convertNodes(
           }
           break;
       }
-    } catch {
-      // 错误边界：插入诊断文字
+    } catch (err) {
+      // 错误边界：单节点失败不中断整体导出；错误如实记录到控制台，不静默吞掉
+      console.error(`[ast-to-docx] 无法转换 ${node.type} 节点:`, err);
       result.push(
         new Paragraph({
           children: [
@@ -380,7 +387,7 @@ function convertList(
     for (const child of item.children as Content[]) {
       if (child.type === "paragraph") {
         const prefix = ordered ? `${(node.start ?? 1) + index}. ` : "• ";
-        const firstLine = FIRST_LINE_INDENT_TWIP + depth * 320;
+        const firstLine = FIRST_LINE_INDENT_TWIP + depth * LIST_NEST_INDENT_TWIP;
 
         const runs = convertInlineNodes(
           (child as MdParagraph).children as PhrasingContent[],
@@ -457,11 +464,14 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
 
 // ── 代码块 ──────────────────────────────────────
 
-function convertCodeBlock(node: Code): Paragraph[] {
+function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
   const lang = node.lang ?? "";
+  const line = node.position?.start.line;
+  const where = line ? `（第 ${line} 行）` : "";
 
   // Mermaid 代码块：灰色提示
   if (lang.toLowerCase() === "mermaid") {
+    fidelitySink?.push(`Mermaid 图表${where}：以占位文字呈现`);
     return [
       new Paragraph({
         shading: { type: ShadingType.CLEAR, fill: "F0F0F0" },
@@ -480,6 +490,7 @@ function convertCodeBlock(node: Code): Paragraph[] {
 
   // LaTeX 数学块
   if (lang === "math" || lang === "latex" || lang === "tex") {
+    fidelitySink?.push(`LaTeX 公式块${where}：以源码文本呈现`);
     return node.value.split("\n").map(
       (line) =>
         new Paragraph({
@@ -500,12 +511,12 @@ function convertCodeBlock(node: Code): Paragraph[] {
     (line) =>
       new Paragraph({
         shading: { type: ShadingType.CLEAR, fill: "F5F5F5" },
-        spacing: { line: 300, lineRule: LineRuleType.EXACT },
+        spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
         children: [
           new TextRun({
             text: line || " ",
             font: CodeFont,
-            size: 20, // 10pt for code
+            size: FONT_SIZE_HALF_PT.CODE,
           }),
         ],
       }),
@@ -642,7 +653,8 @@ function convertInlineNodes(
           }
           break;
       }
-    } catch {
+    } catch (err) {
+      console.error(`[ast-to-docx] 无法转换内联 ${node.type} 节点:`, err);
       result.push(
         new TextRun({
           text: `[转换错误: ${node.type}]`,

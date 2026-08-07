@@ -93,7 +93,7 @@ export function createExportDocxCommand(context: vscode.ExtensionContext) {
 
     // 语言校验
     const langId = editor.document.languageId;
-    if (!["markdown", "md", "mdx", "markdoc", "mdc", "juliamarkdown", "rmarkdown"].includes(langId)) {
+    if (!["markdown", "md", "mdx", "skill", "markdoc", "mdc", "juliamarkdown", "rmarkdown"].includes(langId)) {
       vscode.window.showWarningMessage("请在 Markdown 文件中使用此命令。");
       return;
     }
@@ -140,7 +140,7 @@ export function createExportDocxQuickCommand(context: vscode.ExtensionContext) {
     }
 
     const langId = editor.document.languageId;
-    if (!["markdown", "md", "mdx", "markdoc", "mdc", "juliamarkdown", "rmarkdown"].includes(langId)) {
+    if (!["markdown", "md", "mdx", "skill", "markdoc", "mdc", "juliamarkdown", "rmarkdown"].includes(langId)) {
       vscode.window.showWarningMessage("请在 Markdown 文件中使用此命令。");
       return;
     }
