@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.1.0..v2.2.0) - 2026-08-07
+
+### 新增
+
+- **图表题注导出**：Word 里的表格和插图现在带规范题注——表题在表上方、图题在图下方，黑体小四居中，编号体例符合 GB/T 7713 报告规范。写法：图题就是图片的说明文字；表题写"表1 标题"放在表格上一行
+- **导出更可靠**：未保存的新建文档会先提示保存；已有同名文件时可选择另存为；文中有 Mermaid 图等暂未支持导出的内容时，导出后会明确提醒您哪些内容没有呈现，不再静默丢失
+
+### 改进
+
+- Mermaid 渲染更稳：加载失败可一键重试，错误提示改为中文
+- Remote-SSH / WSL 远程开发环境下导出不再丢失图片
+- 命令与全部设置说明改为中文表述，更易理解
+- 安全更新与内部质量提升（修复 1 项依赖安全漏洞，测试增至 853 项全绿）
+
 ## [2.1.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.0.2..v2.1.0) - 2026-07-22
 
 ### Added
