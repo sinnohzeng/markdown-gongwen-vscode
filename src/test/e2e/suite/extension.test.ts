@@ -937,6 +937,30 @@ suite('Extension E2E', () => {
       'Expected heading1 decoration in cache after inserting "# Heading"'
     );
   });
+
+  // 冒烟：导出命令对近空文档产出合法 DOCX（可解包且含核心部件）
+  test('quick export produces a valid DOCX for a near-empty document', async () => {
+    await withTempFile('正文一行。', async (_doc, uri) => {
+      const outPath = uri.fsPath.replace(/\.md$/, '.docx');
+      try {
+        await vscode.commands.executeCommand('gongwen.exportDocxQuick');
+        // 导出异步执行（带进度条）：轮询等产物出现，上限 10 秒
+        let exists = false;
+        for (let i = 0; i < 50; i++) {
+          if (fs.existsSync(outPath)) { exists = true; break; }
+          await delay(200);
+        }
+        assert.ok(exists, 'Export did not produce the .docx output file');
+
+        const JSZip = (await import('jszip')).default;
+        const zip = await JSZip.loadAsync(fs.readFileSync(outPath));
+        assert.ok(zip.file('word/document.xml'), 'DOCX lacks word/document.xml — not a valid DOCX');
+        assert.ok(zip.file('[Content_Types].xml'), 'DOCX lacks [Content_Types].xml');
+      } finally {
+        try { fs.unlinkSync(outPath); } catch { /* ignore cleanup errors */ }
+      }
+    });
+  });
 });
 
 function delay(ms: number): Promise<void> {
