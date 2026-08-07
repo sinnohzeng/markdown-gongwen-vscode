@@ -18,9 +18,11 @@
 
 **导出** — 点一下编辑器右上角的 Word 图标，当前文档直接导出为 `.docx`。页面尺寸、边距、字体、字号、行距、页码全部按 GB/T 9704 来，拿到手就能用。
 
+<!-- 发布素材：待补演示 GIF（录屏需人工操作） -->
+
 ## 排版规格
 
-导出的每一个数值都溯源到 GB/T 9704-2012 条文（详见 [docs/features/docx-export.md](docs/features/docx-export.md)）：
+导出的每一个数值都溯源到 GB/T 9704-2012 条文（详见 [docs/features/docx-export.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/features/docx-export.md)）：
 
 | 项目 | 值 |
 |------|-----|
@@ -95,7 +97,7 @@
 
 ## 配置项
 
-设置里搜索 **"Markdown Gongwen"**：
+设置里搜索 **"Markdown Gongwen"**。以下配置只影响编辑视图的渲染观感；导出 DOCX 的版式始终按 GB/T 9704 固定，不受任何配置影响：
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
@@ -116,7 +118,7 @@
 
 ## 常见问题
 
-活动栏里为什么有个"Markdown Gongwen"图标（Mermaid 渲染视图）、导出字体、大文件性能等，见 [docs/FAQ.md](docs/FAQ.md)。
+活动栏里为什么有个"Markdown Gongwen"图标（Mermaid 渲染视图）、导出字体、大文件性能等，见 [docs/FAQ.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/FAQ.md)。
 
 ## 开发者
 
@@ -157,6 +159,6 @@ src/
 
 ## 许可证与致谢
 
-MIT License，详见 [LICENSE.txt](LICENSE.txt)。
+MIT License，详见 [LICENSE.txt](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/LICENSE.txt)。
 
 行内渲染框架基于 [SeardnaSchmid/markdown-inline-editor-vscode](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode) 二次开发，公文排版与 DOCX 导出为本仓库新增。感谢原作者与贡献者 [@patrick-yip](https://github.com/patrick-yip)、[@bircni](https://github.com/bircni)、[@ssebs](https://github.com/ssebs)、[@IrishBruse](https://github.com/IrishBruse)。
