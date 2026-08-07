@@ -7,6 +7,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import type { Root, Image, Content } from "mdast";
+import type { ImageWarning } from "./image-resolver";
 
 // ── Output Channel（懒初始化）───────────────────
 
@@ -124,8 +125,8 @@ export function createExportDocxCommand(context: vscode.ExtensionContext) {
     });
     if (!uri) return;
 
-    // 带进度条导出
-    await doExport(editor.document, uri, context);
+    // 带进度条导出（交互模式：成功通知带"打开文件"等动作）
+    await runExport(editor.document, uri, context, { quick: false });
   };
 }
 
@@ -157,30 +158,63 @@ export function createExportDocxQuickCommand(context: vscode.ExtensionContext) {
     } catch {
       exists = false;
     }
+    let targetUri = outputUri;
     if (exists) {
-      const overwrite = await vscode.window.showWarningMessage(
+      const choice = await vscode.window.showWarningMessage(
         `文件 ${path.basename(outputPath)} 已存在，是否覆盖？`,
         "覆盖",
+        "另存为",
         "取消",
       );
-      if (overwrite !== "覆盖") return;
+      if (choice === "取消" || !choice) return;
+      if (choice === "另存为") {
+        const picked = await vscode.window.showSaveDialog({
+          defaultUri: outputUri,
+          filters: { "Word Document": ["docx"] },
+        });
+        if (!picked) return;
+        targetUri = picked;
+      }
     }
 
-    await doExport(editor.document, outputUri, context);
+    await runExport(editor.document, targetUri, context, { quick: true });
   };
 }
 
 // ── 核心导出流程 ────────────────────────────────
 
-interface ExportOutcome {
-  bytes: number;
-  warningCount: number;
+/** 两个导出命令共享的核心：Quick 用静默成功通知，对话框版保留交互动作。 */
+interface ExportOptions {
+  quick: boolean;
 }
 
-async function doExport(
+interface ExportOutcome {
+  bytes: number;
+  /** 未嵌入的图片引用（含原因） */
+  warnings: ImageWarning[];
+  /** 被降级呈现的内容（mermaid 占位、LaTeX 源码等） */
+  fidelity: string[];
+}
+
+/** 把图片警告转为用户可读的一句话 */
+function describeImageWarning(w: ImageWarning): string {
+  switch (w.reason) {
+    case "remote":
+      return `远程图片未下载：${w.url}`;
+    case "data-uri":
+      return "内嵌图片（data URI）未嵌入";
+    case "not-found":
+      return `图片未找到：${w.url}（请检查相对路径是否正确，或重新导出）`;
+    default:
+      return `图片读取失败：${w.url}（${w.reason.replace(/^read-error: /, "")}）`;
+  }
+}
+
+async function runExport(
   document: vscode.TextDocument,
   outputUri: vscode.Uri,
   context: vscode.ExtensionContext,
+  opts: ExportOptions,
 ): Promise<void> {
   // 成功/失败通知必须在 withProgress 结束后再弹：带按钮的通知要等用户
   // 交互才 resolve，若在进度回调内 await，进度通知会一直挂住不消失。
@@ -221,8 +255,12 @@ async function doExport(
         // 3. 生成 DOCX Document
         progress.report({ message: "正在生成 DOCX...", increment: 30 });
         const exporter = (await getExporter())!;
-        const doc = exporter.convertToDocx(ast, images);
+        const fidelity: string[] = [];
+        const doc = exporter.convertToDocx(ast, images, fidelity);
         log("DOCX Document 对象生成完成");
+        for (const f of fidelity) {
+          log(`  保真降级: ${f}`);
+        }
 
         if (token.isCancellationRequested) { log("用户取消"); return undefined; }
 
@@ -239,7 +277,7 @@ async function doExport(
         await context.workspaceState.update("lastExportDirectory", path.dirname(outputUri.fsPath));
 
         progress.report({ increment: 10 });
-        return { bytes: buffer.length, warningCount: warnings.length };
+        return { bytes: buffer.length, warnings, fidelity };
       },
     );
   } catch (err) {
@@ -262,30 +300,54 @@ async function doExport(
     ? `${(outcome.bytes / (1024 * 1024)).toFixed(1)} MB`
     : `${(outcome.bytes / 1024).toFixed(1)} KB`;
 
-  let message = `已导出: ${path.basename(outputUri.fsPath)} (${sizeStr})`;
-  if (outcome.warningCount > 0) {
-    message += `，${outcome.warningCount} 张图片未加载`;
+  const baseMsg = `已导出: ${path.basename(outputUri.fsPath)} (${sizeStr})`;
+  const issues: string[] = [
+    ...outcome.fidelity,
+    ...outcome.warnings.map(describeImageWarning),
+  ];
+  log(`导出成功: ${baseMsg}${issues.length ? `，${issues.length} 处未完整呈现` : ""}`);
+
+  // 打开/定位动作（交互模式才提供按钮）
+  const openActions = async (action: string | undefined) => {
+    try {
+      if (action === "打开文件") {
+        await vscode.env.openExternal(outputUri);
+      } else if (action === "在文件管理器中显示") {
+        await vscode.commands.executeCommand("revealFileInOS", outputUri);
+      } else if (action === "查看详情") {
+        getOutputChannel().show();
+      }
+    } catch (err) {
+      logError("打开导出文件失败", err);
+      vscode.window.showErrorMessage(
+        `无法打开文件: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  };
+
+  if (issues.length === 0) {
+    if (opts.quick) {
+      vscode.window.showInformationMessage(baseMsg); // 静默成功：无按钮
+      return;
+    }
+    await openActions(await vscode.window.showInformationMessage(
+      baseMsg,
+      "打开文件",
+      "在文件管理器中显示",
+    ));
+    return;
   }
 
-  log(`导出成功: ${message}`);
-
-  const action = await vscode.window.showInformationMessage(
+  // 保真告警：降级/未呈现内容明示给用户，完整清单在输出通道
+  const head = issues[0];
+  const message = `${baseMsg}，但 ${issues.length} 处内容未完整呈现：${head}${issues.length > 1 ? " 等" : ""}`;
+  if (opts.quick) {
+    await openActions(await vscode.window.showWarningMessage(message, "查看详情"));
+    return;
+  }
+  await openActions(await vscode.window.showWarningMessage(
     message,
     "打开文件",
-    "在文件管理器中显示",
-  );
-
-  // 单独捕获：文件可能在导出后被移动/删除，打开或定位失败不应抛未处理错误
-  try {
-    if (action === "打开文件") {
-      await vscode.env.openExternal(outputUri);
-    } else if (action === "在文件管理器中显示") {
-      await vscode.commands.executeCommand("revealFileInOS", outputUri);
-    }
-  } catch (err) {
-    logError("打开导出文件失败", err);
-    vscode.window.showErrorMessage(
-      `无法打开文件: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
+    "查看详情",
+  ));
 }
