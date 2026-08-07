@@ -204,7 +204,7 @@ describe("LinkClickHandler", () => {
       );
     });
 
-    it.skip("should handle absolute image paths", async () => {
+    it("should handle absolute image paths", async () => {
       handler.setEnabled(true);
       const document = new TextDocument(
         Uri.file("/test.md"),
@@ -213,7 +213,8 @@ describe("LinkClickHandler", () => {
         "![alt](/absolute/path/image.png)",
       );
       const editor = new TextEditor(document, []);
-      const position = new Position(0, 5);
+      // alt 文字位于 offset 2-5（end 排他），position 4 落在其内
+      const position = new Position(0, 4);
 
       await (handler as any).handleClick(editor, position);
 
