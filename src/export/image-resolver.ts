@@ -1,70 +1,34 @@
 /**
- * 图片路径解析与读取。
+ * 图片路径解析（VS Code 侧）+ 委托纯模块读取/量尺寸。
  *
- * 复用现有的 resolveImageTarget 进行路径解析，
- * 每张图片独立 try/catch，单张失败不中断整体导出。
+ * 路径解析依赖 VS Code Uri，留在本模块；文件读取与尺寸解析在
+ * ./image-dimensions 纯模块中（参数化 IO，可仓库外加载、可单测）。
+ * 每张图片独立 try/catch，单张失败不中断整体导出，失败原因透明携带。
  */
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { PAGE, IMAGE } from "./constants";
+import { dimensionsForPath, type ResolvedImage } from "./image-dimensions";
 
-export interface ResolvedImage {
-  buffer: Buffer;
-  width: number;
-  height: number;
-}
+export type { ResolvedImage } from "./image-dimensions";
 
 export interface ImageWarning {
   url: string;
   reason: string;
 }
 
-/** 版心宽度对应的 EMU（English Metric Unit，1 EMU = 1/914400 英寸） */
-const PRINT_AREA_WIDTH_EMU = Math.round(PAGE.PRINT_AREA_WIDTH_MM * 36000);
-
-/**
- * 从 PNG/JPEG buffer 中快速读取图片尺寸（不依赖外部库）。
- * 返回 [width, height] 或 undefined（格式不支持时）。
- */
-function readImageDimensions(buffer: Buffer): [number, number] | undefined {
-  // PNG: IHDR chunk starts at byte 16, width at 16, height at 20 (big-endian uint32)
-  if (
-    buffer.length >= 24 &&
-    buffer[0] === 0x89 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4e &&
-    buffer[3] === 0x47
-  ) {
-    return [buffer.readUInt32BE(16), buffer.readUInt32BE(20)];
-  }
-
-  // JPEG: scan for SOF0 (0xFFC0) or SOF2 (0xFFC2) marker
-  if (buffer.length >= 4 && buffer[0] === 0xff && buffer[1] === 0xd8) {
-    let offset = 2;
-    while (offset < buffer.length - 9) {
-      if (buffer[offset] !== 0xff) break;
-      const marker = buffer[offset + 1];
-      if (marker === 0xc0 || marker === 0xc2) {
-        const height = buffer.readUInt16BE(offset + 5);
-        const width = buffer.readUInt16BE(offset + 7);
-        return [width, height];
-      }
-      const segmentLength = buffer.readUInt16BE(offset + 2);
-      offset += 2 + segmentLength;
-    }
-  }
-
-  return undefined;
-}
+/** Node fs 作为 ImageIo 注入纯模块 */
+const nodeIo = {
+  existsSync: (p: string) => fs.existsSync(p),
+  readFileSync: (p: string) => fs.readFileSync(p),
+};
 
 /**
  * 解析 Markdown 文档中所有图片引用并读取 buffer。
  *
- * - 本地图片：读取文件 buffer + 解析尺寸
+ * - 本地图片：读取文件 buffer + 解析尺寸（超宽自动等比缩放到版心 156mm）
  * - 远程图片（http/https）：跳过，返回 warning
  * - 缺失图片：跳过，返回 warning
- * - 超宽图片：自动等比缩放到版心宽度 156mm
  */
 export async function resolveImages(
   imageUrls: string[],
@@ -94,25 +58,18 @@ export async function resolveImages(
 
     try {
       const resolved = resolveLocalPath(trimmed, documentUri);
-      if (!resolved || !fs.existsSync(resolved)) {
+      if (!resolved) {
         warnings.push({ url: trimmed, reason: "not-found" });
         continue;
       }
 
-      const buffer = fs.readFileSync(resolved);
-      const dims = readImageDimensions(buffer);
-      let width = dims?.[0] ?? IMAGE.FALLBACK_WIDTH_PX;
-      let height = dims?.[1] ?? IMAGE.FALLBACK_HEIGHT_PX;
-
-      // 等比缩放：宽度超过版心时缩小
-      const widthEmu = width * 9525; // px → EMU (1 px = 9525 EMU at 96 DPI)
-      if (widthEmu > PRINT_AREA_WIDTH_EMU) {
-        const scale = PRINT_AREA_WIDTH_EMU / widthEmu;
-        width = Math.round(width * scale);
-        height = Math.round(height * scale);
+      const entry = dimensionsForPath(resolved, nodeIo);
+      if (!entry) {
+        warnings.push({ url: trimmed, reason: "not-found" });
+        continue;
       }
 
-      images.set(url, { buffer, width, height });
+      images.set(url, entry);
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       warnings.push({ url: trimmed, reason: `read-error: ${detail}` });

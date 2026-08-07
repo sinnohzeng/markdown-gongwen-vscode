@@ -422,3 +422,73 @@ describe("表题（表格上方独立段匹配表N）", () => {
     expect(xml).not.toContain("SimHei");
   });
 });
+
+
+// ── frontmatter 跳过（项20）──────────────────────
+
+describe("frontmatter 解析", () => {
+  it("yaml frontmatter 节点不输出到正文", async () => {
+    const ast = root(
+      { type: "yaml", value: "title: 请示" } as unknown as Content,
+      paragraph(text("正文内容")),
+    );
+    const xml = await toDocumentXml(ast);
+    expect(xml).toContain("正文内容");
+    expect(xml).not.toContain("title: 请示");
+  });
+
+  it("toml frontmatter 节点不输出到正文", async () => {
+    const ast = root(
+      { type: "toml", value: 'title = "请示"' } as unknown as Content,
+      paragraph(text("正文内容")),
+    );
+    const xml = await toDocumentXml(ast);
+    expect(xml).toContain("正文内容");
+    expect(xml).not.toContain("请示\"");
+  });
+});
+
+// ── 保真告警：降级内容收集（项21）────────────────
+
+describe("导出保真告警（fidelitySink）", () => {
+  it("mermaid 代码块被记录为占位降级", async () => {
+    const ast = root({ type: "code", lang: "mermaid", value: "graph TD; A-->B" } as unknown as Content);
+    const sink: string[] = [];
+    const doc = convertToDocx(ast, new Map(), sink);
+    await packToBuffer(doc);
+    expect(sink.length).toBe(1);
+    expect(sink[0]).toContain("Mermaid");
+  });
+
+  it("LaTeX 公式块被记录为源码降级", async () => {
+    const ast = root({ type: "code", lang: "math", value: "E = mc^2" } as unknown as Content);
+    const sink: string[] = [];
+    const doc = convertToDocx(ast, new Map(), sink);
+    await packToBuffer(doc);
+    expect(sink.length).toBe(1);
+    expect(sink[0]).toContain("LaTeX");
+  });
+
+  it("普通代码块不产生降级记录", async () => {
+    const ast = root({ type: "code", lang: "python", value: "print(1)" } as unknown as Content);
+    const sink: string[] = [];
+    const doc = convertToDocx(ast, new Map(), sink);
+    await packToBuffer(doc);
+    expect(sink).toHaveLength(0);
+  });
+
+  it("降级记录携带源码行号", async () => {
+    const ast = root({
+      type: "code",
+      lang: "mermaid",
+      value: "pie",
+      position: {
+        start: { line: 7, column: 1, offset: 0 },
+        end: { line: 9, column: 1, offset: 0 },
+      },
+    } as unknown as Content);
+    const sink: string[] = [];
+    convertToDocx(ast, new Map(), sink);
+    expect(sink[0]).toContain("第 7 行");
+  });
+});

@@ -20,7 +20,7 @@ import {
   TextRun,
   WidthType,
 } from "docx";
-import type { ResolvedImage } from "./image-resolver";
+import type { ResolvedImage } from "./image-dimensions";
 import {
   FONT_SIZE_HALF_PT,
   XiaoBiaoSong, HeiTi, KaiTi, FangSong, CodeFont,
@@ -32,6 +32,7 @@ import {
   type FontSpec,
 } from "./constants";
 import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph } from "./gbt9704-styles";
+import { buildCaptionText } from "./caption";
 
 // ── 类型 ────────────────────────────────────────
 
@@ -251,13 +252,7 @@ function convertParagraph(
 
 // ── 图表题注 ────────────────────────────────────
 //
-// GB/T 7713.2-2022 5.2.4/5.4.3：编号大流水"图1""表1"，编号与题注文字
-// 之间空 1 个汉字（全角空格），题注末尾不加标点。
-
-const CAPTION_NUMBER_PATTERN: Record<"图" | "表", RegExp> = {
-  图: /^图\s*(\d+)([\s\S]*)$/,
-  表: /^表\s*(\d+)([\s\S]*)$/,
-};
+// 匹配与构造规则集中在 ./caption.ts 单一权威源（实现与测试共用）。
 
 /** 提取内联节点的纯文本拼接（表题匹配用） */
 function plainTextOf(nodes: PhrasingContent[]): string {
@@ -270,18 +265,6 @@ function plainTextOf(nodes: PhrasingContent[]): string {
     }
   }
   return out;
-}
-
-/**
- * 题注行匹配"图N/表N"时返回渲染后的题注文字，否则返回 null。
- * 编号与题注间统一为 1 个汉字空；末尾不追加标点。
- */
-function buildCaptionText(raw: string, kind: "图" | "表"): string | null {
-  const m = CAPTION_NUMBER_PATTERN[kind].exec(raw.trim());
-  if (!m) return null;
-  const number = `${kind}${m[1]}`;
-  const title = m[2].trim();
-  return title ? `${number}\u3000${title}` : number;
 }
 
 // ── 图片 ────────────────────────────────────────
