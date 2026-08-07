@@ -8,21 +8,12 @@ let visit: any;
 
 export async function getRemarkProcessor() {
   if (!unified) {
-    try {
-      // Try CommonJS require first (for VS Code extension runtime)
-      unified = require('unified').unified;
-      remarkParse = require('remark-parse');
-      remarkGfm = require('remark-gfm');
-      visit = require('unist-util-visit').visit;
-    } catch {
-      // Fall back to ESM dynamic import (for Jest/testing)
-      const unifiedModule = await import('unified');
-      unified = unifiedModule.unified;
-      remarkParse = await import('remark-parse');
-      remarkGfm = await import('remark-gfm');
-      const visitModule = await import('unist-util-visit');
-      visit = visitModule.visit;
-    }
+    // 单路径 CJS require：bundle 后为 CommonJS，Jest（Node 22+ require ESM）
+    // 亦实测可 require 成功；原 ESM 回退分支从未走到，已删除。
+    unified = require('unified').unified;
+    remarkParse = require('remark-parse');
+    remarkGfm = require('remark-gfm');
+    visit = require('unist-util-visit').visit;
   }
 
   return {

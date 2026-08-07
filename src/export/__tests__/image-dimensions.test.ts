@@ -90,6 +90,17 @@ describe("readImageBuffer / dimensionsForPath", () => {
     expect(r?.height).toBeLessThanOrEqual(501);
   });
 
+  it("魔数判定格式：JPEG → jpg，PNG 与未知格式 → png", async () => {
+    const io = fakeIo({
+      "/j.jpg": jpegBuffer(100, 50),
+      "/p.png": pngBuffer(100, 50),
+      "/u.bin": Buffer.from("GIF89a...."),
+    });
+    expect((await dimensionsForPath("/j.jpg", io))!.format).toBe("jpg");
+    expect((await dimensionsForPath("/p.png", io))!.format).toBe("png");
+    expect((await dimensionsForPath("/u.bin", io))!.format).toBe("png");
+  });
+
   it("读取失败抛出原始错误（不吞）", async () => {
     const io: ImageIo = {
       exists: () => true,

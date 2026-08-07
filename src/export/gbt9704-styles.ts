@@ -23,6 +23,7 @@ import {
   FIRST_LINE_INDENT_TWIP,
   CAPTION_SPACING_TWIP,
   XiaoBiaoSong, HeiTi, KaiTi, FangSong, SongTi, CaptionFont,
+  COLOR_BLACK,
   type FontSpec,
 } from "./constants";
 
@@ -83,7 +84,7 @@ export function createDocumentStyles(): IStylesOptions {
             font: spec.font,
             size: FONT_SIZE_HALF_PT.HEADING,
             ...(spec.bold ? { bold: true } : {}),
-            color: "000000",
+            color: COLOR_BLACK,
           },
           paragraph: headingParagraph,
         },
@@ -97,7 +98,7 @@ export function createDocumentStyles(): IStylesOptions {
         run: {
           font: FangSong,
           size: FONT_SIZE_HALF_PT.BODY,
-          color: "000000",
+          color: COLOR_BLACK,
         },
         paragraph: {
           spacing: {
@@ -115,7 +116,7 @@ export function createDocumentStyles(): IStylesOptions {
         run: {
           font: XiaoBiaoSong,
           size: FONT_SIZE_HALF_PT.TITLE,
-          color: "000000",
+          color: COLOR_BLACK,
         },
         paragraph: {
           spacing: headingSpacing,
@@ -150,7 +151,7 @@ export function createCaptionParagraph(text: string, keepNext = false): Paragrap
         text,
         font: CaptionFont,
         size: FONT_SIZE_HALF_PT.CAPTION,
-        color: "000000",
+        color: COLOR_BLACK,
       }),
     ],
   });

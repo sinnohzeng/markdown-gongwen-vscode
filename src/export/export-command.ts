@@ -66,7 +66,8 @@ function getProcessor(): { parse: (text: string) => Root } {
 
 // ── 提取 AST 中所有图片 URL ─────────────────────
 
-function collectImageUrls(node: Content | Root): string[] {
+/** 导出仅供单测：收集 AST 中全部图片 URL（去重） */
+export function collectImageUrls(node: Content | Root): string[] {
   const urls = new Set<string>();
 
   const walk = (n: Content | Root): void => {

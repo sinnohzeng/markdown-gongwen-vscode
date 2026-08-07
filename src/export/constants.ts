@@ -68,6 +68,18 @@ export const LIST_NEST_INDENT_TWIP = FONT_SIZE_PT.BODY * 20;
 
 // ── 图片 ─────────────────────────────────────────
 
+// ── 颜色与底纹（非 GB 约定，取中性值）─────────────
+
+/** 文档文字颜色（纯黑） */
+export const COLOR_BLACK = "000000";
+
+/** 底纹灰阶：占位提示 / 代码块 / LaTeX 源码 */
+export const SHADING = {
+  PLACEHOLDER: "F0F0F0",
+  CODE: "F5F5F5",
+  MATH: "F8F8F8",
+} as const;
+
 export const IMAGE = {
   /** 无法从文件头解析尺寸时的回退宽度（px，96 DPI） */
   FALLBACK_WIDTH_PX: 600,

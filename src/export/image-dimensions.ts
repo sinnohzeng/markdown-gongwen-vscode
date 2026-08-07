@@ -17,6 +17,8 @@ export interface ResolvedImage {
   buffer: Buffer;
   width: number;
   height: number;
+  /** 由文件头魔数判定的真实格式，供 docx ImageRun 使用 */
+  format: "png" | "jpg";
 }
 
 /** 1 px（96 DPI）对应的 EMU（English Metric Unit） */
@@ -76,6 +78,9 @@ export async function dimensionsForPath(path: string, io: ImageIo): Promise<Reso
   const dims = readImageDimensions(buffer);
   let width = dims?.[0] ?? IMAGE.FALLBACK_WIDTH_PX;
   let height = dims?.[1] ?? IMAGE.FALLBACK_HEIGHT_PX;
+  // JPEG SOI 魔数 → jpg；其余（含 PNG 与未知格式回退）按 png 嵌入
+  const format: ResolvedImage["format"] =
+    buffer.length >= 2 && buffer[0] === 0xff && buffer[1] === 0xd8 ? "jpg" : "png";
 
   // 等比缩放：宽度超过版心时缩小
   const widthEmu = width * EMU_PER_PX;
@@ -85,5 +90,5 @@ export async function dimensionsForPath(path: string, io: ImageIo): Promise<Reso
     height = Math.round(height * scale);
   }
 
-  return { buffer, width, height };
+  return { buffer, width, height, format };
 }

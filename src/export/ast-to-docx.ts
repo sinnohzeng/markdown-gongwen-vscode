@@ -28,6 +28,8 @@ import {
   LINE_SPACING_TWIP,
   CODE_LINE_SPACING_TWIP,
   LIST_NEST_INDENT_TWIP,
+  COLOR_BLACK,
+  SHADING,
   TABLE as TABLE_CONST,
   type FontSpec,
 } from "./constants";
@@ -170,7 +172,7 @@ function convertNodes(
           children: [
             new TextRun({
               text: `[导出错误: 无法转换 ${node.type}]`,
-              color: "000000",
+              color: COLOR_BLACK,
               font: FangSong,
               size: FONT_SIZE_HALF_PT.BODY,
             }),
@@ -269,7 +271,7 @@ function plainTextOf(nodes: PhrasingContent[]): string {
 function imagePlaceholderRun(url: string): TextRun {
   const isRemote = url.startsWith("http://") || url.startsWith("https://");
   const text = isRemote ? `[远程图片: ${url}]` : `[图片未找到: ${url}]`;
-  return new TextRun({ text, color: "000000", italics: true, font: FangSong, size: FONT_SIZE_HALF_PT.BODY });
+  return new TextRun({ text, color: COLOR_BLACK, italics: true, font: FangSong, size: FONT_SIZE_HALF_PT.BODY });
 }
 
 function convertImageParagraph(
@@ -294,7 +296,7 @@ function convertImageParagraph(
       new ImageRun({
         data: resolved.buffer,
         transformation: { width: resolved.width, height: resolved.height },
-        type: "png",
+        type: resolved.format,
       }),
     ],
   });
@@ -453,11 +455,11 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
     fidelitySink?.push(`Mermaid 图表${where}：以占位文字呈现，源码附后`);
     return [
       new Paragraph({
-        shading: { type: ShadingType.CLEAR, fill: "F0F0F0" },
+        shading: { type: ShadingType.CLEAR, fill: SHADING.PLACEHOLDER },
         children: [
           new TextRun({
             text: "[图表：Mermaid 图表未随文档导出，请见源 Markdown]",
-            color: "000000",
+            color: COLOR_BLACK,
             italics: true,
             font: FangSong,
             size: FONT_SIZE_HALF_PT.BODY,
@@ -468,7 +470,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
       ...node.value.split("\n").map(
         (line) =>
           new Paragraph({
-            shading: { type: ShadingType.CLEAR, fill: "F5F5F5" },
+            shading: { type: ShadingType.CLEAR, fill: SHADING.CODE },
             spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
             children: [
               new TextRun({
@@ -488,7 +490,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
     return node.value.split("\n").map(
       (line) =>
         new Paragraph({
-          shading: { type: ShadingType.CLEAR, fill: "F8F8F8" },
+          shading: { type: ShadingType.CLEAR, fill: SHADING.MATH },
           children: [
             new TextRun({
               text: line || " ",
@@ -504,7 +506,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
   return node.value.split("\n").map(
     (line) =>
       new Paragraph({
-        shading: { type: ShadingType.CLEAR, fill: "F5F5F5" },
+        shading: { type: ShadingType.CLEAR, fill: SHADING.CODE },
         spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
         children: [
           new TextRun({
@@ -616,7 +618,7 @@ function convertInlineNodes(
               new ImageRun({
                 data: resolved.buffer,
                 transformation: { width: resolved.width, height: resolved.height },
-                type: "png",
+                type: resolved.format,
               }),
             );
           } else {
@@ -643,7 +645,7 @@ function convertInlineNodes(
       result.push(
         new TextRun({
           text: `[转换错误: ${node.type}]`,
-          color: "000000",
+          color: COLOR_BLACK,
           font: FangSong,
           size: FONT_SIZE_HALF_PT.BODY,
         }),
