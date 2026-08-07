@@ -4,6 +4,7 @@
 
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/sinnohzeng.markdown-gongwen?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen)
 [![Open VSX](https://img.shields.io/open-vsx/v/sinnohzeng/markdown-gongwen?label=Open%20VSX)](https://open-vsx.org/extension/sinnohzeng/markdown-gongwen)
+[![Build & quality](https://github.com/sinnohzeng/markdown-gongwen-vscode/actions/workflows/ci.yaml/badge.svg)](https://github.com/sinnohzeng/markdown-gongwen-vscode/actions/workflows/ci.yaml)
 
 用 Markdown 写党政公文，一键导出符合 GB/T 9704-2012 的 Word 文档。
 
@@ -28,6 +29,7 @@
 | 行距 | 固定值 28 磅，每页 22 行 |
 | 页码 | 宋体四号，—1— 格式，奇数页右、偶数页左 |
 | 表格 | 全框线 0.5pt，表头黑体，撑满版心 |
+| 题注 | 表上图下，黑体小四 12pt，居中，编号与标题间一字空（GB/T 7713 族） |
 | 引用 | 楷体正文（无斜体、无底纹，首行缩进与正文一致） |
 | 列表 | 首行缩进 2 字符、回行顶格，序号连续编号 |
 
@@ -59,7 +61,7 @@
 编辑器右上角的 Word 图标一键导出。也可以用命令面板：
 
 - `导出公文 DOCX` — 弹出保存对话框，记住上次目录
-- `快速导出公文 DOCX` — 直接保存到 `.md` 同目录
+- `快速导出当前文件为 DOCX` — 直接保存到 `.md` 同目录
 
 导出过程带进度条、可取消；完成后通知里可直接"打开文件"或"在文件管理器中显示"；出错时"查看日志"可看完整记录。本地图片自动等比缩放到版心宽度。
 
@@ -89,6 +91,7 @@
 - **列表**：无序列表、有序列表（自动连续编号，源文件不动）、任务列表（可点击切换）
 - **扩展**：代码块、YAML frontmatter、Emoji 短代码、GitHub @提及 与 #引用
 - **图形**：Mermaid 图表行内渲染、LaTeX 公式（`$...$`、`$$...$$`）行内渲染
+- **题注**：`表N` 表题（表上方段落）、`图N` 图题（图片 alt）自动按国标排版，导出与图表同页
 
 ## 配置项
 
@@ -147,7 +150,8 @@ src/
 ## 已知限制
 
 - GFM 表格暂不支持多行单元格
-- Mermaid 图表和 LaTeX 公式导出 DOCX 时为占位文本（路线图上有位图方案）
+- Mermaid 图表和 LaTeX 公式导出 DOCX 时为占位文本/源码（导出结束会通知未完整呈现的内容清单；路线图上有位图方案）
+- 图表题注自动识别仅限以 `图N` / `表N` 开头的写法，其余按普通正文输出
 - 超过 1MB 的文件解析可能较慢
 - 行间距需手动设置 `editor.lineHeight`（VS Code 不允许插件按语言改行高）
 
