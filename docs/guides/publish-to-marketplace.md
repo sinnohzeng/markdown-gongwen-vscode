@@ -1,6 +1,6 @@
 # 发布到 VS Code 应用市场教程
 
-> 更新日期：2026-04-04
+> 更新日期：2026-08-07
 >
 > 本文档适用于将 **Markdown 公文** 插件发布到 VS Code Marketplace（微软官方市场）和 Open VSX Registry（开源替代市场）。
 
@@ -30,7 +30,7 @@
 npm install -g @vscode/vsce
 ```
 
-当前最新版本为 `3.7.1`。也可以不全局安装，使用 `npx @vscode/vsce` 代替。
+当前最新版本为 `3.9.2`。也可以不全局安装，使用 `npx @vscode/vsce` 代替。
 
 ---
 
@@ -114,10 +114,10 @@ vsce verify-pat sinnohzeng
 | 字段 | 要求 | 当前值 |
 |------|------|--------|
 | `name` | 全小写，无空格，市场中唯一 | `markdown-gongwen` ✅ |
-| `version` | SemVer（Semantic Versioning，语义化版本）格式 | `1.1.0` ✅ |
+| `version` | SemVer（Semantic Versioning，语义化版本）格式 | `2.1.0` ✅ |
 | `publisher` | 与注册的发布者 ID 完全一致 | `sinnohzeng` ✅ |
 | `engines.vscode` | 最低 VS Code 版本，不能为 `*` | `^1.100.0` ✅ |
-| `displayName` | 市场中唯一的显示名称 | `Markdown 公文` ✅ |
+| `displayName` | 市场中唯一的显示名称 | `Markdown Gongwen 公文` ✅ |
 | `description` | 简短描述 | ✅ |
 | `categories` | 合法分类值 | `["Formatters", "Visualization", "Other"]` ✅ |
 
