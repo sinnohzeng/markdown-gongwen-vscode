@@ -97,7 +97,7 @@ try {
   log("🎉 Release prep complete!");
   console.log("\nNext steps:");
   console.log(
-    `  1. Push changes including the new tag:\n     git push origin main --follow-tags`,
+    `  1. Push changes and the new tag separately (never use --follow-tags,\n     it once pushed upstream legacy tags and triggered batch old releases):\n     git push origin main && git push origin ${tagVersion}`,
   );
   console.log(
     `  2. If you need to undo, run:\n     git reset --hard HEAD~1\n     git tag -d ${tagVersion}`,
