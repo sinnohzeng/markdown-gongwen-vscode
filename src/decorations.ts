@@ -183,7 +183,7 @@ export function StrikethroughDecorationType() {
  * overlays that composite over the editor background.
  *
  * Note: This decoration type is automatically recreated when the theme changes
- * via {@link Decorator.recreateCodeDecorationType}, ensuring the background color
+ * via {@link DecorationTypeRegistry.recreateColorDependentTypes}, ensuring the background color
  * adapts to the current theme without requiring a restart.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color for text; when undefined only background is applied

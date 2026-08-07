@@ -216,14 +216,6 @@ export class DecorationTypeRegistry {
     return this.ghostFaintDecorationType;
   }
 
-  recreateCodeDecorationType(): void {
-    this.recreateDecorationType(
-      this.codeDecorationType,
-      () => CodeDecorationType(this.options.getInlineCodeColor?.(), this.options.getInlineCodeBackgroundColor?.()),
-      (newType) => { this.codeDecorationType = newType; },
-      'code'
-    );
-  }
 
   /**
    * Recreates all decoration types that depend on color settings or theme.

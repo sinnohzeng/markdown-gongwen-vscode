@@ -886,14 +886,6 @@ export class Decorator {
     return config.decorations.codeBlockLanguageOpacity();
   }
 
-  recreateCodeDecorationType(): void {
-    this.decorationTypes.recreateCodeDecorationType();
-
-    // Reapply decorations with the new decoration type
-    if (this.activeEditor && this.isMarkdownDocument()) {
-      this.updateDecorationsForSelection();
-    }
-  }
 
   /**
    * Recreates link decoration (underline + optional chain icon) when link emoji setting changes.
