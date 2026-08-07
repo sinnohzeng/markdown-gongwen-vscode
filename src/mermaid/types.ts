@@ -35,4 +35,6 @@ export type RenderResponse = {
   error?: string;
   requestId?: string;
   ready?: boolean;
+  /** Mermaid 脚本资源加载失败时由 webview 上报 */
+  loadError?: string;
 };

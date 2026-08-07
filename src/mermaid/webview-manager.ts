@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 import { ColorThemeKind } from 'vscode';
 import type { PendingRender, RenderResponse } from './types';
 import { MERMAID_CONSTANTS } from './constants';
@@ -123,12 +124,14 @@ export class MermaidWebviewManager {
     const mermaidScriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(extensionUri, 'assets', 'mermaid', 'mermaid.esm.min.mjs')
     );
-    
+    const nonce = crypto.randomBytes(16).toString('hex');
+
     return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <style>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}' ${webview.cspSource}; style-src 'nonce-${nonce}' 'unsafe-inline'; img-src ${webview.cspSource} data:; font-src ${webview.cspSource};">
+  <style nonce="${nonce}">
     body {
       font-family: var(--vscode-font-family);
       color: var(--vscode-foreground);
@@ -153,6 +156,17 @@ export class MermaidWebviewManager {
     .hidden {
       display: none;
     }
+    #loadErrorBox {
+      border-color: var(--vscode-inputValidation-errorBorder);
+    }
+    #retryBtn {
+      padding: 4px 12px;
+      cursor: pointer;
+      background: var(--vscode-button-background);
+      color: var(--vscode-button-foreground);
+      border: none;
+      border-radius: 2px;
+    }
   </style>
 </head>
 <body>
@@ -162,11 +176,32 @@ export class MermaidWebviewManager {
     <p><strong>你可以放心忽略这个视图。</strong>它只在后台工作，图表会出现在编辑器里，不会出现在这里。</p>
     <p>不想在活动栏看到这个图标？在活动栏图标上点右键即可隐藏，插件功能不受影响。</p>
   </div>
+  <div id="loadErrorBox" class="info-box hidden">
+    <h3>Mermaid 加载失败</h3>
+    <p id="loadErrorMsg"></p>
+    <button id="retryBtn" type="button">重试</button>
+  </div>
   <div id="renderContainer" class="hidden"></div>
-  <script type="module">
-    import mermaid from '${mermaidScriptUri}';
-    
+  <script type="module" nonce="${nonce}">
     const vscode = acquireVsCodeApi();
+    let mermaid;
+
+    // 项11: Mermaid 资源加载失败时可见、可报、可重试
+    async function loadMermaid() {
+      const box = document.getElementById('loadErrorBox');
+      try {
+        mermaid = (await import('${mermaidScriptUri}')).default;
+        box?.classList.add('hidden');
+        vscode.postMessage({ ready: true });
+      } catch (err) {
+        const msg = err?.message || String(err);
+        document.getElementById('loadErrorMsg').textContent = '渲染引擎脚本加载失败：' + msg;
+        box?.classList.remove('hidden');
+        vscode.postMessage({ loadError: msg });
+      }
+    }
+    document.getElementById('retryBtn')?.addEventListener('click', () => { loadMermaid(); });
+    loadMermaid();
 
     function getDiagramType(source) {
       const firstNonEmptyLine = source
@@ -186,6 +221,10 @@ export class MermaidWebviewManager {
       }
 
       const requestId = data.requestId;
+      if (!mermaid) {
+        vscode.postMessage({ error: 'Mermaid 渲染引擎未加载（请打开渲染视图点击"重试"）', requestId });
+        return;
+      }
       const diagramType = getDiagramType(data.source);
       
       try {
@@ -244,9 +283,6 @@ export class MermaidWebviewManager {
         vscode.postMessage({ error: errorMessage, requestId });
       }
     });
-    
-    // Signal ready after mermaid is loaded
-    vscode.postMessage({ ready: true });
   </script>
 </body>
 </html>`;
@@ -295,15 +331,11 @@ export class MermaidWebviewManager {
       return;
     }
 
-    // Legacy support: string message without requestId (for backwards compatibility)
-    if (typeof message === 'string') {
-      // If there's only one pending render, use it (backwards compatibility)
-      if (this.pendingRenders.size === 1) {
-        const [requestId, { resolve, timeoutId }] = Array.from(this.pendingRenders.entries())[0];
-        clearTimeout(timeoutId);
-        resolve(message);
-        this.pendingRenders.delete(requestId);
-      }
+    // 项12: 按 type 收窄消费——仅识别 ready/error/svg/loadError 四类；
+    // 其余（含未知消息）一律忽略。webview 侧只发这四种消息，无需兼容旧格式。
+    if (message && message.loadError) {
+      console.error('Mermaid: webview 资源加载失败:', message.loadError);
+      return;
     }
   }
 
@@ -418,6 +450,25 @@ export class MermaidWebviewManager {
   }
 
   /**
+   * Webview 视图被销毁（关闭/重建）时的清理：
+   * 释放挂起请求并断开消息订阅；webviewLoaded 保持已解决，视图重建后可继续。
+   */
+  handleWebviewDisposed(): void {
+    if (this.initTimeoutId) {
+      clearTimeout(this.initTimeoutId);
+      this.initTimeoutId = undefined;
+    }
+    for (const { reject, timeoutId } of this.pendingRenders.values()) {
+      clearTimeout(timeoutId);
+      reject(new Error('Mermaid webview disposed'));
+    }
+    this.pendingRenders.clear();
+    this.messageHandlerDisposable?.dispose();
+    this.messageHandlerDisposable = undefined;
+    this.webviewView = undefined;
+  }
+
+  /**
    * Dispose and clean up resources
    */
   dispose(): void {
@@ -475,6 +526,9 @@ class MermaidWebviewViewProvider implements vscode.WebviewViewProvider {
 
     // Store reference BEFORE setting up handlers (like Markless does)
     this.manager.setWebviewView(webviewView);
+
+    // 视图销毁时清理资源：释放 pending 请求、断开消息订阅
+    webviewView.onDidDispose(() => this.manager.handleWebviewDisposed(), null, []);
     
     // Handle messages from the webview - store disposable for cleanup
     const messageHandlerDisposable = webviewView.webview.onDidReceiveMessage((message) => {
