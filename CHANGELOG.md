@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.3.1..v2.3.2) - 2026-09-18
+
+修 2.3.0 样式表收口带出的两处回归，都出在导出的 Word 里。
+
+### 修复
+
+- **图片被裁成一条**：2.3.0 补齐文档默认样式后，固定 28 磅行距真正落到了图片段上，比行高的图片只露一条。现在图片独占段用单倍行距，文字与图片混排的段落和含图片的表格单元格用“最小值 28 磅”，文字行不掉网格，图片行按图高撑开
+- **目录标题**：WPS 插自动目录后“目录”二字是宋体五号，样式面板里还多一条英文名的“TOC Heading”。WPS 不认识这个 Word 2007 才加的内建样式，也不会给“目录”二字套样式。现在面板上只留“目录标题”一条，选中“目录”二字点一下即可；“TOC Heading”隐藏起来只给 Word 的自动目录用，外观继承“目录标题”
+
 ## [2.3.1](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.3.0..v2.3.1) - 2026-09-18
 
 维护版，导出与编辑功能没有改动，换的是插件图标，修的是商店页上那条失效的版本徽章。
