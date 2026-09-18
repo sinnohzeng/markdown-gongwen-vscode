@@ -1,7 +1,7 @@
 {
   "name": "markdown-gongwen",
   "displayName": "Markdown Gongwen 公文",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "用 Markdown 写党政公文，一键导出符合 GB/T 9704 的 Word 文档，支持插图、表格、题注与目录",
   "license": "MIT",
   "author": "sinnohzeng",

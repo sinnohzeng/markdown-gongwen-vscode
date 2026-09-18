@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.3.0..v2.3.1) - 2026-09-18
+
+维护版，导出与编辑功能没有改动，换的是插件图标，修的是商店页上那条失效的版本徽章。
+
+### 改进
+
+- **插件图标**：改为透明背景，深色主题下不再顶着一块白底方块。Markdown 标记下方加上 GB/T 9704 字样，等宽字体，与标记齐宽
+
+### 修复
+
+- **版本徽章**：shields.io 在 2026 年 4 月停用了整个 Visual Studio Marketplace 系列徽章，商店页上的“VS Code Marketplace”一栏因此显示成灰色的 retired badge。现已换到仍在维护的徽章来源，显示的是真实版本号
+
+### 其他
+
+- 清掉 `package.json` 里一段不会生效的 `__metadata`，发布脚本改为可以显式指定版本号
+
 ## [2.3.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.2.0..v2.3.0) - 2026-09-17
 
 这一版的重点是目录：导出文件自带“目录标题”与目录条目样式，在 WPS 或 Word 里插入目录后不用再手动改字体。
