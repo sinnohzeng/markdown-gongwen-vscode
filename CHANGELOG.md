@@ -5,11 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.2.0..v2.3.0) - 2026-09-17
+
+这一版的重点是目录：导出文件自带“目录标题”与目录条目样式，在 WPS 或 Word 里插入目录后不用再手动改字体。
+
+### 新增
+
+- **目录样式**：预先定义“目录标题”（黑体三号居中）与“目录 1”到“目录 3”（仿宋三号逐级缩进）样式，插入自动目录后“目录”二字直接就位
+- **`[TOC]` 目录标记**：Markdown 里单独一行 `[TOC]` 导出为“目录”标题加目录域，收录 `##` 和 `###` 两级标题，打开 Word 时按提示更新域
+
+### 改进
+
+- 表头改为黑体不加粗、水平居中，表体按列对齐标记对齐，所有单元格垂直居中
+- 新定义标题 5 到 7、超链接、脚注和尾注的正文与引用标记、默认段落字体，都按国标或公文惯例定好
+- 移除 docx 库自带的 List Paragraph、Strong 等无关样式，样式表只剩插件定义的样式
+- 标题文字不再带直接格式，在 Word 里修改“标题 N”样式即可全局生效
+- 导出日志改用带时间戳与级别的输出通道
+
+### 修复
+
+- 表格单元格、图表题注、偶数页页码此前继承了正文的 2 字首行缩进，现已归零
+- 代码块、公式源码不再继承正文的首行缩进与两端对齐，改为左对齐
+- 引用块里的表格此前被丢弃，现照常输出
+- 普通文档打开 Word 不再弹出“是否更新域”提示，只有含目录的文档才提示
+
+### 内部
+
+- 依赖兼容性更新，`tsconfig` 显式声明 jest 类型，发布脚本改为向 CHANGELOG 追加条目，测试增至 875 项
+
 ## [2.2.0](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.1.0..v2.2.0) - 2026-08-07
 
 ### 新增
 
-- **图表题注导出**：Word 里的表格和插图现在带规范题注——表题在表上方、图题在图下方，黑体小四居中，编号体例符合 GB/T 7713 报告规范。写法：图题就是图片的说明文字；表题写"表1 标题"放在表格上一行
+- **图表题注导出**：Word 里的表格和插图现在带规范题注，表题在表上方、图题在图下方，黑体小四居中，编号体例符合 GB/T 7713 报告规范。写法：图题就是图片的说明文字；表题写“表1 标题”放在表格上一行
 - **导出更可靠**：未保存的新建文档会先提示保存；已有同名文件时可选择另存为；文中有 Mermaid 图等暂未支持导出的内容时，导出后会明确提醒您哪些内容没有呈现，不再静默丢失
 
 ### 改进
@@ -43,7 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **(export)** 标题启用"与下段同页"，改名 Markdown Gongwen 公文 - ([31fe29c](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/31fe29c326de48636d6bfcf6d8f32314e8cbd01b))
+- **(export)** 标题启用“与下段同页”，改名 Markdown Gongwen 公文 - ([31fe29c](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/31fe29c326de48636d6bfcf6d8f32314e8cbd01b))
 
 ## [2.0.1](https://github.com/sinnohzeng/markdown-gongwen-vscode/compare/v2.0.0..v2.0.1) - 2026-04-04
 
@@ -75,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- 正文字号/行高配置 + 修复 fontWeight 与 textDecoration CSS hack 冲突 - ([c0e60f9](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/c0e60f9f4534502c58c132c566ad993b0825b164))
+- 正文字号/行高配置，修复 fontWeight 与 textDecoration CSS hack 冲突 - ([c0e60f9](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/c0e60f9f4534502c58c132c566ad993b0825b164))
 - 标题字号严格遵循 GB/T 9704，正文改用 editor.fontSize 方案 - ([6619c3c](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/6619c3c1aa3e5203c1c43a341a02b44dfb218512))
 - 加粗和正文全部使用思源宋体，修正 Noto Serif SC 字体名，新增字体安装指南 - ([dbc2733](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/dbc2733046f4e2c2083b9188c564c5b11edccc31))
 - 新增一键导出 GB/T 9704 党政公文 DOCX 功能 - ([ca81a86](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/ca81a86b1b8ad5f4ba11966b9402a84c3985b739))
@@ -125,7 +153,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **(parser)** show only checkbox for task list items, not bullet - ([a08b714](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/a08b714a6c977fd8e775c168d44de382ab42bebb))
 - Add emoji shortcode rendering - ([dfcb036](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/dfcb0367a949c12689b613d5962aaf0022f7895f))
 - add GFM table rendering with visual grid decorations ([#55](https://github.com/sinnohzeng/markdown-gongwen-vscode/issues/55)) - ([822191e](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/822191e78988902afb3d563b01e3b83d090c3470))
-- 新增字体自定义功能，内置党政公文排版风格，重命名为「Markdown 公文视图」 - ([9a4fdbe](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9a4fdbe67f77271dc6b8bb27bf3054b7009067bb))
+- 新增字体自定义功能，内置党政公文排版风格，重命名为“Markdown 公文视图” - ([9a4fdbe](https://github.com/sinnohzeng/markdown-gongwen-vscode/commit/9a4fdbe67f77271dc6b8bb27bf3054b7009067bb))
 
 ### Changed
 
