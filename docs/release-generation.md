@@ -16,11 +16,18 @@ Or directly:
 node scripts/release.js
 ```
 
+To force a specific version instead of letting `git-cliff` decide, pass it as an argument. Use this when the commit types overstate the change, for example a `feat`-typed commit that only swaps an asset and would otherwise bump the minor version:
+
+```bash
+npm run release -- 2.3.1
+node scripts/release.js 2.3.1
+```
+
 This script will:
 
 1. **Validate the environment**: Ensures you're on the `main` branch with a clean working tree
 2. **Run validation checks**: Executes `lint:docs`, `test`, and `build` to ensure everything passes
-3. **Determine the next version**: Analyzes commits since the last tag using `git-cliff` to determine the appropriate version bump (major/minor/patch) based on conventional commits
+3. **Determine the next version**: Uses the version passed as an argument if there is one; otherwise analyzes commits since the last tag using `git-cliff` to determine the appropriate version bump (major/minor/patch) based on conventional commits
 4. **Update CHANGELOG.md**: Prepends a new release section generated from commit messages (grouped by type) above the existing entries. Hand-written sections are kept as they are. Edit the new section by hand before pushing if the generated wording is not what users should read
 5. **Update package.json**: Bumps the version in `package.json` and `package-lock.json`
 6. **Commit and tag**: Creates a commit with message `chore(release): vX.Y.Z` and creates the git tag `vX.Y.Z`

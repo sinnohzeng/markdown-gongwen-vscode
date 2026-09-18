@@ -300,12 +300,13 @@ This runs:
 
 2. **Run Release:**
    ```bash
-   npm run release
+   npm run release            # git-cliff picks the version from commit types
+   npm run release -- 2.3.1   # force a version when the commit types overstate the change
    ```
 
 3. **What Happens:**
    - Validates environment and runs all checks
-   - Determines version from commits (SemVer)
+   - Determines version from the argument, or from commits (SemVer) when none is given
    - Generates CHANGELOG.md
    - Updates package.json version
    - Commits and tags release

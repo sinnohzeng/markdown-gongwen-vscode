@@ -3,8 +3,12 @@ const { execSync } = require("child_process");
 
 /**
  * Release helper script for markdown-gongwen-vscode.
+ *
+ * Usage: npm run release            # git-cliff decides the next version
+ *        npm run release -- 2.3.1   # force an explicit version
+ *
  * - Runs validation checks (lint:docs, test, build)
- * - Gets next version with git-cliff
+ * - Gets next version with git-cliff, unless one is passed as an argument
  * - Prepends the new release section to CHANGELOG.md (hand-written entries are kept)
  * - Bumps package.json version
  * - Commits changes and creates git tag
@@ -64,13 +68,27 @@ try {
     );
   }
 
-  // Determine next version
-  log("🔍 Determining next version with git-cliff...");
-  let nextVersion = run("npx git-cliff --bumped-version");
-  if (!nextVersion) {
-    throw new Error(
-      "Failed to determine next version. Ensure you have conventional commits since the last tag.",
-    );
+  // Determine next version: an explicit argument wins over git-cliff's guess.
+  // git-cliff bumps by commit type, which is wrong whenever a feat-typed commit
+  // carries no user-facing change (an icon swap, for instance).
+  const requested = process.argv[2];
+  let nextVersion;
+  if (requested) {
+    if (!/^v?\d+\.\d+\.\d+(?:-[\w.]+)?$/.test(requested)) {
+      throw new Error(
+        `Invalid version "${requested}". Expected a semver string such as 2.3.1.`,
+      );
+    }
+    nextVersion = requested;
+    log(`🔢 Using the version passed on the command line: ${nextVersion}`);
+  } else {
+    log("🔍 Determining next version with git-cliff...");
+    nextVersion = run("npx git-cliff --bumped-version");
+    if (!nextVersion) {
+      throw new Error(
+        "Failed to determine next version. Ensure you have conventional commits since the last tag.",
+      );
+    }
   }
   // Remove 'v' prefix if present for consistency
   nextVersion = nextVersion.replace(/^v/, "");
