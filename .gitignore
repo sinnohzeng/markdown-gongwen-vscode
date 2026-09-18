@@ -146,3 +146,6 @@ assets/mermaid/
 
 # 本地打包产物（CI 产物在 dist/）
 *.vsix
+
+# 临时投递目录（给 agent 传素材用，不入库也不打包）
+inbox/

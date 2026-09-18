@@ -39,7 +39,11 @@ dist/coverage
 # CI/CD
 .github/**
 
+# Icon source (the built assets/icon.png is what ships)
+assets/icon.svg
+
 # Temporary / generated data (not part of extension)
+inbox/**
 .firecrawl/**
 .remember/**
 .claude/**

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Markdown Gongwen 公文 — 插件图标源文件，透明背景。
+       上：Markdown Mark 线框版，路径取自 iconfont 的 1024 viewBox 原稿，等比缩放到 432px 宽。
+       下：GB/T 9704，Menlo Bold，按字形墨迹宽度（非 advance）对齐到标记同宽。
+       文字依赖 macOS 自带的 Menlo；换机器重新导出 PNG 前先确认字体在位。 -->
+  <g fill="#CC2936" transform="translate(40 68.08) scale(0.421875) translate(0 -192)">
+    <path d="M92 192C42.24 192 0 232.128 0 282.016v459.968C0 791.904 42.24 832 92 832h840C981.76 832 1024 791.872 1024 741.984V282.016C1024 232.16 981.76 192 932 192z m0 64h840c16.512 0 28 12.256 28 26.016v459.968c0 13.76-11.52 26.016-28 26.016H92C75.488 768 64 755.744 64 741.984V282.016c0-13.76 11.52-25.984 28-25.984z"/>
+    <path d="M160 352v320h96v-212.992l96 127.008 96-127.04V672h96V352h-96l-96 128-96-128z"/>
+    <path d="M704 352v160h-96l144 160 144-160h-96v-160z"/>
+  </g>
+  <text x="35.36" y="436.38" fill="#CC2936" font-family="Menlo, monospace" font-weight="700"
+        font-size="81.26" text-anchor="start" textLength="440.3" lengthAdjust="spacing"
+        style="font-kerning:none;font-variant-ligatures:none">GB/T 9704</text>
+</svg>
