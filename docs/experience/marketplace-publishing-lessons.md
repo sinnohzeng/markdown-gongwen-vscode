@@ -44,6 +44,17 @@
 
 **补充（2026-07-22）**：Actions 早已启用、`workflow_dispatch` 正常，但 push 事件（推 main 分支、推 tag）至今不产生任何 run（`actions/runs?event=push` 为空），原因未查明。发版不要等 push 触发，直接手动 dispatch：`gh workflow run "Build & quality" --ref main -f tag=vX.Y.Z`。
 
+**补充（2026-09-18）**：上一条的命令少了 `--repo`，实际会打到上游仓库。本地 clone 有 `upstream` 指向 `SeardnaSchmid/markdown-inline-editor-vscode`，而 `gh` 没有设默认仓库时会在两个 remote 之间自己挑，挑中上游就报 `HTTP 403: Must have admin rights to Repository`。更隐蔽的是 `gh run list` 不报错，直接列出上游的 run，看上去像是本仓库没触发。
+
+两个办法，任选其一，建议都做：
+
+```bash
+gh repo set-default sinnohzeng/markdown-gongwen-vscode   # 写进 .git/config，一次到位
+gh workflow run "Build & quality" --repo sinnohzeng/markdown-gongwen-vscode --ref main -f tag=vX.Y.Z
+```
+
+判断 `gh` 到底在查哪个仓库，看 `gh run list` 里有没有本仓库不存在的分支名（例如上游的 dependabot 分支）。
+
 ## 5. git tag 的 lightweight vs annotated 问题
 
 **问题**：使用 `git push origin main --follow-tags` 推送后，tag 没有被推上去。

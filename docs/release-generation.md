@@ -43,8 +43,10 @@ git push origin vX.Y.Z
 If no "Build & quality" run starts within a minute (push triggers have proven unreliable on this repo), trigger the release manually. This is the path used by all previous releases:
 
 ```bash
-gh workflow run "Build & quality" --ref main -f tag=vX.Y.Z
+gh workflow run "Build & quality" --repo sinnohzeng/markdown-gongwen-vscode --ref main -f tag=vX.Y.Z
 ```
+
+`--repo` 不能省。本地 clone 有 `upstream` remote，`gh` 在没设默认仓库时可能解析到上游，报 `HTTP 403: Must have admin rights to Repository`；`gh run list` 更麻烦，它不报错，直接列出上游的 run。一次性修掉：`gh repo set-default sinnohzeng/markdown-gongwen-vscode`。详见 `docs/experience/marketplace-publishing-lessons.md` §4。
 
 The automated script (`npm run release` or `node scripts/release.js`) is recommended as it:
 - Automatically determines the correct version from commits

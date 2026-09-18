@@ -329,6 +329,8 @@ This runs:
    gh workflow run "Build & quality" -R sinnohzeng/markdown-gongwen-vscode --ref main -f tag=v<version>
    ```
 
+   `-R` is required on **every** `gh` call here, `gh run list` included. This clone has an `upstream` remote, and without a default repo `gh` may resolve to it: `workflow run` then fails with `HTTP 403: Must have admin rights`, while `gh run list` silently lists upstream's runs and looks like the release never triggered. Fix it once with `gh repo set-default sinnohzeng/markdown-gongwen-vscode`.
+
 5. **CI/CD:**
    - GitHub Actions automatically publishes to VS Code Marketplace and OpenVSX
    - **Releases are triggered by a `v*` tag push or by manual `workflow_dispatch` with the tag as input**
