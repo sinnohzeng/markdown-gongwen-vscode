@@ -513,41 +513,5 @@
     "ts-jest": "^29.4.12",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.70.0"
-  },
-  "__metadata": {
-    "id": "sinnohzeng.markdown-gongwen",
-    "publisherDisplayName": "sinnohzeng",
-    "badges": [
-      {
-        "url": "https://github.com/sinnohzeng/markdown-gongwen-vscode/actions/workflows/ci.yaml/badge.svg",
-        "href": "https://github.com/sinnohzeng/markdown-gongwen-vscode/actions/workflows/ci.yaml",
-        "description": "CI 构建与测试状态"
-      },
-      {
-        "url": "https://img.shields.io/visual-studio-marketplace/v/sinnohzeng.markdown-gongwen?label=VS%20Code%20Marketplace",
-        "href": "https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen",
-        "description": "VS Code Marketplace 版本"
-      }
-    ],
-    "keywords": [
-      "markdown",
-      "wysiwyg",
-      "inline",
-      "editor",
-      "公文",
-      "党政公文",
-      "公文排版",
-      "chinese",
-      "typography",
-      "font",
-      "docx",
-      "word",
-      "export",
-      "gb9704"
-    ],
-    "galleryBanner": {
-      "color": "#A61B29",
-      "theme": "dark"
-    }
   }
 }

@@ -2,7 +2,7 @@
 
 <img src="assets/icon.png" align="right" alt="Markdown Gongwen 公文" width="120" height="120">
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/sinnohzeng.markdown-gongwen?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen)
+[![VS Code Marketplace](https://vsmarketplacebadges.dev/version-short/sinnohzeng.markdown-gongwen.svg?label=VS%20Code%20Marketplace&color=007ec6)](https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen)
 [![Open VSX](https://img.shields.io/open-vsx/v/sinnohzeng/markdown-gongwen?label=Open%20VSX)](https://open-vsx.org/extension/sinnohzeng/markdown-gongwen)
 [![Build & quality](https://github.com/sinnohzeng/markdown-gongwen-vscode/actions/workflows/ci.yaml/badge.svg)](https://github.com/sinnohzeng/markdown-gongwen-vscode/actions/workflows/ci.yaml)
 
