@@ -69,8 +69,17 @@ export const HEADING_LEVEL_SPEC: Record<number, HeadingLevelSpec> = {
   5: { styleId: "Heading4", font: FangSong,     bold: false },
 };
 
-/** 目录标题样式 ID：Word 内建 "TOC Heading"，中文 Word 显示为"目录标题"。Word 的自动目录把"目录"二字套用此样式 */
+/** 目录标题样式 ID：Word 内建 "TOC Heading"（中文 Word 显示为"TOC 标题"）。Word 的自动目录把"目录"二字套用此样式 */
 export const TOC_HEADING_STYLE_ID = "TOCHeading";
+
+/**
+ * WPS 自动目录用的目录标题样式 ID。WPS 的内建样式表止于 Word 97 那一代
+ * （heading、toc、index、caption……），不认识 "TOC Heading"；它的"引用 → 目录 →
+ * 自动目录"给"目录"二字套的是一个名叫"目录标题"的样式，文档里没有就按 WPS
+ * 自己的默认值（宋体五号）现造一个。这里预先按这个名字定义好，外观全部继承
+ * TOC Heading，改一处两边生效。平时隐藏，用到才出现在样式面板。
+ */
+export const TOC_HEADING_WPS_STYLE_ID = "TOCHeadingWPS";
 
 /** 标题 5-7：GB/T 9704 标题层级止于四级，更深层级沿用四级标题外观，不再新增视觉层级 */
 const EXTRA_HEADING_LEVELS = [5, 6, 7] as const;
@@ -266,6 +275,17 @@ export function createDocumentStyles(): IStylesOptions {
     },
   });
 
+  // WPS 自动目录按名字找"目录标题"，外观全部继承 TOC Heading
+  const tocHeadingWpsStyle = new StyleForParagraph({
+    id: TOC_HEADING_WPS_STYLE_ID,
+    name: "目录标题",
+    basedOn: TOC_HEADING_STYLE_ID,
+    next: "Normal",
+    uiPriority: UI_PRIORITY.TOC,
+    semiHidden: true,
+    unhideWhenUsed: true,
+  });
+
   // 目录条目 toc 1-3
   const tocEntryStyles = TOC_ENTRY_LEVELS.map(createTocEntryStyle);
 
@@ -312,6 +332,7 @@ export function createDocumentStyles(): IStylesOptions {
       ...headingStyles,
       ...extraHeadingStyles,
       tocHeadingStyle,
+      tocHeadingWpsStyle,
       ...tocEntryStyles,
       hyperlinkStyle,
       ...noteStyles,

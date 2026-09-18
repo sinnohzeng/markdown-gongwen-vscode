@@ -12,6 +12,7 @@ import {
   FIRST_LINE_INDENT_TWIP,
   FONT_SIZE_HALF_PT,
   LINE_SPACING_TWIP,
+  SINGLE_LINE_SPACING_TWIP,
   TOC_LEVEL_INDENT_TWIP,
   TOC_TAB_STOP_TWIP,
 } from "../constants";
@@ -85,6 +86,54 @@ function paragraphContaining(xml: string, needle: string): string {
   if (!hit) throw new Error(`未找到包含 "${needle}" 的段落`);
   return hit;
 }
+
+// ── 图片段行距：固定行距会把图片裁成一条，图片所在段必须让开 ──
+
+describe("图片段行距", () => {
+  const png: ResolvedImage = { buffer: Buffer.alloc(8), width: 10, height: 10, format: "png" };
+  const images = new Map<string, ResolvedImage>([["./a.png", png]]);
+
+  it("独占段图片：单倍行距，不继承文档默认的固定 28 磅", async () => {
+    const xml = await toDocumentXml(root(paragraph(imageNode("./a.png", "装饰"))), images);
+    const p = paragraphContaining(xml, "<w:drawing>");
+    expect(p).toContain(`w:line="${SINGLE_LINE_SPACING_TWIP}"`);
+    expect(p).toContain('w:lineRule="auto"');
+    expect(p).not.toContain(`w:line="${LINE_SPACING_TWIP}"`);
+  });
+
+  it("带图题的图片段同样单倍行距，图题段仍在网格上", async () => {
+    const xml = await toDocumentXml(root(paragraph(imageNode("./a.png", "图1 架构"))), images);
+    expect(paragraphContaining(xml, "<w:drawing>")).toContain('w:lineRule="auto"');
+    expect(paragraphContaining(xml, "图1\u3000架构")).not.toContain('w:lineRule="auto"');
+  });
+
+  it("文字与图片混排：行距改为最小值 28 磅，文字行不掉网格，图片行可撑开", async () => {
+    const ast = root(paragraph(text("见图"), imageNode("./a.png", ""), text("所示")));
+    const xml = await toDocumentXml(ast, images);
+    const p = paragraphContaining(xml, "<w:drawing>");
+    expect(p).toContain(`w:line="${LINE_SPACING_TWIP}"`);
+    expect(p).toContain('w:lineRule="atLeast"');
+  });
+
+  it("纯文字段落不受影响，仍是固定 28 磅", async () => {
+    const xml = await toDocumentXml(root(paragraph(text("正文"))));
+    const p = paragraphContaining(xml, "正文");
+    expect(p).toContain('w:lineRule="exact"');
+  });
+
+  it("表格单元格里的图片：行距改为最小值", async () => {
+    const table = {
+      type: "table", align: [null],
+      children: [
+        { type: "tableRow", children: [{ type: "tableCell", children: [text("表头")] }] },
+        { type: "tableRow", children: [{ type: "tableCell", children: [imageNode("./a.png", "")] }] },
+      ],
+    } as unknown as Content;
+    const xml = await toDocumentXml(root(table), images);
+    expect(paragraphContaining(xml, "<w:drawing>")).toContain('w:lineRule="atLeast"');
+    expect(paragraphContaining(xml, "表头")).not.toContain("w:lineRule");
+  });
+});
 
 // ── 引用块：楷体正文，无底纹、无斜体、首行缩进 ──
 
@@ -604,6 +653,16 @@ describe("样式表 styles.xml", () => {
     expect(style).toContain('<w:jc w:val="center"/>');
     expect(style).toContain('w:firstLine="0"');
     expect(style).not.toContain("<w:b/>");
+  });
+
+  it("WPS 自动目录用的“目录标题”样式：按名字匹配，外观全部继承 TOC Heading，平时隐藏", async () => {
+    const xml = await toStylesXml();
+    const style = styleWithId(xml, "TOCHeadingWPS");
+    expect(style).toContain('<w:name w:val="目录标题"/>');
+    expect(style).toContain('<w:basedOn w:val="TOCHeading"/>');
+    expect(style).toContain("<w:semiHidden/>");
+    expect(style).toContain("<w:unhideWhenUsed/>");
+    expect(style).not.toContain("<w:rPr>");
   });
 
   it("目录条目 toc 1-3：仿宋三号，逐级左缩进 2 字，版心右缘点线制表位", async () => {

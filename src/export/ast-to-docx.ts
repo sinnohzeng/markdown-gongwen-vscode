@@ -28,6 +28,7 @@ import {
   HeiTi, KaiTi, FangSong, CodeFont,
   FIRST_LINE_INDENT_TWIP,
   LINE_SPACING_TWIP,
+  SINGLE_LINE_SPACING_TWIP,
   CODE_LINE_SPACING_TWIP,
   LIST_NEST_INDENT_TWIP,
   COLOR_BLACK,
@@ -266,13 +267,36 @@ function convertParagraph(
       indent: { firstLine: FIRST_LINE_INDENT_TWIP },
       spacing: {
         line: LINE_SPACING_TWIP,
-        lineRule: LineRuleType.EXACT,
+        lineRule: lineRuleFor(runs),
         before: 0,
         after: 0,
       },
       children: runs,
     }),
   ];
+}
+
+// ── 行距与图片 ──────────────────────────────────
+//
+// 固定行距（lineRule=exact）会把行高钉死在 28 磅，比这更高的行内图片只露出
+// 一条，Word 与 WPS 都如此。图片独占段直接用单倍行距；文字与图片混排的段
+// 用"最小值"：文字行仍落在 28 磅网格上，图片所在行按图高撑开。
+
+/** 图片独占段的行距：单倍，让图片按自身高度撑开 */
+const IMAGE_PARAGRAPH_SPACING = {
+  line: SINGLE_LINE_SPACING_TWIP,
+  lineRule: LineRuleType.AUTO,
+  before: 0,
+  after: 0,
+} as const;
+
+function hasImageRun(runs: InlineChild[]): boolean {
+  return runs.some((run) => run instanceof ImageRun);
+}
+
+/** 文字段落的行距规则：含图片则最小值，否则固定值 */
+function lineRuleFor(runs: InlineChild[]): (typeof LineRuleType)[keyof typeof LineRuleType] {
+  return hasImageRun(runs) ? LineRuleType.AT_LEAST : LineRuleType.EXACT;
 }
 
 // ── 图表题注 ────────────────────────────────────
@@ -326,6 +350,7 @@ function convertImageParagraph(
   return new Paragraph({
     alignment: AlignmentType.CENTER,
     indent: { firstLine: 0 },
+    spacing: IMAGE_PARAGRAPH_SPACING,
     keepNext: keepNext || undefined,
     children: [
       new ImageRun({
@@ -373,7 +398,12 @@ function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table 
               new Paragraph({
                 alignment: isHeader ? AlignmentType.CENTER : bodyAlign,
                 indent: { firstLine: 0 },  // 覆盖文档默认的首行缩进 2 字
-                spacing: { before: 40, after: 40 },
+                spacing: {
+                  before: 40,
+                  after: 40,
+                  // 单元格默认继承文档的固定 28 磅；有图片时改最小值，图片才不被裁
+                  ...(hasImageRun(runs) ? { line: LINE_SPACING_TWIP, lineRule: LineRuleType.AT_LEAST } : {}),
+                },
                 children: runs,
               }),
             ],
