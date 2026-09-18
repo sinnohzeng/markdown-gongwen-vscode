@@ -16,8 +16,10 @@ import {
   ShadingType,
   Table,
   TableCell,
+  TableOfContents,
   TableRow,
   TextRun,
+  VerticalAlignTable,
   WidthType,
 } from "docx";
 import type { ResolvedImage } from "./image-dimensions";
@@ -31,34 +33,17 @@ import {
   COLOR_BLACK,
   SHADING,
   TABLE as TABLE_CONST,
+  TOC_HEADING_TEXT,
+  TOC_HEADING_LEVELS,
+  TOC_MARKER_PATTERN,
   type FontSpec,
 } from "./constants";
-import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph, HEADING_LEVEL_SPEC, type HeadingLevelSpec } from "./gbt9704-styles";
+import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph, HEADING_LEVEL_SPEC, TOC_HEADING_STYLE_ID } from "./gbt9704-styles";
 import { buildCaptionText } from "./caption";
 
 // ── 类型 ────────────────────────────────────────
 
-type DocxChild = Paragraph | Table;
-
-// ── 标题级别 → 样式映射 ─────────────────────────
-//   Markdown H1 → Title（公文标题）
-//   Markdown H2 → Heading1（一级标题 黑体）
-//   Markdown H3 → Heading2（二级标题 楷体）
-//   Markdown H4 → Heading3（三级标题 仿宋加粗）
-//   Markdown H5 → Heading4（四级标题 仿宋）
-
-interface HeadingStyle extends HeadingLevelSpec {
-  size: number;
-}
-
-// 标题不设首行缩进——公文中标题编号（一、/（一）/1.）是文字内容的一部分，
-// 缩进由 Markdown 文本本身的空格控制，不由 Word 段落样式控制。
-const HEADING_MAP: Record<number, HeadingStyle> = Object.fromEntries(
-  Object.entries(HEADING_LEVEL_SPEC).map(([level, spec]) => [
-    Number(level),
-    { ...spec, size: spec.styleId === "Title" ? FONT_SIZE_HALF_PT.TITLE : FONT_SIZE_HALF_PT.HEADING },
-  ]),
-);
+type DocxChild = Paragraph | Table | TableOfContents;
 
 // ── 公开入口 ────────────────────────────────────
 
@@ -81,9 +66,12 @@ export function convertToDocx(
     children.push(new Paragraph({}));
   }
 
+  // 只有含目录域时才让 Word 打开即更新域；普通文档不弹"是否更新域"提示
+  const hasToc = children.some((child) => child instanceof TableOfContents);
+
   return new Document({
     styles: createDocumentStyles(),
-    features: { updateFields: true },
+    features: hasToc ? { updateFields: true } : undefined,
     evenAndOddHeaderAndFooters: true, // 启用奇偶页不同页脚
     sections: [
       {
@@ -113,6 +101,8 @@ interface RunContext {
   strikethrough?: boolean;
   font?: FontSpec;
   size?: number;
+  /** 文字不打直接格式，字体字号由段落样式承担（标题用；否则目录域会把标题字体带进条目） */
+  inheritStyle?: boolean;
 }
 
 function convertNodes(
@@ -187,19 +177,51 @@ function convertNodes(
 
 // ── 标题 ────────────────────────────────────────
 
+//   Markdown H1 → Title（公文标题）
+//   Markdown H2 → Heading1（一级标题 黑体）
+//   Markdown H3 → Heading2（二级标题 楷体）
+//   Markdown H4 → Heading3（三级标题 仿宋加粗）
+//   Markdown H5 → Heading4（四级标题 仿宋）
+//
+// 标题文字不打直接格式，字体、字号、加粗全部由样式承担：用户在 Word 里改
+// "标题 1"样式即可全局生效，目录域（\h \u）也不会把黑体 / 楷体带进条目。
+// 标题编号（一、/（一）/1.）是文字内容的一部分，由 Markdown 文本控制。
+
 function convertHeading(node: Heading, images: Map<string, ResolvedImage>): Paragraph {
   // 公文标题层级到 H5（四级标题）为止；更深的 H6 回退到四级标题样式。
-  const style = HEADING_MAP[node.depth] ?? HEADING_MAP[5];
-  const runs = convertInlineNodes(node.children as PhrasingContent[], images, {
-    font: style.font,
-    size: style.size,
-    bold: style.bold,
-  });
+  const spec = HEADING_LEVEL_SPEC[node.depth] ?? HEADING_LEVEL_SPEC[5];
+  const runs = convertInlineNodes(node.children as PhrasingContent[], images, { inheritStyle: true });
 
   return new Paragraph({
-    style: style.styleId,
+    style: spec.styleId,
     children: runs,
   });
+}
+
+// ── 目录 ────────────────────────────────────────
+//
+// 独占一段的 [TOC] / [[TOC]] 标记 → "目录"标题段（TOC Heading 样式）+ 目录域。
+// 目录域打开文档时由 Word 更新（settings.xml 的 updateFields），WPS 若未自动生成
+// 条目，右键目录选"更新域"。
+
+function isTocMarker(node: MdParagraph): boolean {
+  // 只认独占一段的纯文本；`[TOC]`（行内代码）、*[toc]*、[[TOC]](url) 都是在讲这个写法，不是标记
+  const [only] = node.children;
+  return node.children.length === 1 && only.type === "text"
+    && TOC_MARKER_PATTERN.test((only as Text).value.trim());
+}
+
+function createTocBlock(): DocxChild[] {
+  return [
+    new Paragraph({
+      style: TOC_HEADING_STYLE_ID,
+      children: [new TextRun({ text: TOC_HEADING_TEXT })],
+    }),
+    new TableOfContents(TOC_HEADING_TEXT, {
+      hyperlink: true,
+      headingStyleRange: TOC_HEADING_LEVELS,
+    }),
+  ];
 }
 
 // ── 段落 ────────────────────────────────────────
@@ -210,6 +232,11 @@ function convertParagraph(
   ctx: RunContext,
   nextNode?: Content,
 ): DocxChild[] {
+  // 目录标记：整段只有 [TOC]
+  if (isTocMarker(node)) {
+    return createTocBlock();
+  }
+
   // 表题：紧邻表格上方的段落匹配"表N 标题"时，渲染为表上居中题注段，
   // 不再作为普通正文输出（GB/T 7713.1-2006、CY/T 170-2019 4.2.1.2）
   if (nextNode?.type === "table") {
@@ -268,10 +295,16 @@ function plainTextOf(nodes: PhrasingContent[]): string {
 // ── 图片 ────────────────────────────────────────
 
 /** 未嵌入图片引用的公共占位文案与样式（块级与内联共用，防文案漂移） */
-function imagePlaceholderRun(url: string): TextRun {
+function imagePlaceholderRun(url: string, ctx: RunContext = {}): TextRun {
   const isRemote = url.startsWith("http://") || url.startsWith("https://");
   const text = isRemote ? `[远程图片: ${url}]` : `[图片未找到: ${url}]`;
-  return new TextRun({ text, color: COLOR_BLACK, italics: true, font: FangSong, size: FONT_SIZE_HALF_PT.BODY });
+  return new TextRun({
+    text,
+    color: COLOR_BLACK,
+    italics: true,
+    font: ctx.inheritStyle ? undefined : FangSong,
+    size: ctx.inheritStyle ? undefined : FONT_SIZE_HALF_PT.BODY,
+  });
 }
 
 function convertImageParagraph(
@@ -284,6 +317,7 @@ function convertImageParagraph(
   if (!resolved) {
     return new Paragraph({
       alignment: AlignmentType.CENTER,
+      indent: { firstLine: 0 },
       keepNext: keepNext || undefined,
       children: [imagePlaceholderRun(node.url)],
     });
@@ -291,6 +325,7 @@ function convertImageParagraph(
 
   return new Paragraph({
     alignment: AlignmentType.CENTER,
+    indent: { firstLine: 0 },
     keepNext: keepNext || undefined,
     children: [
       new ImageRun({
@@ -303,6 +338,9 @@ function convertImageParagraph(
 }
 
 // ── 表格（全框线）───────────────────────────────
+//
+// 表头黑体四号不加粗、水平居中（黑体本身够重，再加粗反而难看）；
+// 表体仿宋四号，按 GFM 列对齐；所有单元格垂直居中。
 
 function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table {
   const rows = node.children as MdTableRow[];
@@ -316,7 +354,7 @@ function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table 
         tableHeader: isHeader,
         children: (row.children as MdTableCell[]).map((cell, colIdx) => {
           const cellAlign = alignments[colIdx];
-          const docxAlign = cellAlign === "center" ? AlignmentType.CENTER
+          const bodyAlign = cellAlign === "center" ? AlignmentType.CENTER
             : cellAlign === "right" ? AlignmentType.RIGHT
             : AlignmentType.LEFT;
 
@@ -324,16 +362,17 @@ function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table 
             cell.children as PhrasingContent[],
             images,
             {
-              bold: isHeader,
               font: isHeader ? HeiTi : FangSong,
               size: FONT_SIZE_HALF_PT.TABLE_CELL,
             },
           );
 
           return new TableCell({
+            verticalAlign: VerticalAlignTable.CENTER,
             children: [
               new Paragraph({
-                alignment: docxAlign,
+                alignment: isHeader ? AlignmentType.CENTER : bodyAlign,
+                indent: { firstLine: 0 },  // 覆盖文档默认的首行缩进 2 字
                 spacing: { before: 40, after: 40 },
                 children: runs,
               }),
@@ -409,8 +448,8 @@ function convertList(
 
 // 引用块按正文版式排版（首行缩进、两端对齐、无底纹），文字改用楷体与正文
 // 区分——中文公文排版不使用斜体。
-function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>): Paragraph[] {
-  const result: Paragraph[] = [];
+function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>): DocxChild[] {
+  const result: DocxChild[] = [];
 
   for (const child of node.children as Content[]) {
     if (child.type === "paragraph") {
@@ -434,9 +473,7 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
         }),
       );
     } else {
-      for (const item of convertNodes([child], images, { font: KaiTi })) {
-        if (item instanceof Paragraph) result.push(item);
-      }
+      result.push(...convertNodes([child], images, { font: KaiTi }));
     }
   }
 
@@ -444,6 +481,12 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
 }
 
 // ── 代码块 ──────────────────────────────────────
+
+/** 代码类段落（代码行、Mermaid 占位、公式源码）：左对齐、无首行缩进，不继承正文版式 */
+const CODE_PARAGRAPH = {
+  alignment: AlignmentType.LEFT,
+  indent: { firstLine: 0 },
+} as const;
 
 function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
   const lang = node.lang ?? "";
@@ -455,6 +498,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
     fidelitySink?.push(`Mermaid 图表${where}：以占位文字呈现，源码附后`);
     return [
       new Paragraph({
+        ...CODE_PARAGRAPH,
         shading: { type: ShadingType.CLEAR, fill: SHADING.PLACEHOLDER },
         children: [
           new TextRun({
@@ -470,6 +514,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
       ...node.value.split("\n").map(
         (line) =>
           new Paragraph({
+            ...CODE_PARAGRAPH,
             shading: { type: ShadingType.CLEAR, fill: SHADING.CODE },
             spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
             children: [
@@ -490,6 +535,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
     return node.value.split("\n").map(
       (line) =>
         new Paragraph({
+          ...CODE_PARAGRAPH,
           shading: { type: ShadingType.CLEAR, fill: SHADING.MATH },
           children: [
             new TextRun({
@@ -506,6 +552,7 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
   return node.value.split("\n").map(
     (line) =>
       new Paragraph({
+        ...CODE_PARAGRAPH,
         shading: { type: ShadingType.CLEAR, fill: SHADING.CODE },
         spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
         children: [
@@ -555,12 +602,13 @@ function convertInlineNodes(
           break;
 
         case "strong":
-          // "强调"样式：楷体 + Times New Roman 三号，不加粗（用字体区分而非粗细）
+          // "强调"样式：楷体 + Times New Roman 三号，不加粗（用字体区分而非粗细）。
+          // 标题内不打直接格式，强调按标题样式原样输出。
           result.push(
             ...convertInlineNodes(
               (node as Strong).children as PhrasingContent[],
               images,
-              { ...ctx, bold: false, font: KaiTi, size: ctx.size ?? FONT_SIZE_HALF_PT.HEADING },
+              ctx.inheritStyle ? ctx : { ...ctx, bold: false, font: KaiTi, size: ctx.size ?? FONT_SIZE_HALF_PT.HEADING },
             ),
           );
           break;
@@ -589,8 +637,8 @@ function convertInlineNodes(
           result.push(
             new TextRun({
               text: (node as InlineCode).value,
-              font: CodeFont,
-              size: ctx.size ?? FONT_SIZE_HALF_PT.BODY,
+              font: ctx.inheritStyle ? undefined : CodeFont,
+              size: ctx.size ?? (ctx.inheritStyle ? undefined : FONT_SIZE_HALF_PT.BODY),
               bold: ctx.bold,
               italics: ctx.italic,
             }),
@@ -622,7 +670,7 @@ function convertInlineNodes(
               }),
             );
           } else {
-            result.push(imagePlaceholderRun(imgNode.url));
+            result.push(imagePlaceholderRun(imgNode.url, ctx));
           }
           break;
         }
@@ -659,8 +707,8 @@ function convertInlineNodes(
 function createTextRun(text: string, ctx: RunContext): TextRun {
   return new TextRun({
     text,
-    font: ctx.font ?? FangSong,
-    size: ctx.size ?? FONT_SIZE_HALF_PT.BODY,
+    font: ctx.font ?? (ctx.inheritStyle ? undefined : FangSong),
+    size: ctx.size ?? (ctx.inheritStyle ? undefined : FONT_SIZE_HALF_PT.BODY),
     bold: ctx.bold,
     italics: ctx.italic,
     strike: ctx.strikethrough,

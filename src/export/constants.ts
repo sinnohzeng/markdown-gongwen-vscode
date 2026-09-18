@@ -20,6 +20,9 @@ export const PAGE = {
   PRINT_AREA_HEIGHT_MM: 225,
 } as const;
 
+/** 1 毫米 = 1440 / 25.4 twip */
+const TWIP_PER_MM = 1440 / 25.4;
+
 // ── 字号（磅值 & docx 半磅值） ──────────────────
 
 export const FONT_SIZE_PT = {
@@ -35,6 +38,8 @@ export const FONT_SIZE_PT = {
   TABLE_CELL: 14,
   /** 小四（图表题注，GB/T 7713.2 附录B：小于或等于正文、重于表内文字） */
   CAPTION: 12,
+  /** 小五（脚注 / 尾注文本）。GB/T 9704 未规定，类比 GB/T 7713.2-2022 附录 B 的资料性取值 */
+  FOOTNOTE: 9,
 } as const;
 
 /** 代码块使用五号（10pt），小于正文以示层级 */
@@ -48,6 +53,7 @@ export const FONT_SIZE_HALF_PT = {
   PAGE_NUMBER: (FONT_SIZE_PT.PAGE_NUMBER * 2) as 28,
   TABLE_CELL: (FONT_SIZE_PT.TABLE_CELL * 2) as 28,
   CAPTION: (FONT_SIZE_PT.CAPTION * 2) as 24,
+  FOOTNOTE: (FONT_SIZE_PT.FOOTNOTE * 2) as 18,
   CODE: CODE_FONT_SIZE_PT * 2,
 } as const;
 
@@ -57,6 +63,8 @@ export const FONT_SIZE_HALF_PT = {
 export const LINE_SPACING_PT = 28;
 /** 28pt × 20 = 560 twip */
 export const LINE_SPACING_TWIP = LINE_SPACING_PT * 20;
+/** 单倍行距（Word 的 line=240、lineRule=auto），脚注 / 尾注文本用 */
+export const SINGLE_LINE_SPACING_TWIP = 240;
 /** 首行缩进 2 字符 = 2 × 16pt × 20 = 640 twip */
 export const FIRST_LINE_INDENT_TWIP = 2 * FONT_SIZE_PT.BODY * 20;
 /** 题注段上下间距约半行 = 560 / 2 = 280 twip */
@@ -66,7 +74,22 @@ export const CODE_LINE_SPACING_TWIP = 300;
 /** 列表嵌套每层加深的首行缩进 = 1 字符 = 16pt × 20 = 320 twip */
 export const LIST_NEST_INDENT_TWIP = FONT_SIZE_PT.BODY * 20;
 
-// ── 图片 ─────────────────────────────────────────
+// ── 目录（Word 目录域与 toc N 样式）────────────
+//
+// GB/T 9704 不涉及目录页，取党政机关长文档惯例：
+// "目录"二字黑体三号居中，条目与正文同字体同网格，逐级缩进 2 字，
+// 页码靠版心右缘、点线前导。
+
+/** 目录条目每级左缩进 2 字符 = 640 twip */
+export const TOC_LEVEL_INDENT_TWIP = 2 * FONT_SIZE_PT.BODY * 20;
+/** 目录页码制表位：版心右缘（156mm ≈ 8844 twip） */
+export const TOC_TAB_STOP_TWIP = Math.round(PAGE.PRINT_AREA_WIDTH_MM * TWIP_PER_MM);
+/** 目录标题文字 */
+export const TOC_HEADING_TEXT = "目录";
+/** 目录域收录的 Word 标题级别：1-2 即 Markdown H2、H3（一级、二级标题） */
+export const TOC_HEADING_LEVELS = "1-2";
+/** Markdown 目录标记：独占一段的 [TOC] 或 [[TOC]]，大小写不敏感，括号必须成对 */
+export const TOC_MARKER_PATTERN = /^(\[toc\]|\[\[toc\]\])$/i;
 
 // ── 颜色与底纹（非 GB 约定，取中性值）─────────────
 
@@ -79,6 +102,8 @@ export const SHADING = {
   CODE: "F5F5F5",
   MATH: "F8F8F8",
 } as const;
+
+// ── 图片 ─────────────────────────────────────────
 
 export const IMAGE = {
   /** 无法从文件头解析尺寸时的回退宽度（px，96 DPI） */
@@ -108,13 +133,13 @@ export interface FontSpec {
 /** 方正小标宋简体 — 公文标题专用（GB/T 9704 标准指定，未安装时 Word 自动回退到宋体） */
 export const XiaoBiaoSong: FontSpec = { eastAsia: "FZXiaoBiaoSong-B05S", ascii: "Times New Roman", hAnsi: "Times New Roman" };
 
-/** 黑体 SimHei + Arial — 一级标题、表头 */
+/** 黑体 SimHei + Arial — 一级标题、表头、目录标题 */
 export const HeiTi: FontSpec = { eastAsia: "SimHei", ascii: "Arial", hAnsi: "Arial" };
 
 /** 楷体 KaiTi + Arial — 二级标题、强调 */
 export const KaiTi: FontSpec = { eastAsia: "KaiTi", ascii: "Arial", hAnsi: "Arial" };
 
-/** 仿宋 FangSong + Times New Roman — 正文、三/四级标题 */
+/** 仿宋 FangSong + Times New Roman — 正文、三/四级标题、目录条目、脚注 */
 export const FangSong: FontSpec = { eastAsia: "FangSong", ascii: "Times New Roman", hAnsi: "Times New Roman" };
 
 /** 黑体 SimHei + Times New Roman — 图表题注（GB/T 7713.2：题注用黑体，数字/字母用 Times New Roman） */
@@ -132,4 +157,6 @@ export const TABLE = {
   /** 边框粗细（0.5pt = 4） */
   INNER_BORDER_SIZE: 4,
   BORDER_COLOR: "000000",
+  /** 单元格左右边距 108 twip（0.19cm，Word 默认值） */
+  CELL_MARGIN_TWIP: 108,
 } as const;

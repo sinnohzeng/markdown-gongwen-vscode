@@ -10,7 +10,7 @@ Pandoc 功能强大，但对 VS Code 扩展来说有两个硬伤：一是用户�
 
 ### 核心转换做成纯函数
 
-`ast-to-docx.ts` 不引入任何 VS Code API——拿到语法树和图片 buffer，直接出 Word 文档对象。好处是 Jest 直接测，不用启动 Extension Development Host。VS Code 扩展里凡是能抽成纯函数的逻辑，都该抽出来。
+`ast-to-docx.ts` 不引入任何 VS Code API，拿到语法树和图片 buffer，直接出 Word 文档对象。好处是 Jest 直接测，不用启动 Extension Development Host。VS Code 扩展里凡是能抽成纯函数的逻辑，都该抽出来。
 
 ### 图片尺寸自己读，不装额外的包
 
@@ -18,7 +18,7 @@ PNG 的宽高藏在 IHDR chunk 里（byte 16-23），JPEG 的藏在 SOF marker �
 
 ### 字体常量按字体本身命名
 
-最初写成 `FONT_HEADING_H1`、`FONT_HEADING_H2`，后来发现不对——一种字体可能用在好几个地方，按标题级别命名就绑死了。改成 `HeiTi`、`KaiTi`、`FangSong`、`SongTi`、`XiaoBiaoSong`，一眼就知道是什么字体。
+最初写成 `FONT_HEADING_H1`、`FONT_HEADING_H2`，后来发现不对：一种字体可能用在好几个地方，按标题级别命名就绑死了。改成 `HeiTi`、`KaiTi`、`FangSong`、`SongTi`、`XiaoBiaoSong`，一眼就知道是什么字体。
 
 中间还试过中文变量名（`黑体`、`楷体`），TypeScript 语法上没问题，但工具链兼容性和团队协作是隐患，最终用了拼音 PascalCase。
 
@@ -26,13 +26,13 @@ PNG 的宽高藏在 IHDR chunk 里（byte 16-23），JPEG 的藏在 SOF marker �
 
 ## 踩过的坑
 
-### Word 样式重复——`w:name` 才是命门
+### Word 样式重复：`w:name` 才是命门
 
-用 `paragraphStyles` 定义样式时，写了 `id: "Heading1"` 和 `name: "一级标题"`。结果 Word 里同时冒出来"标题 1"和"一级标题"两个样式。
+用 `paragraphStyles` 定义样式时，写了 `id: "Heading1"` 和 `name: "一级标题"`。结果 Word 里同时冒出来“标题 1”和“一级标题”两个样式。
 
-原因：Word 不看 `w:styleId`，它看 `w:name`。`w:name` 写的是"一级标题"，Word 不认为它是内建样式，就当作新样式处理了。而内建的"标题 1"（`w:name="heading 1"`）照常存在。
+原因：Word 不看 `w:styleId`，它看 `w:name`。`w:name` 写的是“一级标题”，Word 不认为它是内建样式，就当作新样式处理了。而内建的“标题 1”（`w:name="heading 1"`）照常存在。
 
-改用 `styles.default.heading1` API 就好了——这个 API 保留 `w:name="heading 1"` 不变，只覆盖字体、字号等格式属性。中文版 Word 自动把"heading 1"显示为"标题 1"。
+改用 `styles.default.heading1` API 就好了，这个 API 保留 `w:name="heading 1"` 不变，只覆盖字体、字号等格式属性。中文版 Word 自动把“heading 1”显示为“标题 1”。（2026-09 起改为 `importedStyles` 整体替换，见文末补记，`w:name` 的结论不变。）
 
 一句话总结：**`w:styleId` 是文档内部的引用键，`w:name` 才是 Word 识别内建样式的依据。**
 
@@ -44,15 +44,15 @@ Word 的样式继承规则：子样式只有显式设定的属性才会覆盖父
 
 ### 页码的一字线不是英文短横线
 
-GB/T 9704 说"数字左右各放一条一字线"。一字线是占一个汉字宽度的横线，对应 Unicode 的 Em Dash `—`（U+2014），不是键盘上的短横线 `-`（U+002D）。
+GB/T 9704 说“数字左右各放一条一字线”。一字线是占一个汉字宽度的横线，对应 Unicode 的 Em Dash `—`（U+2014），不是键盘上的短横线 `-`（U+002D）。
 
 ### `docx` 库的单位换算
 
-字号用半磅——16pt 写成 32。行距和缩进用 twip（一磅的二十分之一）——28pt 写成 560。毫米转 twip 有现成的 `convertMillimetersToTwip()` 函数。这套单位体系很容易出错，全靠命名常量兜底。
+字号用半磅，16pt 写成 32。行距和缩进用 twip（一磅的二十分之一），28pt 写成 560。毫米转 twip 有现成的 `convertMillimetersToTwip()` 函数。这套单位体系很容易出错，全靠命名常量兜底。
 
 ### macOS 没有仿宋
 
-Windows 上 `FangSong` 是系统字体，macOS 上不存在。但不用在代码里做平台判断——Word 自有一套字体回退机制，会自动找到 `STFangsong`（华文仿宋）。黑体回退到 Heiti SC，楷体回退到 Kaiti SC，都是 Word 自己处理的。
+Windows 上 `FangSong` 是系统字体，macOS 上不存在。但不用在代码里做平台判断，Word 自有一套字体回退机制，会自动找到 `STFangsong`（华文仿宋）。黑体回退到 Heiti SC，楷体回退到 Kaiti SC，都是 Word 自己处理的。
 
 ### 不需要拆分 bundle
 
@@ -65,10 +65,34 @@ Windows 上 `FangSong` 是系统字体，macOS 上不存在。但不用在代码
 | 事项 | 选了什么 | 没选什么 | 为什么 |
 |------|---------|---------|--------|
 | DOCX 生成 | `docx` npm | Pandoc | 零依赖、样式干净 |
-| 样式覆盖 | `styles.default.headingN` | `paragraphStyles` + 自定义 name | 避免样式重复 |
+| 样式覆盖 | `importedStyles` 整体替换，沿用 Word 内建 `w:name` | `default.*` / `paragraphStyles` + 自定义 name | 只输出自己定义的样式，且不产生重复样式 |
 | 字体编码 | 现代字体名 | `_GB2312` 后缀 | 用户要求 |
 | 公文标题 | 方正小标宋简体 | 华文中宋 | 国标指定字体 |
 | 强调样式 | 楷体，不加粗 | 黑体 / CSS bold | 楷体更柔和，公文不靠粗细区分 |
 | 图片尺寸 | 手写 PNG/JPEG 解析 | `image-size` 包 | 避免 native 依赖 |
 | Bundle | 单 bundle | 分离 chunk | 复杂度不值得 |
 | 变量命名 | 拼音 PascalCase | 中文变量名 / 按标题级别命名 | 兼顾可读性和工具链兼容 |
+
+---
+
+## 2026-09-17 补记
+
+### 库的默认样式会悄悄进文件
+
+`docx` 库的 `Document({ styles })` 内部是 `new Styles({ ...defaultStyles, ...options.styles })`。只传 `default.headingN` 时，库自带的 Heading 1 到 6、Strong、List Paragraph、Hyperlink、脚注尾注一整套默认样式照样写进 styles.xml，样式面板里就多出一堆蓝色 Calibri 的英文样式。传 `importedStyles` 才是整体替换：数组里有什么，文件里就只有什么。代价是 `default.*` 随之失效，docDefaults 要自己用 `DocumentDefaults` 发射；Normal、Default Paragraph Font、Normal Table 三个 `w:default="1"` 样式要用 `ImportedXmlComponent` 手工拼，因为 `StyleForParagraph` 写不出 `w:default`，而 `ImportedXmlComponent.fromXmlString` 会多包一层 `<undefined>`。
+
+### 标题文字不能打直接格式
+
+目录域带 `\h \u` 时，Word 会把标题 run 上的直接格式（字体、加粗）原样复制进目录条目。标题 run 只留文字，字体全部交给样式，目录条目才会老实用 toc N 样式。顺带的好处：用户在 Word 里改“标题 1”样式就能全局生效。
+
+### 文档默认的首行缩进会渗到所有段落
+
+docDefaults 里的 `firstLine=640` 是所有段落的底色，不只作用于正文。表格单元格、题注、页码段没有显式归零，导出后单元格文字缩进 2 字、居中题注右偏 1 字、偶数页页码“空三字”。规律：凡是不该缩进的段落，都要显式写 `indent: { firstLine: 0 }`，靠“没设置”是靠不住的。前文“公文标题继承了全局缩进”是同一条规律的第一次出现。
+
+### 样式级制表位要走原生 XML
+
+`StyleForParagraph` 的段落属性只有 `rightTabStop` / `leftTabStop`，写不出点线前导符；目录条目样式的 `<w:tab w:val="right" w:leader="dot"/>` 用 `ImportedXmlComponent` 拼。
+
+### patch 版依赖也能弄坏构建
+
+`@tsconfig/node-lts` 从 24.0.0 到 24.0.1 加了 `"types": ["node"]`，jest 全局类型随之从 tsc 视野里消失，`src/test/__mocks__/vscode.ts` 里的 `jest.fn` 全部报错。本仓库 `tsconfig.json` 现在显式写 `"types": ["node", "jest"]`。`npm update` 之后必须跑一遍 `npm run compile`，`npm test` 走 ts-jest 不会暴露这个问题。

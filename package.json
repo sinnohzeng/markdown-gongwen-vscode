@@ -2,7 +2,7 @@
   "name": "markdown-gongwen",
   "displayName": "Markdown Gongwen 公文",
   "version": "2.2.0",
-  "description": "在 VS Code 中编辑和导出党政公文——所见即所得 Markdown 编辑 + 一键导出 GB/T 9704 DOCX",
+  "description": "用 Markdown 写党政公文，一键导出符合 GB/T 9704 的 Word 文档，支持插图、表格、题注与目录",
   "license": "MIT",
   "author": "sinnohzeng",
   "publisher": "sinnohzeng",
@@ -138,7 +138,7 @@
           "minimum": 0,
           "maximum": 1,
           "description": "光标所在行语法标记的透明度",
-          "markdownDescription": "光标所在行的语法标记透明度（0.0 完全透明 – 1.0 完全显示），默认 `0.3`。"
+          "markdownDescription": "光标所在行的语法标记透明度，0.0 完全透明，1.0 完全显示，默认 `0.3`。"
         },
         "markdownGongwen.decorations.frontmatterDelimiterOpacity": {
           "type": "number",
@@ -146,7 +146,7 @@
           "minimum": 0,
           "maximum": 1,
           "description": "frontmatter 分隔线的透明度",
-          "markdownDescription": "frontmatter 分隔线（`---`）的透明度（0.0 – 1.0），默认 `0.3`。"
+          "markdownDescription": "frontmatter 分隔线（`---`）的透明度，取值 0.0 到 1.0，默认 `0.3`。"
         },
         "markdownGongwen.decorations.codeBlockLanguageOpacity": {
           "type": "number",
@@ -154,7 +154,7 @@
           "minimum": 0,
           "maximum": 1,
           "description": "代码块语言标识的透明度",
-          "markdownDescription": "代码块语言标识的透明度（0.0 – 1.0），默认 `0.3`。"
+          "markdownDescription": "代码块语言标识的透明度，取值 0.0 到 1.0，默认 `0.3`。"
         },
         "markdownGongwen.links.showEmoji": {
           "type": "boolean",
@@ -304,7 +304,7 @@
           "default": "",
           "pattern": "^$|^(normal|bold|lighter|bolder|[1-9]00)$",
           "description": "一级标题的 CSS 字重",
-          "markdownDescription": "一级标题的 CSS 字重（`normal`、`bold`、`100`–`900`）。留空使用插件默认。"
+          "markdownDescription": "一级标题的 CSS 字重（`normal`、`bold`，或 `100` 到 `900`）。留空使用插件默认。"
         },
         "markdownGongwen.fonts.heading1.fontSize": {
           "type": "string",
@@ -437,7 +437,7 @@
           "type": "string",
           "default": "",
           "description": "正文的 CSS 字号",
-          "markdownDescription": "正文的 CSS 字号（如 `105%`、`16px`）。默认 `105%`——比编辑器默认略大，提升中文可读性。留空使用插件默认。"
+          "markdownDescription": "正文的 CSS 字号（如 `105%`、`16px`）。默认 `105%`，比编辑器默认略大，提升中文可读性。留空使用插件默认。"
         },
         "markdownGongwen.fonts.body.lineHeight": {
           "type": "string",

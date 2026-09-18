@@ -10,24 +10,26 @@ import type { Root, Image, Content } from "mdast";
 import type { ImageWarning } from "./image-resolver";
 
 // ── Output Channel（懒初始化）───────────────────
+//
+// LogOutputChannel（VS Code 1.74 起）自带时间戳与日志级别，
+// 用户可在输出面板按级别过滤，不再手工拼时间戳。
 
-let _outputChannel: vscode.OutputChannel | undefined;
+let _outputChannel: vscode.LogOutputChannel | undefined;
 
-function getOutputChannel(): vscode.OutputChannel {
+function getOutputChannel(): vscode.LogOutputChannel {
   if (!_outputChannel) {
-    _outputChannel = vscode.window.createOutputChannel("DOCX 导出");
+    _outputChannel = vscode.window.createOutputChannel("DOCX 导出", { log: true });
   }
   return _outputChannel;
 }
 
 function log(msg: string): void {
-  const ts = new Date().toISOString().slice(11, 23);
-  getOutputChannel().appendLine(`[${ts}] ${msg}`);
+  getOutputChannel().info(msg);
 }
 
 function logError(msg: string, err: unknown): void {
   const detail = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
-  log(`ERROR: ${msg}\n${detail}`);
+  getOutputChannel().error(`${msg}\n${detail}`);
 }
 
 // ── 延迟加载 docx 导出模块 ──────────────────────

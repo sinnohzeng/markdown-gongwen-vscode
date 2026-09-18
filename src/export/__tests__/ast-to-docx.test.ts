@@ -7,7 +7,14 @@
 import JSZip from "jszip";
 import type { Root, Content } from "mdast";
 import { convertToDocx, packToBuffer } from "../ast-to-docx";
-import { CAPTION_SPACING_TWIP, FIRST_LINE_INDENT_TWIP } from "../constants";
+import {
+  CAPTION_SPACING_TWIP,
+  FIRST_LINE_INDENT_TWIP,
+  FONT_SIZE_HALF_PT,
+  LINE_SPACING_TWIP,
+  TOC_LEVEL_INDENT_TWIP,
+  TOC_TAB_STOP_TWIP,
+} from "../constants";
 import type { ResolvedImage } from "../image-resolver";
 
 // ── 工具 ────────────────────────────────────────
@@ -24,16 +31,51 @@ function paragraph(...children: Content[]): Content {
   return { type: "paragraph", children } as unknown as Content;
 }
 
+async function toPartXml(ast: Root, part: string, images: Map<string, ResolvedImage>): Promise<string> {
+  const doc = convertToDocx(ast, images);
+  const buffer = await packToBuffer(doc);
+  const zip = await JSZip.loadAsync(buffer);
+  const file = zip.file(part);
+  if (!file) throw new Error(`${part} missing from packed DOCX`);
+  return file.async("string");
+}
+
 async function toDocumentXml(
   ast: Root,
   images: Map<string, ResolvedImage> = new Map(),
 ): Promise<string> {
-  const doc = convertToDocx(ast, images);
-  const buffer = await packToBuffer(doc);
-  const zip = await JSZip.loadAsync(buffer);
-  const file = zip.file("word/document.xml");
-  if (!file) throw new Error("word/document.xml missing from packed DOCX");
-  return file.async("string");
+  return toPartXml(ast, "word/document.xml", images);
+}
+
+async function toStylesXml(ast: Root = root()): Promise<string> {
+  return toPartXml(ast, "word/styles.xml", new Map());
+}
+
+async function toSettingsXml(ast: Root): Promise<string> {
+  return toPartXml(ast, "word/settings.xml", new Map());
+}
+
+/** 取出 styles.xml 里指定 styleId 的 <w:style>…</w:style> 片段 */
+function styleWithId(stylesXml: string, styleId: string): string {
+  const styles = stylesXml.match(/<w:style\b[^>]*>.*?<\/w:style>/gs) ?? [];
+  const hits = styles.filter((s) => s.includes(`w:styleId="${styleId}"`));
+  if (hits.length !== 1) throw new Error(`styleId ${styleId} 出现 ${hits.length} 次，期望 1 次`);
+  return hits[0];
+}
+
+function heading(depth: number, value: string): Content {
+  return { type: "heading", depth, children: [text(value)] } as unknown as Content;
+}
+
+function gfmTable(align: (string | null)[], rows: string[][]): Content {
+  return {
+    type: "table",
+    align,
+    children: rows.map((cells) => ({
+      type: "tableRow",
+      children: cells.map((c) => ({ type: "tableCell", children: [text(c)] })),
+    })),
+  } as unknown as Content;
 }
 
 /** 取出包含指定文字的 <w:p>…</w:p> 段落 XML 片段 */
@@ -249,7 +291,7 @@ describe("既有导出行为回归", () => {
     expect(p).toContain(`w:firstLine="${FIRST_LINE_INDENT_TWIP}"`);
   });
 
-  it("代码块保留等宽字体与底纹（非公文正文内容）", async () => {
+  it("代码块保留等宽字体与底纹（非公文正文内容），左对齐且无首行缩进", async () => {
     const ast = root({
       type: "code",
       lang: "bash",
@@ -259,6 +301,8 @@ describe("既有导出行为回归", () => {
     const p = paragraphContaining(xml, "echo hello");
     expect(p).toContain("<w:shd");
     expect(p).toContain('w:ascii="Consolas"');
+    expect(p).toContain('<w:jc w:val="left"/>');
+    expect(p).toContain('w:firstLine="0"');
   });
 
   it("空文档兜底生成一个空段落", async () => {
@@ -339,12 +383,12 @@ describe("图题（独占段图片 alt 匹配图N）", () => {
     expect(xml).not.toContain("图1 总体架构"); // 半角空格被归一为全角
   });
 
-  it("题注段上下各约半行距，无首行缩进", async () => {
+  it("题注段上下各约半行距，首行缩进显式归零", async () => {
     const xml = await toDocumentXml(figAst);
     const p = paragraphContaining(xml, "图1\u3000总体架构");
     expect(p).toContain(`w:before="${CAPTION_SPACING_TWIP}"`);
     expect(p).toContain(`w:after="${CAPTION_SPACING_TWIP}"`);
-    expect(p).not.toMatch(/w:firstLine=/);
+    expect(p).toContain('w:firstLine="0"');
   });
 
   it("alt 不匹配图N 的图片不产题注（装饰图不受影响）", async () => {
@@ -401,7 +445,7 @@ describe("表题（表格上方独立段匹配表N）", () => {
     const xml = await toDocumentXml(tblAst);
     expect(countOf(xml, "表1\u3000五年成本对照")).toBe(1);
     const p = paragraphContaining(xml, "表1\u3000五年成本对照");
-    expect(p).not.toMatch(/w:firstLine=/); // 无正文首行缩进
+    expect(p).not.toContain(`w:firstLine="${FIRST_LINE_INDENT_TWIP}"`); // 无正文首行缩进
     expect(p).not.toContain('w:eastAsia="FangSong"');
   });
 
@@ -490,5 +534,211 @@ describe("导出保真告警（fidelitySink）", () => {
     const sink: string[] = [];
     convertToDocx(ast, new Map(), sink);
     expect(sink[0]).toContain("第 7 行");
+  });
+});
+
+// ── 样式表（styles.xml）：只含插件明确定义的样式 ──
+
+describe("样式表 styles.xml", () => {
+  it("不再带 docx 库默认注入的 List Paragraph / Strong", async () => {
+    const xml = await toStylesXml();
+    expect(xml).not.toContain('w:styleId="ListParagraph"');
+    expect(xml).not.toContain('w:styleId="Strong"');
+    expect(xml).not.toContain("List Paragraph");
+  });
+
+  it("每个 styleId 只定义一次", async () => {
+    const xml = await toStylesXml();
+    const ids = [...xml.matchAll(/w:styleId="([^"]+)"/g)].map((m) => m[1]);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("Normal / 默认段落字体 / 普通表格三个默认样式带 w:default", async () => {
+    const xml = await toStylesXml();
+    expect(styleWithId(xml, "Normal")).toContain('w:default="1"');
+    expect(styleWithId(xml, "DefaultParagraphFont")).toContain('w:name w:val="Default Paragraph Font"');
+    expect(styleWithId(xml, "DefaultParagraphFont")).toContain('w:default="1"');
+    expect(styleWithId(xml, "TableNormal")).toContain('w:default="1"');
+  });
+
+  it("文档默认：仿宋三号、固定 28 磅、首行缩进 2 字、两端对齐", async () => {
+    const xml = await toStylesXml();
+    const defaults = xml.match(/<w:docDefaults>.*?<\/w:docDefaults>/s)?.[0] ?? "";
+    expect(defaults).toContain('w:eastAsia="FangSong"');
+    expect(defaults).toContain(`<w:sz w:val="${FONT_SIZE_HALF_PT.BODY}"/>`);
+    expect(defaults).toContain(`w:line="${LINE_SPACING_TWIP}"`);
+    expect(defaults).toContain(`w:firstLine="${FIRST_LINE_INDENT_TWIP}"`);
+    expect(defaults).toContain('<w:jc w:val="both"/>');
+  });
+
+  it("标题 1-4 沿用 Word 内建名称 heading N（中文 Word 显示为标题 N），带大纲级别", async () => {
+    const xml = await toStylesXml();
+    expect(styleWithId(xml, "Heading1")).toContain('<w:name w:val="heading 1"/>');
+    expect(styleWithId(xml, "Heading1")).toContain('<w:outlineLvl w:val="0"/>');
+    expect(styleWithId(xml, "Heading4")).toContain('<w:outlineLvl w:val="3"/>');
+    expect(styleWithId(xml, "Heading7")).toContain('<w:outlineLvl w:val="6"/>');
+    expect(styleWithId(xml, "Title")).not.toContain("w:outlineLvl");
+    expect(styleWithId(xml, "Heading1")).toContain('w:eastAsia="SimHei"');
+    expect(styleWithId(xml, "Heading2")).toContain('w:eastAsia="KaiTi"');
+    expect(styleWithId(xml, "Heading3")).toContain("<w:b/>");
+    expect(styleWithId(xml, "Heading4")).not.toContain("<w:b/>");
+  });
+
+  it("标题 5/6/7 定义为仿宋三号不加粗，与标题 4 同外观", async () => {
+    const xml = await toStylesXml();
+    for (const level of [5, 6, 7]) {
+      const style = styleWithId(xml, `Heading${level}`);
+      expect(style).toContain(`<w:name w:val="heading ${level}"/>`);
+      expect(style).toContain('w:eastAsia="FangSong"');
+      expect(style).toContain(`<w:sz w:val="${FONT_SIZE_HALF_PT.HEADING}"/>`);
+      expect(style).not.toContain("<w:b/>");
+    }
+  });
+
+  it("目录标题 TOC Heading：黑体三号居中，无首行缩进", async () => {
+    const xml = await toStylesXml();
+    const style = styleWithId(xml, "TOCHeading");
+    expect(style).toContain('<w:name w:val="TOC Heading"/>');
+    expect(style).toContain('w:eastAsia="SimHei"');
+    expect(style).toContain(`<w:sz w:val="${FONT_SIZE_HALF_PT.HEADING}"/>`);
+    expect(style).toContain('<w:jc w:val="center"/>');
+    expect(style).toContain('w:firstLine="0"');
+    expect(style).not.toContain("<w:b/>");
+  });
+
+  it("目录条目 toc 1-3：仿宋三号，逐级左缩进 2 字，版心右缘点线制表位", async () => {
+    const xml = await toStylesXml();
+    for (const level of [1, 2, 3]) {
+      const style = styleWithId(xml, `TOC${level}`);
+      expect(style).toContain(`<w:name w:val="toc ${level}"/>`);
+      expect(style).toContain('w:eastAsia="FangSong"');
+      expect(style).toContain(`w:left="${(level - 1) * TOC_LEVEL_INDENT_TWIP}"`);
+      expect(style).toContain(`<w:tab w:val="right" w:leader="dot" w:pos="${TOC_TAB_STOP_TWIP}"/>`);
+      expect(style).toContain(`w:line="${LINE_SPACING_TWIP}"`);
+    }
+  });
+
+  it("超链接：黑色、无下划线", async () => {
+    const xml = await toStylesXml();
+    const style = styleWithId(xml, "Hyperlink");
+    expect(style).toContain('<w:color w:val="000000"/>');
+    expect(style).toContain('<w:u w:val="none"/>');
+  });
+
+  it("脚注 / 尾注文本：仿宋小五、单倍行距、无首行缩进；引用编号上标", async () => {
+    const xml = await toStylesXml();
+    for (const kind of ["Footnote", "Endnote"]) {
+      const textStyle = styleWithId(xml, `${kind}Text`);
+      expect(textStyle).toContain(`<w:name w:val="${kind.toLowerCase()} text"/>`);
+      expect(textStyle).toContain('w:eastAsia="FangSong"');
+      expect(textStyle).toContain(`<w:sz w:val="${FONT_SIZE_HALF_PT.FOOTNOTE}"/>`);
+      expect(textStyle).toContain('w:line="240"');
+      expect(textStyle).toContain('w:firstLine="0"');
+      expect(styleWithId(xml, `${kind}Reference`)).toContain('<w:vertAlign w:val="superscript"/>');
+    }
+  });
+});
+
+// ── 表格：表头黑体不加粗居中，单元格垂直居中 ──
+
+describe("表格表头与单元格", () => {
+  const tableAst = root(gfmTable([null, "right"], [["系统", "数量"], ["行业系统", "12"]]));
+
+  it("表头黑体、不加粗、水平居中（忽略列对齐）", async () => {
+    const xml = await toDocumentXml(tableAst);
+    const p = paragraphContaining(xml, "数量");
+    expect(p).toContain('w:eastAsia="SimHei"');
+    expect(p).toContain('<w:jc w:val="center"/>');
+    expect(p).not.toContain("<w:b/>");
+  });
+
+  it("表体仿宋四号，按 GFM 列对齐，默认左对齐", async () => {
+    const xml = await toDocumentXml(tableAst);
+    const left = paragraphContaining(xml, "行业系统");
+    const right = paragraphContaining(xml, "12");
+    expect(left).toContain('w:eastAsia="FangSong"');
+    expect(left).toContain(`<w:sz w:val="${FONT_SIZE_HALF_PT.TABLE_CELL}"/>`);
+    expect(left).toContain('<w:jc w:val="left"/>');
+    expect(right).toContain('<w:jc w:val="right"/>');
+  });
+
+  it("单元格垂直居中，段落首行缩进归零", async () => {
+    const xml = await toDocumentXml(tableAst);
+    expect(countOf(xml, '<w:vAlign w:val="center"/>')).toBe(4);
+    expect(paragraphContaining(xml, "行业系统")).toContain('w:firstLine="0"');
+  });
+});
+
+// ── 标题：文字不打直接格式，字体由样式承担 ──
+
+describe("标题文字继承样式", () => {
+  it("标题 run 不写字体字号（目录域不会把标题字体带进条目）", async () => {
+    const xml = await toDocumentXml(root(heading(2, "一、总体说明"), heading(4, "三级标题项")));
+    const h1 = paragraphContaining(xml, "一、总体说明");
+    expect(h1).toContain('<w:pStyle w:val="Heading1"/>');
+    expect(h1).not.toContain("w:rFonts");
+    expect(h1).not.toContain("<w:sz ");
+    const h3 = paragraphContaining(xml, "三级标题项");
+    expect(h3).toContain('<w:pStyle w:val="Heading3"/>');
+    expect(h3).not.toContain("<w:b/>");
+  });
+
+  it("标题内的强调与行内代码同样不打直接格式", async () => {
+    const ast = root({
+      type: "heading",
+      depth: 2,
+      children: [
+        text("关于"),
+        { type: "strong", children: [text("重点")] },
+        { type: "inlineCode", value: "code" },
+      ],
+    } as unknown as Content);
+    const xml = await toDocumentXml(ast);
+    const p = paragraphContaining(xml, "重点");
+    expect(p).not.toContain("w:rFonts");
+    expect(p).not.toContain("<w:sz ");
+    expect(p).not.toContain("<w:b");
+  });
+});
+
+// ── [TOC] 标记：目录标题段 + 目录域 ──
+
+describe("[TOC] 目录标记", () => {
+  const tocAst = root(paragraph(text("[TOC]")), heading(2, "一、总体说明"));
+
+  it("独占段 [TOC] 输出目录标题段（TOC Heading 样式）与目录域", async () => {
+    const xml = await toDocumentXml(tocAst);
+    const title = paragraphContaining(xml, "目录");
+    expect(title).toContain('<w:pStyle w:val="TOCHeading"/>');
+    expect(xml).toContain("TOC \\h \\o &quot;1-2&quot;");
+    expect(xml).not.toContain("[TOC]");
+  });
+
+  it("[[toc]] 同样识别，大小写不敏感", async () => {
+    const xml = await toDocumentXml(root(paragraph(text("[[toc]]"))));
+    expect(xml).toContain('<w:pStyle w:val="TOCHeading"/>');
+  });
+
+  it("带其他文字的段落不是目录标记", async () => {
+    const xml = await toDocumentXml(root(paragraph(text("[TOC] 见下"))));
+    expect(xml).not.toContain("TOCHeading");
+    expect(xml).toContain("[TOC] 见下");
+  });
+
+  it("行内代码、强调、链接里的 [TOC] 不是目录标记（讲解这个写法的文档不会冒出目录）", async () => {
+    const ast = root(
+      paragraph({ type: "inlineCode", value: "[TOC]" } as unknown as Content),
+      paragraph({ type: "emphasis", children: [text("[toc]")] } as unknown as Content),
+      paragraph({ type: "link", url: "https://example.com", children: [text("[[TOC]]")] } as unknown as Content),
+    );
+    const xml = await toDocumentXml(ast);
+    expect(xml).not.toContain("TOCHeading");
+    expect(xml).not.toContain("<w:sdt>");
+    for (const literal of ["[TOC]", "[toc]", "[[TOC]]"]) expect(xml).toContain(literal);
+  });
+
+  it("含目录域时 settings.xml 写 updateFields，否则不写", async () => {
+    expect(await toSettingsXml(tocAst)).toContain("<w:updateFields/>");
+    expect(await toSettingsXml(root(paragraph(text("普通正文"))))).not.toContain("<w:updateFields");
   });
 });

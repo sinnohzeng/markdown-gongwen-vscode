@@ -8,29 +8,28 @@
 
 用 Markdown 写党政公文，一键导出符合 GB/T 9704-2012 的 Word 文档。
 
-写公文的痛苦从来不在内容，而在排版：字体要在方正小标宋、黑体、楷体、仿宋之间切换，行距要固定 28 磅，页码要"—1—"还分奇偶页。这个插件把这些全部固化成代码——你只管用 Markdown 写，标题层级、字体搭配、版面规格、页码格式，导出瞬间全部按国标就位。
+排版是写公文最费时间的一环：各级标题的字体、正文的 28 磅固定行距、分奇偶页的一字线页码，每份文件都要重设一遍。这套规格插件替你定好了，你用 Markdown 写内容，导出的 Word 直接就是国标版式。
 
 > **For non-Chinese users:** This extension formats **Chinese government documents (党政公文)** per national standard GB/T 9704-2012. If you don't work with Simplified Chinese government documents, it is unlikely to be useful for you.
 
 ## 两件事
 
-**编辑** — 打开 `.md` 文件，标题、加粗、链接、图片、表格、公式、Mermaid 图表全部在编辑区行内渲染，不用开预览面板。语法标记自动隐藏，光标靠近时淡入，点击后完全显示。文件始终是标准 Markdown，插件只做视觉渲染，不改动内容。
+**编辑**：打开 `.md` 文件，标题、加粗、链接、图片、表格、公式、Mermaid 图表全部在编辑区行内渲染，不用开预览面板。语法标记自动隐藏，光标靠近时淡入，点击后完全显示。文件始终是标准 Markdown，插件只做视觉渲染，不改动内容。
 
-**导出** — 点一下编辑器右上角的 Word 图标，当前文档直接导出为 `.docx`。页面尺寸、边距、字体、字号、行距、页码全部按 GB/T 9704 来，拿到手就能用。
-
-<!-- 发布素材：待补演示 GIF（录屏需人工操作） -->
+**导出**：点一下编辑器右上角的 Word 图标，当前文档导出为 `.docx`。页面、字体、行距、页码按 GB/T 9704 设定，插图、表格、题注随文导出，正文版式不用再动。
 
 ## 排版规格
 
-导出的每一个数值都溯源到 GB/T 9704-2012 条文（详见 [docs/features/docx-export.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/features/docx-export.md)）：
+各项数值的条文出处见 [docs/features/docx-export.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/features/docx-export.md)：
 
 | 项目 | 值 |
 |------|-----|
 | 纸张 | A4 纵向，上 37mm / 下 35mm / 左 28mm / 右 26mm |
 | 正文 | 仿宋 + Times New Roman，三号 16pt，首行缩进 2 字符，两端对齐 |
 | 行距 | 固定值 28 磅，每页 22 行 |
-| 页码 | 宋体四号，—1— 格式，奇数页右、偶数页左 |
-| 表格 | 全框线 0.5pt，表头黑体，撑满版心 |
+| 页码 | 宋体四号，数字两侧各一条一字线，奇数页居右、偶数页居左 |
+| 表格 | 全框线 0.5pt，表头黑体四号不加粗居中，表体仿宋四号按列对齐，单元格垂直居中，撑满版心 |
+| 目录 | “目录”黑体三号居中，条目仿宋三号逐级缩进 2 字 |
 | 题注 | 表上图下，黑体小四 12pt，居中，编号与标题间一字空（GB/T 7713 族） |
 | 引用 | 楷体正文（无斜体、无底纹，首行缩进与正文一致） |
 | 列表 | 首行缩进 2 字符、回行顶格，序号连续编号 |
@@ -49,12 +48,12 @@
 
 ## 安装与兼容
 
-在扩展市场搜索 **"Markdown Gongwen 公文"** 安装：
+在扩展市场搜索 **“Markdown Gongwen 公文”** 安装：
 
-- **VS Code**（1.100+）：[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen)
-- **Cursor / Windsurf / Trae / VSCodium**：[Open VSX](https://open-vsx.org/extension/sinnohzeng/markdown-gongwen)（这些编辑器的扩展市场直接可搜）
+- **VS Code**（1.100 及以上）：[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sinnohzeng.markdown-gongwen)
+- **Cursor / Windsurf / Trae / VSCodium**：[Open VSX](https://open-vsx.org/extension/sinnohzeng/markdown-gongwen)，在各自的扩展市场里直接搜索即可
 
-引擎门槛特意压在 1.100，Cursor（1.105 内核）、Trae（1.104 内核）等基于旧内核的编辑器都能装。
+最低支持 VS Code 1.100，Cursor、Trae 这类基于旧内核的编辑器都能直接装。
 
 > 本插件由 Markdown Inline Editor 二次开发而来，两者不能同时启用（会重复渲染）。
 
@@ -62,10 +61,12 @@
 
 编辑器右上角的 Word 图标一键导出。也可以用命令面板：
 
-- `导出公文 DOCX` — 弹出保存对话框，记住上次目录
-- `快速导出当前文件为 DOCX` — 直接保存到 `.md` 同目录
+- `导出公文 DOCX`：弹出保存对话框，记住上次目录
+- `快速导出当前文件为 DOCX`：直接保存到 `.md` 同目录
 
-导出过程带进度条、可取消；完成后通知里可直接"打开文件"或"在文件管理器中显示"；出错时"查看日志"可看完整记录。本地图片自动等比缩放到版心宽度。
+导出过程带进度条，可以取消。完成后通知里可直接“打开文件”或“在文件管理器中显示”。出错时点“查看日志”可看完整记录。本地图片自动等比缩放到版心宽度。
+
+目录有两种加法。一是在 WPS 或 Word 里插入自动目录，“目录”二字与各级条目的样式已经定义好，不用再手动改字体。二是在 Markdown 里单独写一行 `[TOC]`，导出时生成“目录”标题和目录域，收录 `##` 和 `###` 两级标题，打开 Word 时按提示更新域即可。
 
 ## 编辑体验建议
 
@@ -97,7 +98,7 @@
 
 ## 配置项
 
-设置里搜索 **"Markdown Gongwen"**。以下配置只影响编辑视图的渲染观感；导出 DOCX 的版式始终按 GB/T 9704 固定，不受任何配置影响：
+设置里搜索 **“Markdown Gongwen”**。以下配置只影响编辑视图的渲染观感；导出 DOCX 的版式始终按 GB/T 9704 固定，不受任何配置影响：
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
@@ -118,7 +119,7 @@
 
 ## 常见问题
 
-活动栏里为什么有个"Markdown Gongwen"图标（Mermaid 渲染视图）、导出字体、大文件性能等，见 [docs/FAQ.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/FAQ.md)。
+活动栏里为什么有个“Markdown Gongwen”图标（Mermaid 渲染视图）、导出字体、大文件性能等，见 [docs/FAQ.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/FAQ.md)。
 
 ## 开发者
 
@@ -133,9 +134,9 @@ npm test
 
 | 命令 | 说明 |
 |------|------|
-| `npm test` | 全部单元测试（Jest，800+ 用例） |
+| `npm test` | 全部单元测试（Jest） |
 | `npm run lint` | ESLint 检查 |
-| `npm run validate` | 文档检查 + 测试 + 完整构建 |
+| `npm run validate` | 文档检查、测试与完整构建 |
 | `npm run build` | 完整构建并打出 `.vsix` |
 
 ```
@@ -151,8 +152,9 @@ src/
 
 ## 已知限制
 
+- 导出的是公文主体：标题、正文、表格、插图、题注、页码。版头（发文机关标志、发文字号、密级、签发人等）与版记不生成，需在 Word 里按本单位模板补齐
 - GFM 表格暂不支持多行单元格
-- Mermaid 图表和 LaTeX 公式导出 DOCX 时为占位文本/源码（导出结束会通知未完整呈现的内容清单；路线图上有位图方案）
+- Mermaid 图表和 LaTeX 公式导出 DOCX 时为占位文本或源码，导出结束会列出未完整呈现的内容
 - 图表题注自动识别仅限以 `图N` / `表N` 开头的写法，其余按普通正文输出
 - 超过 1MB 的文件解析可能较慢
 - 行间距需手动设置 `editor.lineHeight`（VS Code 不允许插件按语言改行高）

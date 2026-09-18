@@ -11,6 +11,9 @@ import {
   CAPTION_SPACING_TWIP,
   CODE_LINE_SPACING_TWIP,
   LIST_NEST_INDENT_TWIP,
+  TOC_LEVEL_INDENT_TWIP,
+  TOC_TAB_STOP_TWIP,
+  TOC_MARKER_PATTERN,
   IMAGE,
 } from "../constants";
 
@@ -39,6 +42,21 @@ describe("GB/T 9704 常量", () => {
   it("代码块行距与字号为小一号规格", () => {
     expect(CODE_LINE_SPACING_TWIP).toBe(300);
     expect(FONT_SIZE_HALF_PT.CODE).toBe(20); // 五号 10pt
+  });
+
+  it("脚注小五 9pt，目录条目缩进 2 字，制表位在版心右缘", () => {
+    expect(FONT_SIZE_HALF_PT.FOOTNOTE).toBe(18);
+    expect(TOC_LEVEL_INDENT_TWIP).toBe(FIRST_LINE_INDENT_TWIP);
+    expect(TOC_TAB_STOP_TWIP).toBe(Math.round(PAGE.PRINT_AREA_WIDTH_MM / 25.4 * 1440));
+  });
+
+  it("目录标记只匹配独占的 [TOC] / [[toc]]", () => {
+    expect(TOC_MARKER_PATTERN.test("[TOC]")).toBe(true);
+    expect(TOC_MARKER_PATTERN.test("[[toc]]")).toBe(true);
+    expect(TOC_MARKER_PATTERN.test("[TOC] 见下")).toBe(false);
+    expect(TOC_MARKER_PATTERN.test("[toc]]")).toBe(false);
+    expect(TOC_MARKER_PATTERN.test("[[toc]")).toBe(false);
+    expect(TOC_MARKER_PATTERN.test("toc")).toBe(false);
   });
 
   it("图片回退尺寸为正", () => {

@@ -226,7 +226,7 @@ export const window = {
   showInformationMessage: jest.fn().mockResolvedValue(undefined),
   showWarningMessage: jest.fn().mockResolvedValue(undefined),
   showErrorMessage: jest.fn().mockResolvedValue(undefined),
-  createOutputChannel: jest.fn(() => ({ appendLine: jest.fn(), show: jest.fn(), dispose: jest.fn() })),
+  createOutputChannel: jest.fn(() => ({ appendLine: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn(), show: jest.fn(), dispose: jest.fn() })),
 };
 
 export class WorkspaceEdit {
