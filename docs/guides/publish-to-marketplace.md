@@ -30,7 +30,7 @@
 npm install -g @vscode/vsce
 ```
 
-当前最新版本为 `3.9.2`。也可以不全局安装，使用 `npx @vscode/vsce` 代替。
+本仓库锁定 `3.9.2`；`vsce` 4.0 已发布，升级前先在 CI 上验证发布流程。也可以不全局安装，使用 `npx @vscode/vsce` 代替。
 
 ---
 
@@ -47,7 +47,7 @@ npm install -g @vscode/vsce
 
 ### 2.2 创建个人访问令牌（PAT，Personal Access Token）
 
-> **安全提示** ：微软官方已建议在条件允许时优先使用 [Microsoft Entra tokens](https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/entra) 替代 PAT，因为 PAT 属于长期凭据，存在泄露风险。但对于 VS Code 插件发布场景，`vsce` 工具目前仅支持 PAT 认证，因此仍需创建 PAT。
+> **时间点** ：微软计划于 2026 年 12 月 1 日停用 Azure DevOps 的全局 PAT（Organization 选 All accessible organizations 的那种，正是发布插件所需的）。`vsce` 4.0 起支持 `vsce publish --azure-credential`，用 [Microsoft Entra](https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/entra) 身份发布。届时本仓库 CI 需从 `AZURE_DEVOPS_TOKEN` 密钥切换到 Entra 登录。在此之前 PAT 仍可用，按下文创建。
 
 1. 进入你的组织页面 **https://dev.azure.com/{你的组织名}**
 2. 点击页面 **右上角** 的用户设置图标（齿轮形状 ⚙️，位于个人头像旁边）→ 在下拉菜单中选择 **Personal access tokens**
@@ -64,7 +64,7 @@ npm install -g @vscode/vsce
 | Scopes | 选择 **Custom defined** → 点击 **Show all scopes** → 找到 **Marketplace** → 勾选 **Manage** |
 
 4. 点击 **Create**
-5. **⚠️ 立即复制令牌并妥善保存** ——令牌只显示一次，关闭页面后无法再次查看
+5. **⚠️ 立即复制令牌并妥善保存** ，令牌只显示一次，关闭页面后无法再次查看
 
 > **最常见的错误** ：Organization 选项如果选择了某个具体的组织（而非 All accessible organizations），发布时会遇到 401 或 403 错误。请务必选择 **All accessible organizations** 。
 
@@ -176,7 +176,7 @@ vsce package -o dist/markdown-gongwen-1.0.0.vsix
 code --install-extension markdown-gongwen-1.0.0.vsix
 ```
 
-或在 VS Code 中：扩展面板 → 右上角 `...` → 「从 VSIX 安装…」
+或在 VS Code 中：扩展面板 → 右上角 `...` → “从 VSIX 安装…”
 
 ### 5.3 发布到市场
 
@@ -253,7 +253,7 @@ Open VSX 是由 Eclipse Foundation（Eclipse 基金会）运营的开源扩展�
 
 1. 进入 **https://open-vsx.org/user-settings/tokens** （头像 → Settings → Access Tokens）
 2. 点击 **Generate New Token** → 输入描述 → 点击 **Generate Token**
-3. **⚠️ 立即复制保存** ——关闭对话框后无法再次查看
+3. **⚠️ 立即复制保存** ，关闭对话框后无法再次查看
 
 ### 7.3 配置 GitHub Secret
 
@@ -274,7 +274,7 @@ npx ovsx create-namespace sinnohzeng -p <Open-VSX-Token>
 npx ovsx publish -p <Open-VSX-Token>
 ```
 
-### 7.5 认领命名空间（消除「unverified」警告）
+### 7.5 认领命名空间（消除 “unverified” 警告）
 
 创建命名空间后，你的身份是 contributor 而非 owner，发布的插件会显示 ⚠️ 警告。需要通过提 issue 认领：
 
@@ -304,17 +304,17 @@ npx ovsx publish dist/extension.vsix --pat ${{ secrets.OPENVSX_TOKEN }}
 
 ### 8.1 401 / 403 错误
 
-**原因** ：创建 PAT 时 Organization 选择了具体组织，而非 「All accessible organizations」。
+**原因** ：创建 PAT 时 Organization 选择了具体组织，而非 “All accessible organizations”。
 
 **解决** ：重新创建 PAT，Organization 选择 **All accessible organizations** ，Scopes 勾选 **Marketplace > Manage** 。
 
-### 8.2 「Extension name already exists」
+### 8.2 “Extension name already exists”
 
 **原因** ：`name` 或 `displayName` 与市场上已有的插件重复。
 
 **解决** ：修改 `package.json` 中的 `name` 或 `displayName` 为唯一值。
 
-### 8.3 「Exceeded 30 tags」
+### 8.3 “Exceeded 30 tags”
 
 **原因** ：`keywords` 数组超过 30 个。
 
@@ -346,7 +346,7 @@ npx ovsx publish dist/extension.vsix --pat ${{ secrets.OPENVSX_TOKEN }}
 1. 访问仓库的 Actions 页面，点击 **"I understand my workflows, go ahead and enable them"**
 2. 或者使用 `gh workflow run` 手动触发：`gh workflow run "Build & quality" --ref main -f tag=v2.0.1`
 
-### 8.7 「already exists」版本重复错误
+### 8.7 “already exists” 版本重复错误
 
 **原因** ：尝试发布一个已存在于市场上的版本号。常见于手动重新触发 CI/CD。
 

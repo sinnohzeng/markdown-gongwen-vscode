@@ -5,7 +5,7 @@ const { execSync } = require("child_process");
  * Release helper script for markdown-gongwen-vscode.
  * - Runs validation checks (lint:docs, test, build)
  * - Gets next version with git-cliff
- * - Generates CHANGELOG.md
+ * - Prepends the new release section to CHANGELOG.md (hand-written entries are kept)
  * - Bumps package.json version
  * - Commits changes and creates git tag
  * - Prints push/undo instructions
@@ -78,8 +78,8 @@ try {
   log(`Next version: ${nextVersion} (tag: ${tagVersion})`);
 
   // Generate CHANGELOG
-  log("📝 Generating CHANGELOG.md...");
-  run(`npx git-cliff -o CHANGELOG.md --tag ${tagVersion}`);
+  log("📝 Prepending release notes to CHANGELOG.md...");
+  run(`npx git-cliff --unreleased --tag ${tagVersion} --prepend CHANGELOG.md`);
 
   // Update package.json version
   log("🔢 Bumping package.json version...");

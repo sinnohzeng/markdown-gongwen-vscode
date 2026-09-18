@@ -156,7 +156,7 @@ npm run release       # Automated release (see Release section)
 - Mock VS Code API when needed (see existing tests for patterns)
 
 **Current Test Coverage:**
-- 800+ passing tests across 56 test suites (run `npm test` for the authoritative count)
+- 870+ passing tests across 60 test suites (run `npm test` for the authoritative count)
 - Maintain or improve this coverage
 
 ### 4. Code Style

@@ -21,19 +21,19 @@ This script will:
 1. **Validate the environment**: Ensures you're on the `main` branch with a clean working tree
 2. **Run validation checks**: Executes `lint:docs`, `test`, and `build` to ensure everything passes
 3. **Determine the next version**: Analyzes commits since the last tag using `git-cliff` to determine the appropriate version bump (major/minor/patch) based on conventional commits
-4. **Generate CHANGELOG.md**: Automatically creates changelog entries from commit messages, grouped by type (Added, Changed, Fixed, etc.)
+4. **Update CHANGELOG.md**: Prepends a new release section generated from commit messages (grouped by type) above the existing entries. Hand-written sections are kept as they are. Edit the new section by hand before pushing if the generated wording is not what users should read
 5. **Update package.json**: Bumps the version in `package.json` and `package-lock.json`
 6. **Commit and tag**: Creates a commit with message `chore(release): vX.Y.Z` and creates the git tag `vX.Y.Z`
 7. **Provide instructions**: Shows next steps for pushing changes
 
-After running the script, push the changes — push ONLY the release tag, never `--follow-tags` or `--tags` (those would also push upstream's historical annotated tags, and every `v*` tag push is treated as a release trigger; see `docs/experience/marketplace-publishing-lessons.md` §13):
+After running the script, push the changes. Push ONLY the release tag, never `--follow-tags` or `--tags` (those would also push upstream's historical annotated tags, and every `v*` tag push is treated as a release trigger; see `docs/experience/marketplace-publishing-lessons.md` §13):
 
 ```bash
 git push origin main
 git push origin vX.Y.Z
 ```
 
-If no "Build & quality" run starts within a minute (push triggers have proven unreliable on this repo), trigger the release manually — this is the path used by all previous releases:
+If no "Build & quality" run starts within a minute (push triggers have proven unreliable on this repo), trigger the release manually. This is the path used by all previous releases:
 
 ```bash
 gh workflow run "Build & quality" --ref main -f tag=vX.Y.Z
