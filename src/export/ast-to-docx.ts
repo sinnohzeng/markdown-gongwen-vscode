@@ -201,7 +201,7 @@ function convertHeading(node: Heading, images: Map<string, ResolvedImage>): Para
 
 // ── 目录 ────────────────────────────────────────
 //
-// 独占一段的 [TOC] / [[TOC]] 标记 → "目录"标题段（TOC Heading 样式）+ 目录域。
+// 独占一段的 [TOC] / [[TOC]] 标记 → "目录"标题段（目录标题样式）+ 目录域。
 // 目录域打开文档时由 Word 更新（settings.xml 的 updateFields），WPS 若未自动生成
 // 条目，右键目录选"更新域"。
 

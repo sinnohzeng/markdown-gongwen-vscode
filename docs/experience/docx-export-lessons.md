@@ -99,7 +99,9 @@ docDefaults 里的 `firstLine=640` 是所有段落的底色，不只作用于正
 
 ### WPS 不认识 TOC Heading
 
-WPS 的内建样式名表（wpsio、docwriter 两个框架里都有一份）止于 Word 97 那一代：heading、toc、index、caption、footnote text 到 toa heading 为止，没有 Word 2007 才加的 `TOC Heading`。所以同一个 styles.xml，Word 把它认成内建样式显示“TOC 标题”，WPS 当成用户样式原样显示英文名。WPS 自己的“引用 → 目录 → 自动目录”给“目录”二字套的是一个名叫“目录标题”的样式（wpscore 里挨着“目录 1”到“目录 4”），文档里没有就按 WPS 默认值现造一个宋体五号的。解法是按这个名字预定义一个空壳样式，`basedOn` TOC Heading，两边各认各的名字，外观只维护一份。
+WPS 的内建样式名表（wpsio、docwriter 两个框架里都有一份）止于 Word 97 那一代：heading、toc、index、caption、footnote text 到 toa heading 为止，没有 Word 2007 才加的 `TOC Heading`。所以同一个 styles.xml，Word 把它认成内建样式显示“TOC 标题”，WPS 当成用户样式原样显示英文名。
+
+WPS 自动目录插出来的“目录”二字不带任何样式，用户实测确认（2026-09-17）。之前从 wpscore 二进制里看到“目录标题”挨着“目录 1”到“目录 4”，推测 WPS 会按这个名字找样式，预定义了同名空壳，实测没匹配上：二进制里的字符串是 WPS 自家 API 的样式名表，不是自动目录块的引用。教训是二进制字符串只能当线索，不能当证据。现在的做法：面板可见的只有“目录标题”（styleId `TOCTitle`，带全部格式），`TOC Heading` 反过来做它的空壳并隐藏，只给 Word 的自动目录用；WPS 用户选中“目录”二字点一下“目录标题”。
 
 ### patch 版依赖也能弄坏构建
 

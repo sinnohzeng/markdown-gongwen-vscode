@@ -644,25 +644,27 @@ describe("样式表 styles.xml", () => {
     }
   });
 
-  it("目录标题 TOC Heading：黑体三号居中，无首行缩进", async () => {
+  it("目录标题：黑体三号居中，无首行缩进，样式面板里可见", async () => {
     const xml = await toStylesXml();
-    const style = styleWithId(xml, "TOCHeading");
-    expect(style).toContain('<w:name w:val="TOC Heading"/>');
+    const style = styleWithId(xml, "TOCTitle");
+    expect(style).toContain('<w:name w:val="目录标题"/>');
     expect(style).toContain('w:eastAsia="SimHei"');
     expect(style).toContain(`<w:sz w:val="${FONT_SIZE_HALF_PT.HEADING}"/>`);
     expect(style).toContain('<w:jc w:val="center"/>');
     expect(style).toContain('w:firstLine="0"');
     expect(style).not.toContain("<w:b/>");
+    expect(style).not.toContain("<w:semiHidden/>");
   });
 
-  it("WPS 自动目录用的“目录标题”样式：按名字匹配，外观全部继承 TOC Heading，平时隐藏", async () => {
+  it("Word 自动目录用的 TOC Heading：外观全部继承目录标题，平时隐藏不占样式面板", async () => {
     const xml = await toStylesXml();
-    const style = styleWithId(xml, "TOCHeadingWPS");
-    expect(style).toContain('<w:name w:val="目录标题"/>');
-    expect(style).toContain('<w:basedOn w:val="TOCHeading"/>');
+    const style = styleWithId(xml, "TOCHeading");
+    expect(style).toContain('<w:name w:val="TOC Heading"/>');
+    expect(style).toContain('<w:basedOn w:val="TOCTitle"/>');
     expect(style).toContain("<w:semiHidden/>");
     expect(style).toContain("<w:unhideWhenUsed/>");
     expect(style).not.toContain("<w:rPr>");
+    expect(xml).not.toContain("TOCHeadingWPS");
   });
 
   it("目录条目 toc 1-3：仿宋三号，逐级左缩进 2 字，版心右缘点线制表位", async () => {
@@ -765,22 +767,22 @@ describe("标题文字继承样式", () => {
 describe("[TOC] 目录标记", () => {
   const tocAst = root(paragraph(text("[TOC]")), heading(2, "一、总体说明"));
 
-  it("独占段 [TOC] 输出目录标题段（TOC Heading 样式）与目录域", async () => {
+  it("独占段 [TOC] 输出目录标题段（目录标题样式）与目录域", async () => {
     const xml = await toDocumentXml(tocAst);
     const title = paragraphContaining(xml, "目录");
-    expect(title).toContain('<w:pStyle w:val="TOCHeading"/>');
+    expect(title).toContain('<w:pStyle w:val="TOCTitle"/>');
     expect(xml).toContain("TOC \\h \\o &quot;1-2&quot;");
     expect(xml).not.toContain("[TOC]");
   });
 
   it("[[toc]] 同样识别，大小写不敏感", async () => {
     const xml = await toDocumentXml(root(paragraph(text("[[toc]]"))));
-    expect(xml).toContain('<w:pStyle w:val="TOCHeading"/>');
+    expect(xml).toContain('<w:pStyle w:val="TOCTitle"/>');
   });
 
   it("带其他文字的段落不是目录标记", async () => {
     const xml = await toDocumentXml(root(paragraph(text("[TOC] 见下"))));
-    expect(xml).not.toContain("TOCHeading");
+    expect(xml).not.toContain("TOCTitle");
     expect(xml).toContain("[TOC] 见下");
   });
 
@@ -791,7 +793,7 @@ describe("[TOC] 目录标记", () => {
       paragraph({ type: "link", url: "https://example.com", children: [text("[[TOC]]")] } as unknown as Content),
     );
     const xml = await toDocumentXml(ast);
-    expect(xml).not.toContain("TOCHeading");
+    expect(xml).not.toContain("TOCTitle");
     expect(xml).not.toContain("<w:sdt>");
     for (const literal of ["[TOC]", "[toc]", "[[TOC]]"]) expect(xml).toContain(literal);
   });
