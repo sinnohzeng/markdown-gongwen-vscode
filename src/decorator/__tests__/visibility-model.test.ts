@@ -1,4 +1,4 @@
-jest.mock('../../parser', () => ({
+vi.mock('../../parser', () => ({
   MarkdownParser: class {
     extractDecorations() { return []; }
   },
@@ -82,6 +82,45 @@ describe('emoji decoration', () => {
       (s, e, t) => simpleRangeFactory(s, e, t),
     );
     expect(result.has('emoji')).toBe(false);
+  });
+});
+
+describe('checkbox reveal behavior', () => {
+  const text = '- [ ] task';
+  const decs: DecorationRange[] = [
+    { startPos: 0, endPos: 2, type: 'checkboxMarker' } as any,
+    { startPos: 2, endPos: 5, type: 'checkboxUnchecked' } as any,
+  ];
+  const doc = new TextDocument(Uri.file('test.md'), 'markdown', 1, text);
+  const scopes: ScopeEntry[] = [
+    {
+      startPos: 0,
+      endPos: text.length,
+      kind: 'listItem',
+      range: new Range(doc.positionAt(0), doc.positionAt(text.length)) as any,
+    },
+    {
+      startPos: 0,
+      endPos: 5,
+      kind: 'checkbox',
+      range: new Range(doc.positionAt(0), doc.positionAt(5)) as any,
+    },
+  ];
+
+  it('keeps the bullet hidden when the cursor is elsewhere on the line', () => {
+    // Regression: the `listItem` scope spans the whole line, so a scope-based
+    // reveal would unhide the bullet whenever the cursor is anywhere on it.
+    const editor = makeEditor(text, 0, 9); // on "task", outside the checkbox
+    const result = filterDecorationsForEditor(editor as any, decs, scopes, text, simpleRangeFactory);
+    expect(result.get('checkboxMarker')?.length).toBe(1);
+    expect(result.get('checkboxUnchecked')?.length).toBe(1);
+  });
+
+  it('reveals the marker and the box together when the cursor is on the checkbox', () => {
+    const editor = makeEditor(text, 0, 3); // inside `[ ]`
+    const result = filterDecorationsForEditor(editor as any, decs, scopes, text, simpleRangeFactory);
+    expect(result.get('checkboxMarker')).toBeUndefined();
+    expect(result.get('checkboxUnchecked')).toBeUndefined();
   });
 });
 

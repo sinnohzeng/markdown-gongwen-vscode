@@ -4,56 +4,6 @@ export type LinkTarget =
   | { kind: "command"; command: string; args: unknown[] }
   | { kind: "uri"; uri: vscode.Uri };
 
-/**
- * Percent-decode a markdown href path so `link%20test.md` maps to `link test.md`.
- *
- * @param path - Raw href path, possibly percent-encoded
- * @returns Decoded path, or the original string if decoding fails
- */
-function decodeMarkdownHrefPath(path: string): string {
-  // joinPath would otherwise look for a filename that literally contains "%20"
-  try {
-    return decodeURIComponent(path);
-  } catch {
-    return path;
-  }
-}
-
-/**
- * Split `file.md#heading` so the fragment is not treated as part of the filename.
- *
- * @param href - Relative or absolute markdown href
- * @returns Path and fragment (empty string when no hash is present)
- */
-function splitMarkdownHref(href: string): { path: string; fragment: string } {
-  const hashIndex = href.indexOf("#");
-  if (hashIndex === -1) {
-    return { path: href, fragment: "" };
-  }
-  return { path: href.slice(0, hashIndex), fragment: href.slice(hashIndex + 1) };
-}
-
-/**
- * Resolve a local markdown/image path after decoding percent-encoding.
- *
- * @param hrefPath - Path without fragment
- * @param documentUri - URI of the document that contains the href
- * @returns File URI, or undefined when the path is empty
- */
-function resolveLocalMarkdownUri(
-  hrefPath: string,
-  documentUri: vscode.Uri,
-): vscode.Uri | undefined {
-  const decoded = decodeMarkdownHrefPath(hrefPath);
-  if (!decoded) {
-    return;
-  }
-  if (decoded.startsWith("/")) {
-    return vscode.Uri.file(decoded);
-  }
-  return vscode.Uri.joinPath(documentUri, "..", decoded);
-}
-
 export function resolveImageTarget(
   url: string,
   documentUri: vscode.Uri,
@@ -61,6 +11,10 @@ export function resolveImageTarget(
   const trimmed = url.trim();
   if (!trimmed) {
     return;
+  }
+
+  if (trimmed.startsWith("/")) {
+    return vscode.Uri.file(trimmed);
   }
 
   if (
@@ -76,7 +30,7 @@ export function resolveImageTarget(
     }
   }
 
-  return resolveLocalMarkdownUri(trimmed, documentUri);
+  return vscode.Uri.joinPath(documentUri, "..", trimmed);
 }
 
 export function resolveLinkTarget(
@@ -92,7 +46,7 @@ export function resolveLinkTarget(
     const anchor = trimmed.substring(1);
     return {
       kind: "command",
-      command: "gongwen.navigateToAnchor",
+      command: "markdown-inline-editor.navigateToAnchor",
       args: [anchor, documentUri.toString()],
     };
   }
@@ -113,22 +67,11 @@ export function resolveLinkTarget(
     }
   }
 
-  const { path, fragment } = splitMarkdownHref(trimmed);
-  const uri = resolveLocalMarkdownUri(path, documentUri);
-  if (!uri) {
-    return;
+  if (trimmed.startsWith("/")) {
+    return { kind: "uri", uri: vscode.Uri.file(trimmed) };
   }
 
-  // Relative file plus fragment: open that file then jump to the heading
-  if (fragment) {
-    return {
-      kind: "command",
-      command: "gongwen.navigateToAnchor",
-      args: [fragment, uri.toString()],
-    };
-  }
-
-  return { kind: "uri", uri };
+  return { kind: "uri", uri: vscode.Uri.joinPath(documentUri, "..", trimmed) };
 }
 
 export function toCommandUri(command: string, args: unknown[]): vscode.Uri {

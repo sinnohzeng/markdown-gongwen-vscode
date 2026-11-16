@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 'sinnohzeng.markdown-gongwen';
+const EXTENSION_ID = 'CodeSmith.markdown-inline-editor-vscode';
 
 // ── Minimal mirror types for ext.exports ─────────────────────────────────────
 // These parallel src/parser.ts::DecorationRange, src/markdown-parse-cache.ts::ParseEntry,
@@ -54,8 +54,8 @@ suite('Extension E2E', () => {
   test('toggle command is registered', async () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(
-      commands.includes('gongwen.toggleDecorations'),
-      'gongwen.toggleDecorations not registered'
+      commands.includes('mdInline.toggleDecorations'),
+      'mdInline.toggleDecorations not registered'
     );
   });
 
@@ -70,6 +70,49 @@ suite('Extension E2E', () => {
     // Reaching here without an unhandled exception means the decorator ran cleanly.
   });
 
+  // One document exercising many parsers at once — catches interaction bugs before release.
+  test('release smoke: kitchen-sink markdown decorates without error', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'markdown',
+      content: [
+        '---',
+        'title: Smoke',
+        '---',
+        '',
+        '# Title',
+        '',
+        '| A | B |',
+        '| - | - |',
+        '| 1 | 2 |',
+        '',
+        '- [ ] open',
+        '- [x] done',
+        '',
+        '1. one',
+        '2. two',
+        '',
+        '**bold** _italic_ `code` ~~strike~~',
+        '',
+        '[link](https://example.com/page)',
+        '',
+        '```javascript',
+        'const x = "**not** bold";',
+        '```',
+        '',
+        '> quote line',
+        '',
+        '---',
+        '',
+        'See #99 and @alice.',
+        '',
+        'Emoji :rocket:',
+      ].join('\n'),
+    });
+    await vscode.window.showTextDocument(doc);
+    await delay(900);
+    assert.strictEqual(doc.languageId, 'markdown');
+  });
+
   test('toggle command executes without error on active markdown editor', async () => {
     const doc = await vscode.workspace.openTextDocument({
       language: 'markdown',
@@ -77,9 +120,9 @@ suite('Extension E2E', () => {
     });
     await vscode.window.showTextDocument(doc);
     await delay(300);
-    await vscode.commands.executeCommand('gongwen.toggleDecorations');
+    await vscode.commands.executeCommand('mdInline.toggleDecorations');
     await delay(200);
-    await vscode.commands.executeCommand('gongwen.toggleDecorations');
+    await vscode.commands.executeCommand('mdInline.toggleDecorations');
   });
 
   // Issue #28: per-file toggle state
@@ -98,7 +141,7 @@ suite('Extension E2E', () => {
     await vscode.window.showTextDocument(docA);
     await delay(300);
     assert.ok(decoratorApi?.isEnabled(), 'File A should start enabled');
-    await vscode.commands.executeCommand('gongwen.toggleDecorations');
+    await vscode.commands.executeCommand('mdInline.toggleDecorations');
     await delay(200);
     assert.strictEqual(decoratorApi?.isEnabled(), false, 'File A should now be disabled');
 
@@ -113,7 +156,7 @@ suite('Extension E2E', () => {
     assert.strictEqual(decoratorApi?.isEnabled(), false, 'File A should still be disabled');
 
     // Re-enable file A to leave state clean for subsequent tests
-    await vscode.commands.executeCommand('gongwen.toggleDecorations');
+    await vscode.commands.executeCommand('mdInline.toggleDecorations');
     await delay(200);
   });
 
@@ -278,6 +321,19 @@ suite('Extension E2E', () => {
     assert.strictEqual(doc.languageId, 'markdown');
   });
 
+  // Issue #31: ordered list auto-numbering
+  // Ordered list markers should be hidden and replaced with auto-calculated numbers.
+  test('#31 — ordered list auto-numbering decorates without error', async () => {
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'markdown',
+      content: '1. First item\n1. Second item\n1. Third item\n\nNested:\n1. Outer\n   1. Inner A\n   1. Inner B\n1. Outer again',
+    });
+    await vscode.window.showTextDocument(doc);
+    await delay(500);
+    assert.strictEqual(doc.languageId, 'markdown');
+    // Extension must not throw while decorating ordered lists with auto-numbering.
+  });
+
   // Edge case: an empty markdown document should not throw.
   test('empty markdown document decorates without error', async () => {
     const doc = await vscode.workspace.openTextDocument({
@@ -300,8 +356,8 @@ suite('Extension E2E', () => {
   test('navigateToAnchor command is registered', async () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(
-      commands.includes('gongwen.navigateToAnchor'),
-      'gongwen.navigateToAnchor not registered'
+      commands.includes('markdown-inline-editor.navigateToAnchor'),
+      'markdown-inline-editor.navigateToAnchor not registered'
     );
   });
 
@@ -350,6 +406,97 @@ suite('Extension E2E', () => {
     );
   });
 
+  // Image hover (MarkdownImageHoverProvider) — release smoke for image previews.
+  test('image hover provider includes the image URL in hover content', async () => {
+    await withTempFile(
+      '![preview shot](https://example.com/assets/photo.png)',
+      async (_doc, uri) => {
+        const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+          'vscode.executeHoverProvider',
+          uri,
+          new vscode.Position(0, 5)
+        );
+        assert.ok(hovers && hovers.length > 0, 'Expected hover content over image alt text');
+        const hoverText = hovers
+          .flatMap(h => h.contents)
+          .map(c => (typeof c === 'string' ? c : c.value))
+          .join('\n');
+        assert.ok(
+          hoverText.includes('example.com') && hoverText.toLowerCase().includes('image'),
+          `Expected image hover with URL; got: ${hoverText.slice(0, 200)}`
+        );
+      }
+    );
+  });
+
+  // Relative links must resolve for file-backed docs (common README pattern).
+  test('link provider resolves relative ./ path to a sibling markdown file', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'md-e2e-rel-'));
+    const mainPath = path.join(dir, 'readme.md');
+    const siblingPath = path.join(dir, 'other.md');
+    fs.writeFileSync(mainPath, '[See other](./other.md)\n', 'utf8');
+    fs.writeFileSync(siblingPath, '# Other\n\nBody.\n', 'utf8');
+    try {
+      const uri = vscode.Uri.file(mainPath);
+      const doc = await vscode.workspace.openTextDocument(uri);
+      await vscode.window.showTextDocument(doc);
+      await delay(600);
+      const links = await vscode.commands.executeCommand<vscode.DocumentLink[]>(
+        'vscode.executeLinkProvider',
+        uri
+      );
+      assert.ok(links && links.length > 0, 'Expected at least one DocumentLink');
+      const normalizedSibling = siblingPath.replace(/\\/g, '/').toLowerCase();
+      const hit = links.some(l => {
+        const fsPath = l.target?.fsPath?.replace(/\\/g, '/').toLowerCase() ?? '';
+        return fsPath === normalizedSibling || fsPath.endsWith('/other.md');
+      });
+      assert.ok(
+        hit,
+        `Expected link target for ./other.md; targets: ${links.map(l => l.target?.toString()).join(', ')}`
+      );
+    } finally {
+      try {
+        fs.unlinkSync(mainPath);
+        fs.unlinkSync(siblingPath);
+        fs.rmdirSync(dir);
+      } catch {
+        /* ignore cleanup */
+      }
+    }
+  });
+
+  // mailto: links must still surface as clickable document links.
+  test('link provider returns a mailto target for email links', async () => {
+    await withTempFile('[Write us](mailto:support@example.com)', async (_doc, uri) => {
+      const links = await vscode.commands.executeCommand<vscode.DocumentLink[]>(
+        'vscode.executeLinkProvider',
+        uri
+      );
+      assert.ok(links && links.length > 0, 'Expected a DocumentLink for mailto');
+      const mail = links.find(l => l.target?.scheme === 'mailto');
+      assert.ok(mail, `Expected mailto link, got: ${links.map(l => l.target?.toString()).join(', ')}`);
+      const targetStr = mail!.target!.toString(true);
+      assert.ok(
+        /support(@|%40)example\.com/i.test(targetStr),
+        `Unexpected mailto target: ${targetStr}`
+      );
+    });
+  });
+
+  // Images must be document links (open in image viewer / preview).
+  test('link provider returns an https target for markdown images', async () => {
+    await withTempFile('![](https://example.com/preview.png)', async (_doc, uri) => {
+      const links = await vscode.commands.executeCommand<vscode.DocumentLink[]>(
+        'vscode.executeLinkProvider',
+        uri
+      );
+      assert.ok(links && links.length > 0, 'Expected DocumentLink for image');
+      const img = links.find(l => l.target?.toString().includes('example.com'));
+      assert.ok(img, `Expected image link target, got: ${links.map(l => l.target?.toString()).join(', ')}`);
+    });
+  });
+
   // navigateToAnchor must move the active editor cursor to the line of the
   // target heading (not just open the file without error).
   test('navigateToAnchor moves cursor to the target heading line', async () => {
@@ -358,7 +505,7 @@ suite('Extension E2E', () => {
       async (_doc, uri) => {
         // Navigate to "introduction" (normalizeAnchorText lowercases the heading).
         await vscode.commands.executeCommand(
-          'gongwen.navigateToAnchor',
+          'markdown-inline-editor.navigateToAnchor',
           'introduction',
           uri.toString()
         );
@@ -373,6 +520,46 @@ suite('Extension E2E', () => {
         );
       }
     );
+  });
+
+  // navigateToAnchor must match ## headings (not only #).
+  test('navigateToAnchor moves cursor to a ## subheading line', async () => {
+    await withTempFile(
+      '# Title\n\n## Sub section\n\nText.\n\n### Deep\n',
+      async (_doc, uri) => {
+        await vscode.commands.executeCommand(
+          'markdown-inline-editor.navigateToAnchor',
+          'sub-section',
+          uri.toString()
+        );
+        await delay(300);
+        const activeEditor = vscode.window.activeTextEditor;
+        assert.ok(activeEditor, 'Expected an active editor after navigation');
+        const lineText = activeEditor.document.lineAt(activeEditor.selection.active.line).text;
+        assert.ok(
+          lineText.includes('Sub section'),
+          `Expected cursor on ## Sub section, got line: "${lineText}"`
+        );
+      }
+    );
+  });
+
+  // Missing anchor must not throw; document content must be unchanged.
+  test('navigateToAnchor with unknown anchor completes without error', async () => {
+    await withTempFile('# Only heading\n\nParagraph.', async (doc, uri) => {
+      const before = doc.getText();
+      await vscode.commands.executeCommand(
+        'markdown-inline-editor.navigateToAnchor',
+        'this-anchor-is-not-in-the-document',
+        uri.toString()
+      );
+      await delay(200);
+      assert.strictEqual(
+        doc.getText(),
+        before,
+        'Document must be unchanged when anchor is not found'
+      );
+    });
   });
 
   // Switching rapidly between a markdown editor and a non-markdown editor
@@ -653,6 +840,36 @@ suite('Extension E2E', () => {
     );
   });
 
+  test('parse: ordered list produces orderedListItem decorations', async () => {
+    assert.ok(cache, 'parseCache not available from ext.exports');
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'markdown',
+      content: '1. first\n2. second',
+    });
+    await vscode.window.showTextDocument(doc);
+    await delay(400);
+    const entry = cache.get(doc);
+    assert.ok(
+      entry.decorations.some(d => d.type === 'orderedListItem'),
+      'Expected orderedListItem decorations for numbered list'
+    );
+  });
+
+  test('parse: inline backticks produce a code decoration', async () => {
+    assert.ok(cache, 'parseCache not available from ext.exports');
+    const doc = await vscode.workspace.openTextDocument({
+      language: 'markdown',
+      content: 'Use `npm test` here.',
+    });
+    await vscode.window.showTextDocument(doc);
+    await delay(400);
+    const entry = cache.get(doc);
+    const codes = entry.decorations.filter(d => d.type === 'code');
+    assert.ok(codes.length > 0, 'Expected a code decoration for inline backticks');
+    const slice = entry.text.slice(codes[0].startPos, codes[0].endPos);
+    assert.ok(slice.includes('npm test'), `Expected code slice to cover npm test, got "${slice}"`);
+  });
+
   test('parse: CRLF — decoration positions are consistent with LF-normalised offsets', async () => {
     assert.ok(cache, 'parseCache not available from ext.exports');
     // CRLF document: "**bold**\r\n_italic_"
@@ -880,7 +1097,7 @@ suite('Extension E2E', () => {
     try {
       // Phase 1: decorations OFF — applyDecorations short-circuits, onApply not called
       phase = 1;
-      await vscode.commands.executeCommand('gongwen.toggleDecorations');
+      await vscode.commands.executeCommand('mdInline.toggleDecorations');
       await vscode.commands.executeCommand('cursorMove', { to: 'right' });
       await delay(300);
       assert.strictEqual(
@@ -891,7 +1108,7 @@ suite('Extension E2E', () => {
 
       // Phase 2: decorations ON — applyDecorations runs, onApply fires with count > 0
       phase = 2;
-      await vscode.commands.executeCommand('gongwen.toggleDecorations');
+      await vscode.commands.executeCommand('mdInline.toggleDecorations');
       await vscode.commands.executeCommand('cursorMove', { to: 'right' });
       await delay(300);
       assert.ok(
@@ -902,7 +1119,7 @@ suite('Extension E2E', () => {
       decoratorApi.onApply = undefined;
       // Guard: ensure decorations end up ON regardless of test outcome
       if (!decoratorApi.isEnabled()) {
-        await vscode.commands.executeCommand('gongwen.toggleDecorations');
+        await vscode.commands.executeCommand('mdInline.toggleDecorations');
       }
     }
   });
@@ -936,30 +1153,6 @@ suite('Extension E2E', () => {
       after.decorations.some(d => d.type === 'heading1'),
       'Expected heading1 decoration in cache after inserting "# Heading"'
     );
-  });
-
-  // 冒烟：导出命令对近空文档产出合法 DOCX（可解包且含核心部件）
-  test('quick export produces a valid DOCX for a near-empty document', async () => {
-    await withTempFile('正文一行。', async (_doc, uri) => {
-      const outPath = uri.fsPath.replace(/\.md$/, '.docx');
-      try {
-        await vscode.commands.executeCommand('gongwen.exportDocxQuick');
-        // 导出异步执行（带进度条）：轮询等产物出现，上限 10 秒
-        let exists = false;
-        for (let i = 0; i < 50; i++) {
-          if (fs.existsSync(outPath)) { exists = true; break; }
-          await delay(200);
-        }
-        assert.ok(exists, 'Export did not produce the .docx output file');
-
-        const JSZip = (await import('jszip')).default;
-        const zip = await JSZip.loadAsync(fs.readFileSync(outPath));
-        assert.ok(zip.file('word/document.xml'), 'DOCX lacks word/document.xml — not a valid DOCX');
-        assert.ok(zip.file('[Content_Types].xml'), 'DOCX lacks [Content_Types].xml');
-      } finally {
-        try { fs.unlinkSync(outPath); } catch { /* ignore cleanup errors */ }
-      }
-    });
   });
 });
 

@@ -1,6 +1,7 @@
 import type { TextEditorDecorationType } from 'vscode';
 import {
   HideDecorationType,
+  CheckboxMarkerDecorationType,
   TransparentDecorationType,
   GhostFaintDecorationType,
   BoldDecorationType,
@@ -35,7 +36,6 @@ import {
   TableSeparatorPipeDecorationType,
   TableSeparatorDashDecorationType,
   TableCellDecorationType,
-  BodyTextDecorationType,
 } from '../decorations';
 import type { DecorationType } from '../parser';
 
@@ -59,35 +59,11 @@ type RegistryOptions = {
   getImageColor?: () => string | undefined;
   getHorizontalRuleColor?: () => string | undefined;
   getCheckboxColor?: () => string | undefined;
-  // Font customization getters
-  getHeading1FontFamily?: () => string | undefined;
-  getHeading1FontWeight?: () => string | undefined;
-  getHeading1FontSize?: () => string | undefined;
-  getHeading2FontFamily?: () => string | undefined;
-  getHeading2FontWeight?: () => string | undefined;
-  getHeading2FontSize?: () => string | undefined;
-  getHeading3FontFamily?: () => string | undefined;
-  getHeading3FontWeight?: () => string | undefined;
-  getHeading3FontSize?: () => string | undefined;
-  getHeading4FontFamily?: () => string | undefined;
-  getHeading4FontWeight?: () => string | undefined;
-  getHeading4FontSize?: () => string | undefined;
-  getHeading5FontFamily?: () => string | undefined;
-  getHeading5FontWeight?: () => string | undefined;
-  getHeading5FontSize?: () => string | undefined;
-  getHeading6FontFamily?: () => string | undefined;
-  getHeading6FontWeight?: () => string | undefined;
-  getHeading6FontSize?: () => string | undefined;
-  getEmphasisFontFamily?: () => string | undefined;
-  getEmphasisFontWeight?: () => string | undefined;
-  getBodyFontFamily?: () => string | undefined;
-  getBodyFontWeight?: () => string | undefined;
-  getBodyFontSize?: () => string | undefined;
-  getBodyLineHeight?: () => string | undefined;
 };
 
 export class DecorationTypeRegistry {
   private hideDecorationType!: TextEditorDecorationType;
+  private checkboxMarkerDecorationType!: TextEditorDecorationType;
   private transparentDecorationType!: TextEditorDecorationType;
   private ghostFaintDecorationType!: TextEditorDecorationType;
   private boldDecorationType!: TextEditorDecorationType;
@@ -122,29 +98,29 @@ export class DecorationTypeRegistry {
   private tableSeparatorPipeDecorationType!: TextEditorDecorationType;
   private tableSeparatorDashDecorationType!: TextEditorDecorationType;
   private tableCellDecorationType!: TextEditorDecorationType;
-  private bodyTextDecorationType!: TextEditorDecorationType;
 
   private decorationTypeMap = new Map<DecorationType, TextEditorDecorationType>();
 
   constructor(private options: RegistryOptions) {
     this.hideDecorationType = HideDecorationType();
+    this.checkboxMarkerDecorationType = CheckboxMarkerDecorationType();
     this.transparentDecorationType = TransparentDecorationType();
     this.ghostFaintDecorationType = GhostFaintDecorationType(this.options.getGhostFaintOpacity());
-    this.boldDecorationType = BoldDecorationType(this.options.getEmphasisColor?.(), this.options.getEmphasisFontFamily?.(), this.options.getEmphasisFontWeight?.());
-    this.italicDecorationType = ItalicDecorationType(this.options.getEmphasisColor?.(), this.options.getEmphasisFontFamily?.());
-    this.boldItalicDecorationType = BoldItalicDecorationType(this.options.getEmphasisColor?.(), this.options.getEmphasisFontFamily?.(), this.options.getEmphasisFontWeight?.());
+    this.boldDecorationType = BoldDecorationType(this.options.getEmphasisColor?.());
+    this.italicDecorationType = ItalicDecorationType(this.options.getEmphasisColor?.());
+    this.boldItalicDecorationType = BoldItalicDecorationType(this.options.getEmphasisColor?.());
     this.strikethroughDecorationType = StrikethroughDecorationType();
     this.codeDecorationType = CodeDecorationType(this.options.getInlineCodeColor?.(), this.options.getInlineCodeBackgroundColor?.());
     this.codeBlockDecorationType = CodeBlockDecorationType();
     this.codeBlockLanguageDecorationType = CodeBlockLanguageDecorationType(this.options.getCodeBlockLanguageOpacity());
     this.selectionOverlayDecorationType = SelectionOverlayDecorationType();
     this.headingDecorationType = HeadingDecorationType();
-    this.heading1DecorationType = Heading1DecorationType(this.options.getHeading1Color?.(), this.options.getHeading1FontFamily?.(), this.options.getHeading1FontWeight?.(), this.options.getHeading1FontSize?.());
-    this.heading2DecorationType = Heading2DecorationType(this.options.getHeading2Color?.(), this.options.getHeading2FontFamily?.(), this.options.getHeading2FontWeight?.(), this.options.getHeading2FontSize?.());
-    this.heading3DecorationType = Heading3DecorationType(this.options.getHeading3Color?.(), this.options.getHeading3FontFamily?.(), this.options.getHeading3FontWeight?.(), this.options.getHeading3FontSize?.());
-    this.heading4DecorationType = Heading4DecorationType(this.options.getHeading4Color?.(), this.options.getHeading4FontFamily?.(), this.options.getHeading4FontWeight?.(), this.options.getHeading4FontSize?.());
-    this.heading5DecorationType = Heading5DecorationType(this.options.getHeading5Color?.(), this.options.getHeading5FontFamily?.(), this.options.getHeading5FontWeight?.(), this.options.getHeading5FontSize?.());
-    this.heading6DecorationType = Heading6DecorationType(this.options.getHeading6Color?.(), this.options.getHeading6FontFamily?.(), this.options.getHeading6FontWeight?.(), this.options.getHeading6FontSize?.());
+    this.heading1DecorationType = Heading1DecorationType(this.options.getHeading1Color?.());
+    this.heading2DecorationType = Heading2DecorationType(this.options.getHeading2Color?.());
+    this.heading3DecorationType = Heading3DecorationType(this.options.getHeading3Color?.());
+    this.heading4DecorationType = Heading4DecorationType(this.options.getHeading4Color?.());
+    this.heading5DecorationType = Heading5DecorationType(this.options.getHeading5Color?.());
+    this.heading6DecorationType = Heading6DecorationType(this.options.getHeading6Color?.());
     this.linkDecorationType = LinkDecorationType(
       this.options.getLinkColor?.(),
       this.options.getLinkShowEmoji?.() ?? false,
@@ -165,11 +141,8 @@ export class DecorationTypeRegistry {
     this.tableSeparatorPipeDecorationType = TableSeparatorPipeDecorationType();
     this.tableSeparatorDashDecorationType = TableSeparatorDashDecorationType();
     this.tableCellDecorationType = TableCellDecorationType();
-    this.bodyTextDecorationType = BodyTextDecorationType(this.options.getBodyFontFamily?.(), this.options.getBodyFontWeight?.(), this.options.getBodyFontSize?.(), this.options.getBodyLineHeight?.());
 
     this.decorationTypeMap = new Map<DecorationType, TextEditorDecorationType>([
-      // Body text decoration first so headings/emphasis can override
-      ['body', this.bodyTextDecorationType],
       ['hide', this.hideDecorationType],
       ['transparent', this.transparentDecorationType],
       ['bold', this.boldDecorationType],
@@ -196,6 +169,7 @@ export class DecorationTypeRegistry {
       ['horizontalRule', this.horizontalRuleDecorationType],
       ['checkboxUnchecked', this.checkboxUncheckedDecorationType],
       ['checkboxChecked', this.checkboxCheckedDecorationType],
+      ['checkboxMarker', this.checkboxMarkerDecorationType],
       ['frontmatter', this.frontmatterDecorationType],
       ['frontmatterDelimiter', this.frontmatterDelimiterDecorationType],
       ['emoji', this.emojiDecorationType],
@@ -216,11 +190,15 @@ export class DecorationTypeRegistry {
     return this.ghostFaintDecorationType;
   }
 
+  recreateCodeDecorationType(): void {
+    this.recreateDecorationType(
+      this.codeDecorationType,
+      () => CodeDecorationType(this.options.getInlineCodeColor?.(), this.options.getInlineCodeBackgroundColor?.()),
+      (newType) => { this.codeDecorationType = newType; },
+      'code'
+    );
+  }
 
-  /**
-   * Recreates all decoration types that depend on color settings or theme.
-   * Call when config (markdownGongwen.colors) or active color theme changes.
-   */
   /** Recreates link decoration when link color or link emoji setting changes. */
   recreateLinkDecorationType(): void {
     this.recreateDecorationType(
@@ -231,13 +209,17 @@ export class DecorationTypeRegistry {
     );
   }
 
+  /**
+   * Recreates all decoration types that depend on color settings or theme.
+   * Call when config (markdownInlineEditor.colors) or active color theme changes.
+   */
   recreateColorDependentTypes(): void {
-    this.recreateDecorationType(this.heading1DecorationType, () => Heading1DecorationType(this.options.getHeading1Color?.(), this.options.getHeading1FontFamily?.(), this.options.getHeading1FontWeight?.(), this.options.getHeading1FontSize?.()), (t) => { this.heading1DecorationType = t; }, 'heading1');
-    this.recreateDecorationType(this.heading2DecorationType, () => Heading2DecorationType(this.options.getHeading2Color?.(), this.options.getHeading2FontFamily?.(), this.options.getHeading2FontWeight?.(), this.options.getHeading2FontSize?.()), (t) => { this.heading2DecorationType = t; }, 'heading2');
-    this.recreateDecorationType(this.heading3DecorationType, () => Heading3DecorationType(this.options.getHeading3Color?.(), this.options.getHeading3FontFamily?.(), this.options.getHeading3FontWeight?.(), this.options.getHeading3FontSize?.()), (t) => { this.heading3DecorationType = t; }, 'heading3');
-    this.recreateDecorationType(this.heading4DecorationType, () => Heading4DecorationType(this.options.getHeading4Color?.(), this.options.getHeading4FontFamily?.(), this.options.getHeading4FontWeight?.(), this.options.getHeading4FontSize?.()), (t) => { this.heading4DecorationType = t; }, 'heading4');
-    this.recreateDecorationType(this.heading5DecorationType, () => Heading5DecorationType(this.options.getHeading5Color?.(), this.options.getHeading5FontFamily?.(), this.options.getHeading5FontWeight?.(), this.options.getHeading5FontSize?.()), (t) => { this.heading5DecorationType = t; }, 'heading5');
-    this.recreateDecorationType(this.heading6DecorationType, () => Heading6DecorationType(this.options.getHeading6Color?.(), this.options.getHeading6FontFamily?.(), this.options.getHeading6FontWeight?.(), this.options.getHeading6FontSize?.()), (t) => { this.heading6DecorationType = t; }, 'heading6');
+    this.recreateDecorationType(this.heading1DecorationType, () => Heading1DecorationType(this.options.getHeading1Color?.()), (t) => { this.heading1DecorationType = t; }, 'heading1');
+    this.recreateDecorationType(this.heading2DecorationType, () => Heading2DecorationType(this.options.getHeading2Color?.()), (t) => { this.heading2DecorationType = t; }, 'heading2');
+    this.recreateDecorationType(this.heading3DecorationType, () => Heading3DecorationType(this.options.getHeading3Color?.()), (t) => { this.heading3DecorationType = t; }, 'heading3');
+    this.recreateDecorationType(this.heading4DecorationType, () => Heading4DecorationType(this.options.getHeading4Color?.()), (t) => { this.heading4DecorationType = t; }, 'heading4');
+    this.recreateDecorationType(this.heading5DecorationType, () => Heading5DecorationType(this.options.getHeading5Color?.()), (t) => { this.heading5DecorationType = t; }, 'heading5');
+    this.recreateDecorationType(this.heading6DecorationType, () => Heading6DecorationType(this.options.getHeading6Color?.()), (t) => { this.heading6DecorationType = t; }, 'heading6');
     this.recreateDecorationType(
       this.linkDecorationType,
       () => LinkDecorationType(this.options.getLinkColor?.(), this.options.getLinkShowEmoji?.() ?? false),
@@ -248,17 +230,15 @@ export class DecorationTypeRegistry {
     this.recreateDecorationType(this.listItemDecorationType, () => ListItemDecorationType(this.options.getListMarkerColor?.()), (t) => { this.listItemDecorationType = t; }, 'listItem');
     this.recreateDecorationType(this.orderedListItemDecorationType, () => OrderedListItemDecorationType(this.options.getListMarkerColor?.()), (t) => { this.orderedListItemDecorationType = t; }, 'orderedListItem');
     this.recreateDecorationType(this.codeDecorationType, () => CodeDecorationType(this.options.getInlineCodeColor?.(), this.options.getInlineCodeBackgroundColor?.()), (t) => { this.codeDecorationType = t; }, 'code');
-    this.recreateDecorationType(this.boldDecorationType, () => BoldDecorationType(this.options.getEmphasisColor?.(), this.options.getEmphasisFontFamily?.(), this.options.getEmphasisFontWeight?.()), (t) => { this.boldDecorationType = t; }, 'bold');
-    this.recreateDecorationType(this.italicDecorationType, () => ItalicDecorationType(this.options.getEmphasisColor?.(), this.options.getEmphasisFontFamily?.()), (t) => { this.italicDecorationType = t; }, 'italic');
-    this.recreateDecorationType(this.boldItalicDecorationType, () => BoldItalicDecorationType(this.options.getEmphasisColor?.(), this.options.getEmphasisFontFamily?.(), this.options.getEmphasisFontWeight?.()), (t) => { this.boldItalicDecorationType = t; }, 'boldItalic');
+    this.recreateDecorationType(this.boldDecorationType, () => BoldDecorationType(this.options.getEmphasisColor?.()), (t) => { this.boldDecorationType = t; }, 'bold');
+    this.recreateDecorationType(this.italicDecorationType, () => ItalicDecorationType(this.options.getEmphasisColor?.()), (t) => { this.italicDecorationType = t; }, 'italic');
+    this.recreateDecorationType(this.boldItalicDecorationType, () => BoldItalicDecorationType(this.options.getEmphasisColor?.()), (t) => { this.boldItalicDecorationType = t; }, 'boldItalic');
     this.recreateDecorationType(this.imageDecorationType, () => ImageDecorationType(this.options.getImageColor?.()), (t) => { this.imageDecorationType = t; }, 'image');
     this.recreateDecorationType(this.mentionDecorationType, () => MentionDecorationType(this.options.getLinkColor?.()), (t) => { this.mentionDecorationType = t; }, 'mention');
     this.recreateDecorationType(this.issueReferenceDecorationType, () => IssueReferenceDecorationType(this.options.getLinkColor?.()), (t) => { this.issueReferenceDecorationType = t; }, 'issueReference');
     this.recreateDecorationType(this.horizontalRuleDecorationType, () => HorizontalRuleDecorationType(this.options.getHorizontalRuleColor?.()), (t) => { this.horizontalRuleDecorationType = t; }, 'horizontalRule');
     this.recreateDecorationType(this.checkboxUncheckedDecorationType, () => CheckboxUncheckedDecorationType(this.options.getCheckboxColor?.()), (t) => { this.checkboxUncheckedDecorationType = t; }, 'checkboxUnchecked');
     this.recreateDecorationType(this.checkboxCheckedDecorationType, () => CheckboxCheckedDecorationType(this.options.getCheckboxColor?.()), (t) => { this.checkboxCheckedDecorationType = t; }, 'checkboxChecked');
-    // Recreate body text decoration
-    this.recreateDecorationType(this.bodyTextDecorationType, () => BodyTextDecorationType(this.options.getBodyFontFamily?.(), this.options.getBodyFontWeight?.(), this.options.getBodyFontSize?.(), this.options.getBodyLineHeight?.())!, (t) => { this.bodyTextDecorationType = t; }, 'body');
   }
 
   recreateGhostFaintDecorationType(): void {
