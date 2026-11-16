@@ -22,8 +22,8 @@ author: Hubby + AI
 
 1. 保留 Git 祖先关系，通过双亲 merge commit 跟踪 `SeardnaSchmid/markdown-inline-editor-vscode`，不以 squash、整树覆盖或永久 cherry-pick 替代祖先关系。
 2. 第一阶段合并上游模块化基线 `96fc352493f9590cd79298f598518fed7b5ddd1d`，形成结构迁移提交 `6f3162f8268b79a57fc928fbd558633dd1ac7ec5`。
-3. 在该结构上恢复 DOCX、编辑器公文字体、正文段落装饰、中文通知、配置热刷新与 `config.debug`，形成语义回迁提交 `8ec737a`。
-4. 第二阶段目标为 `77d051ad5b3c27f6cfe81acfa4939e1b8b87f7ec`，在保留上游新能力的同时解决 fork 冲突。目标提交是否已经形成真实 merge commit，以 Git 历史为准；解决冲突或暂存不等于合并完成。
+3. 在该结构上恢复 DOCX、编辑器公文字体、正文段落装饰、中文通知、配置热刷新与 `config.debug`，形成语义回迁提交 `5a381f75087ac6829c84bcd6ee2e3e4c1620c296`。
+4. 第二阶段已通过真实双亲 merge commit `c35a69de60e5134ec0105563d641d09619ed581f` 合并 `77d051ad5b3c27f6cfe81acfa4939e1b8b87f7ec`，在保留上游新能力的同时解决 fork 冲突；两个 parent 分别为 `5a381f75087ac6829c84bcd6ee2e3e4c1620c296` 与该上游尖端。
 5. 后续同步继续使用普通 `git merge upstream/main`，按功能模块解决冲突，不再重复全仓回迁。
 
 ## 不可被上游覆盖的 fork 边界

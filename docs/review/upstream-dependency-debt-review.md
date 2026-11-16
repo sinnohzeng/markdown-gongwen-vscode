@@ -11,7 +11,7 @@
 2. **上游截至 `77d051a` 的变更值得接纳。** 其中缺陷修复、parser 模块化、Vitest 和依赖更新直接降低维护成本；表格预览/highlight/表头着色按公文兼容策略保留，后两者默认关闭。
 3. **DOCX 五项配置已模块化实现，但每行字数仍有外部渲染未决异常。** OOXML 公式正确不能替代 Word/WPS/LibreOffice 验收。
 4. **直接依赖已升级到当前兼容范围内的最新版本。** 仅保留四项有明确理由的 latest 偏差，不盲目追版本号。
-5. **当前还不能称为已验收或可发布版本。** 最新上游冲突已解决并暂存，`MERGE_HEAD=77d051a`、unmerged=0；merge commit 因命令确认超时未形成，编译/测试也未恢复。
+5. **结构合并已完成，但还不能称为已验收或可发布版本。** 第二阶段真实双亲 merge commit 为 `c35a69de60e5134ec0105563d641d09619ed581f`；编译、代码 lint、测试和新的外部渲染仍未恢复。
 
 ## 2. Git 与上游事实
 
@@ -23,10 +23,11 @@
 | `aa19e3c7ff6e4c52bfd072b3ca3439cac6c5f047` | 改造前 WIP checkpoint |
 | `96fc352493f9590cd79298f598518fed7b5ddd1d` | 第一阶段上游模块化基线 |
 | `6f3162f8268b79a57fc928fbd558633dd1ac7ec5` | 第一阶段双亲 merge |
-| `8ec737a` | 公文语义回迁 |
-| `77d051ad5b3c27f6cfe81acfa4939e1b8b87f7ec` | 第二阶段目标与当前 `MERGE_HEAD` |
+| `5a381f75087ac6829c84bcd6ee2e3e4c1620c296` | 公文语义回迁 |
+| `77d051ad5b3c27f6cfe81acfa4939e1b8b87f7ec` | 第二阶段上游尖端 |
+| `c35a69de60e5134ec0105563d641d09619ed581f` | 第二阶段双亲 merge；parent 为 `5a381f7` 与 `77d051a` |
 
-`git ls-remote upstream refs/heads/main` 在本次最终核对时仍返回 `77d051a`。因此没有遗漏更新的 upstream/main 尖端；遗漏的是本仓库最后那个 merge commit，而不是上游内容。
+`git ls-remote upstream refs/heads/main` 在本次最终核对时仍返回 `77d051a`，且该提交已通过 `c35a69d` 成为本仓库真实祖先。后续同步可直接普通 merge 新的 upstream/main，不需要再次全仓回迁。
 
 ### 2.2 近期上游内容及采纳判断
 
@@ -132,8 +133,7 @@
 
 | 债务 | 当前证据 | 下一步 |
 |---|---|---|
-| 最新 merge commit 未形成 | `MERGE_HEAD` 存在、unmerged=0，提交命令确认超时且未执行 | 完成 merge commit，再核对双亲和状态 |
-| 合并后未编译、lint、测试 | 本轮无任何最新通过结果 | 用户恢复验证后运行完整 `npm run validate` |
+| 合并后未编译、代码 lint、测试 | 本轮无任何最新通过结果 | 用户恢复验证后运行完整 `npm run validate` |
 | DOCX 外部字符网格异常 | LibreOffice 实际步进约为目标两倍 | 最小 OOXML 对照实验 + Word/WPS 主验收 |
 
 ### P1：高相关剩余风险
@@ -171,13 +171,14 @@
 
 后续应分别控制 Normal 字号、`snapToChars`、段落 `snapToGrid`、行距规则和渲染器做最小对照，并以 Word/WPS 为主验收。当前不得宣称“每行 28/30 字已通过外部验收”。规范参考：[ECMA docGrid](https://webapp.docx4java.org/OnlineDemo/ecma376/WordML/docGrid.html)。
 
-## 8. 后续验证与合并顺序
+## 8. 后续验证顺序
 
-1. 形成第二阶段 merge commit，确认两个 parent、工作区和文档状态。
-2. 经用户恢复授权后运行 `npm run validate`；先修静态/类型/单测，再进入 E2E。
-3. 跑 Extension Host：激活、差异视图、复选框、表格、highlight、Mermaid、DOCX。
-4. 在真实 Remote-SSH 中验证链接、图片、快速/普通导出。
-5. 用 Word/WPS/LibreOffice 验收 DOCX，并解决字符网格异常。
-6. 最后才构建发布 VSIX；push、tag、发布继续单独授权。
+第二阶段 merge commit `c35a69d` 已完成并核对双亲，文档收尾独立提交。
+
+1. 经用户恢复授权后运行 `npm run validate`；先修静态/类型/单测，再进入 E2E。
+2. 跑 Extension Host：激活、差异视图、复选框、表格、highlight、Mermaid、DOCX。
+3. 在真实 Remote-SSH 中验证链接、图片、快速/普通导出。
+4. 用 Word/WPS/LibreOffice 验收 DOCX，并解决字符网格异常。
+5. 最后才构建发布 VSIX；push、tag、发布继续单独授权。
 
 长期同步规则见 [ADR](../architecture/ADR/upstream-sync.md) 与 [标准工作范式](../experience/upstream-realignment-lessons.md)。
