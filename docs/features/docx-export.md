@@ -1,6 +1,6 @@
 ---
 status: active
-updateDate: 2026-09-17
+updateDate: 2026-11-16
 priority: Core Feature
 ---
 
@@ -26,8 +26,9 @@ Markdown → remark 解析 → mdast 语法树 → ast-to-docx 映射 → docx �
 
 ```
 src/export/
-├── constants.ts        页面尺寸、字号、行距、字体，全是命名常量
-├── gbt9704-styles.ts   样式定义、页面布局、页脚
+├── constants.ts        GB/T 9704 缺省页面、字号、行距和字体常量
+├── typography.ts       配置合并、校验、单位换算与文档网格参数（纯函数）
+├── gbt9704-styles.ts   样式定义、页面布局、文档网格、页脚
 ├── ast-to-docx.ts      语法树到 Word 文档的纯函数映射（不碰 VS Code API）
 ├── image-resolver.ts   图片路径解析、尺寸读取、版心缩放
 └── export-command.ts   按钮点击后的交互流程编排
@@ -49,10 +50,61 @@ src/export/
 | 左边距 | 28mm |
 | 右边距 | 26mm |
 | 版心 | 156 × 225mm |
-| 每页 | 22 行，每行 28 字 |
+| 每页 | 缺省 22 行，每行 28 字 |
 | 行距 | 固定值 28 磅（560 twip） |
 | 正文首行缩进 | 2 个字符（640 twip） |
 | 正文对齐 | 两端对齐 |
+
+上述数值是缺省版式。`markdownGongwen.docx.*` 可以覆盖字体、字号、每行字数、行距和首行缩进；页面尺寸与页边距仍固定。
+
+## DOCX 排版配置
+
+编辑器显示的 `markdownGongwen.fonts.*` 与 DOCX 导出的 `markdownGongwen.docx.*` 是两套独立配置，互不影响。
+
+| 设置 | 缺省值 | 说明 |
+|------|--------|------|
+| `markdownGongwen.docx.fonts` | `{}` | 按角色覆盖 `eastAsia`、`ascii`、`hAnsi`、`cs`；缺省角色和槽位沿用 `constants.ts` |
+| `markdownGongwen.docx.fontSizesPt` | `{}` | 按角色覆盖字号，单位磅，6–72，0.5 步进 |
+| `markdownGongwen.docx.charsPerLine` | `28` | 每行东亚全角字符格数，1–100 的整数 |
+| `markdownGongwen.docx.lineSpacingPt` | `28` | 正文固定行距，同时作为网格 `linePitch`；6–144，0.5 步进 |
+| `markdownGongwen.docx.firstLineIndentChars` | `2` | 正文、列表、引用和标题的首行缩进字符数，按正文字号换算；0–10，0.5 步进，0 表示取消 |
+
+字体角色为 `body`、`title`、`heading1`、`heading2`、`heading3`、`emphasis`、`tableHeader`、`caption`、`pageNumber`、`code`。字号角色为 `title`、`heading`、`body`、`pageNumber`、`table`、`caption`、`footnote`、`code`。`heading` 同时控制各级公文标题；`heading1/2/3` 分别控制标题 1/2 及更深级别的字体。
+
+`charsPerLine` 不是截断文本、插入空格或估算编辑器列宽，而是在 `w:sectPr` 写入 `<w:docGrid w:type="snapToChars" …/>`。东亚全角字符按格位排列；拉丁文字按实际宽度占用所需格位并居中，其余格位不变。`charSpace` 按 ECMA-376 计算：
+
+```
+版心宽度 = A4 宽度 - 左右页边距 = 8844 twip
+目标字距（pt） = 版心宽度 / 20 / charsPerLine
+charSpace = round((目标字距 - 正文字号) × 4096)
+```
+
+缺省 28 字、正文 16pt 时 `charSpace=-848`，`linePitch=560`。Normal 正文字号是公式的基准；其他角色使用不同字号时，其实际字宽不保证恰好等于一格，不能用同一格数反推每个角色的精确换行位置。
+
+不单独提供“每页行数”设置：它与行距、版心高度描述同一件事，双配置会互相冲突。缺省 28pt 行距对应约 22 行；修改 `lineSpacingPt` 即同时改变固定行距和网格行距。行距小于字号可能裁切文字，图片段仍按既有规则使用单倍或最小行距。
+
+示例：
+
+```json
+{
+  "markdownGongwen.docx.fonts": {
+    "body": {
+      "eastAsia": "FangSong",
+      "ascii": "Times New Roman",
+      "hAnsi": "Times New Roman"
+    }
+  },
+  "markdownGongwen.docx.fontSizesPt": {
+    "body": 16,
+    "title": 22
+  },
+  "markdownGongwen.docx.charsPerLine": 28,
+  "markdownGongwen.docx.lineSpacingPt": 28,
+  "markdownGongwen.docx.firstLineIndentChars": 2
+}
+```
+
+配置在 VS Code schema 与纯转换层各校验一次。非法数值、非整数每行字数、错误步进、空字体都会使导出失败并显示具体原因，不会静默退回默认版式。
 
 ---
 
@@ -240,6 +292,7 @@ Markdown 里也可以写一个独占段落的 `[TOC]`（`[[TOC]]` 亦可，大�
 | 标题 5 到 7 | Heading5 到 Heading7 | 同标题 4 | 国标止于四级，沿用四级外观 |
 | 目录标题、TOC 标题、目录 1 到 3 | TOCTitle、TOCHeading、TOC1 到 TOC3 | 见“目录”一节 | 机关长文档惯例 |
 | 超链接 | Hyperlink | 黑色，无下划线 | 公文全文纯黑 |
+| 页码 | PageNumber | 缺省宋体四号，确保 PAGE 域与两侧一字线使用同一字体字号 | GB/T 9704 7.5 |
 | 脚注文本、尾注文本 | FootnoteText、EndnoteText | 仿宋小五 9pt，单倍行距，无首行缩进 | 类比 GB/T 7713.2-2022 附录 B |
 | 脚注引用、尾注引用 | FootnoteReference、EndnoteReference | 上标 | Word 惯例 |
 | 默认段落字体 | DefaultParagraphFont | 无格式（字符样式基类） | OOXML 要求 |
@@ -271,6 +324,8 @@ Markdown 里也可以写一个独占段落的 `[TOC]`（`[[TOC]]` 亦可，大�
 ## 验收标准
 
 - 导出的 DOCX 符合 GB/T 9704-2012 版面规格（纸张、边距、行距、字号）
+- 缺省配置不改变既有输出；自定义字体、字号、行距和首行缩进均写入实际 `document.xml`、`styles.xml` 与页脚
+- `w:docGrid` 为 `snapToChars`，缺省写入 `linePitch=560`、`charSpace=-848`；自定义值按规范公式换算
 - 标题层级字体映射正确（方正小标宋 / 黑体 / 楷体 / 仿宋）
 - 引用块为楷体正文版式（无斜体、无底纹、首行缩进）
 - 列表段落首行缩进 2 字符、回行顶格（无“文本之前”左缩进）

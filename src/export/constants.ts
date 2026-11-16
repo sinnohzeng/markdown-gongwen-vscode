@@ -65,8 +65,10 @@ export const LINE_SPACING_PT = 28;
 export const LINE_SPACING_TWIP = LINE_SPACING_PT * 20;
 /** 单倍行距（Word 的 line=240、lineRule=auto），脚注 / 尾注文本用 */
 export const SINGLE_LINE_SPACING_TWIP = 240;
+/** 正文首行缩进字符数 */
+export const FIRST_LINE_INDENT_CHARS = 2;
 /** 首行缩进 2 字符 = 2 × 16pt × 20 = 640 twip */
-export const FIRST_LINE_INDENT_TWIP = 2 * FONT_SIZE_PT.BODY * 20;
+export const FIRST_LINE_INDENT_TWIP = FIRST_LINE_INDENT_CHARS * FONT_SIZE_PT.BODY * 20;
 /** 题注段上下间距约半行 = 560 / 2 = 280 twip */
 export const CAPTION_SPACING_TWIP = Math.round(LINE_SPACING_TWIP / 2);
 /** 代码块固定行距 15pt × 20 = 300 twip（代码行较密） */

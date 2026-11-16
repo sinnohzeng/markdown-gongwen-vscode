@@ -98,7 +98,7 @@
 
 ## 配置项
 
-设置里搜索 **“Markdown Gongwen”**。以下配置只影响编辑视图的渲染观感；导出 DOCX 的版式始终按 GB/T 9704 固定，不受任何配置影响：
+设置里搜索 **“Markdown Gongwen”**。`decorations.*`、`colors.*`、`fonts.*` 等以下配置只影响编辑视图，不改变 DOCX 导出：
 
 | 配置项 | 说明 | 默认值 |
 |--------|------|--------|
@@ -116,6 +116,39 @@
 | `markdownGongwen.mentions.linksEnabled` | 强制开/关提及链接（默认跟随 git 远程） | 未设置 |
 | `markdownGongwen.colors.*` | 15 个颜色自定义 | 跟随主题 |
 | `markdownGongwen.fonts.*` | 标题/正文/强调的字体、字重、字号与正文行高 | 内置公文风格 |
+
+### DOCX 排版配置
+
+DOCX 使用独立的 `markdownGongwen.docx.*` 设置，缺省仍是 GB/T 9704 版式：
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| `markdownGongwen.docx.fonts` | 按正文、标题、强调、表头、题注、页码、代码等角色覆盖中英文字体 | `{}`，沿用内置字体 |
+| `markdownGongwen.docx.fontSizesPt` | 按角色设置字号（磅），支持 0.5 步进 | `{}`，沿用内置字号 |
+| `markdownGongwen.docx.charsPerLine` | 每行东亚全角字符格数，通过 Word `snapToChars` 文档网格实现 | `28` |
+| `markdownGongwen.docx.lineSpacingPt` | 固定行距（磅），同时设置网格行距 | `28` |
+| `markdownGongwen.docx.firstLineIndentChars` | 首行缩进字符数，按正文字号换算；`0` 表示取消 | `2` |
+
+```json
+{
+  "markdownGongwen.docx.fonts": {
+    "body": {
+      "eastAsia": "FangSong",
+      "ascii": "Times New Roman",
+      "hAnsi": "Times New Roman"
+    }
+  },
+  "markdownGongwen.docx.fontSizesPt": {
+    "body": 16,
+    "title": 22
+  },
+  "markdownGongwen.docx.charsPerLine": 28,
+  "markdownGongwen.docx.lineSpacingPt": 28,
+  "markdownGongwen.docx.firstLineIndentChars": 2
+}
+```
+
+每行字数由真实 OOXML 网格控制，不通过截断或补空格模拟；拉丁文字按实际宽度占用格位。没有单独的“每页行数”设置，修改固定行距即改变每页可容纳行数。完整角色、取值范围与网格公式见 [DOCX 导出规范](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/features/docx-export.md)。
 
 ## 常见问题
 

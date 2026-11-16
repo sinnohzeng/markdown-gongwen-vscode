@@ -1,4 +1,10 @@
 import * as vscode from 'vscode';
+import type { DocxTypographyOverrides } from './export/typography';
+import {
+  CHARS_PER_LINE,
+  FIRST_LINE_INDENT_CHARS,
+  LINE_SPACING_PT,
+} from './export/constants';
 
 const SECTION = 'markdownGongwen' as const;
 
@@ -132,6 +138,22 @@ export const config = {
       return vscode.workspace
         .getConfiguration(SECTION)
         .get<boolean>('mentions.enabled', true);
+    },
+  },
+  /** DOCX 导出排版；与编辑器显示的 fonts.* 配置互不影响。 */
+  docx: {
+    typography(): DocxTypographyOverrides {
+      const cfg = vscode.workspace.getConfiguration(SECTION);
+      return {
+        fonts: cfg.get<DocxTypographyOverrides['fonts']>('docx.fonts', {}),
+        fontSizesPt: cfg.get<DocxTypographyOverrides['fontSizesPt']>('docx.fontSizesPt', {}),
+        charsPerLine: cfg.get<number>('docx.charsPerLine', CHARS_PER_LINE),
+        lineSpacingPt: cfg.get<number>('docx.lineSpacingPt', LINE_SPACING_PT),
+        firstLineIndentChars: cfg.get<number>(
+          'docx.firstLineIndentChars',
+          FIRST_LINE_INDENT_CHARS,
+        ),
+      };
     },
   },
   colors: {

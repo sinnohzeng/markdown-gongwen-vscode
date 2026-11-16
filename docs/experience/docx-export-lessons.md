@@ -106,3 +106,30 @@ WPS 自动目录插出来的“目录”二字不带任何样式，用户实测�
 ### patch 版依赖也能弄坏构建
 
 `@tsconfig/node-lts` 从 24.0.0 到 24.0.1 加了 `"types": ["node"]`，jest 全局类型随之从 tsc 视野里消失，`src/test/__mocks__/vscode.ts` 里的 `jest.fn` 全部报错。本仓库 `tsconfig.json` 现在显式写 `"types": ["node", "jest"]`。`npm update` 之后必须跑一遍 `npm run compile`，`npm test` 走 ts-jest 不会暴露这个问题。
+
+---
+
+## 2026-11-16 补记：可配置排版与真实字符网格
+
+### 只改 styles.xml 不会让全文字体配置生效
+
+这个导出器不是“所有文字都靠 Normal 继承”：正文、表格、列表、引用、代码、行内代码、强调、图片与错误占位都有直接 run 格式。只把 `DocumentDefaults` 改成用户字体，表面看配置已经接上，实际 `document.xml` 仍保留原来的 FangSong/KaiTi/Consolas。正确做法是让 `typography.ts` 一次性合并并校验配置，再通过 `RunContext` 把同一份结果传到所有转换分支；样式、节属性和页脚也接收同一对象。
+
+页码还有另一个坑：`SimpleField("PAGE")` 自身不能设置 run 字体。仅给两侧 Em Dash 设置宋体，不代表 PAGE 域也使用宋体。`PageNumber` 段落样式用于给域和一字线提供一致的字号字体，页脚段显式引用这个样式。
+
+### “每行 28 字”必须是 `w:docGrid`，不能是字符串处理
+
+截断、补空格、按 JavaScript 字符数换行都不能模拟 Word 的排版，也无法正确处理比例字体和中英混排。OOXML 的正确机制是 `<w:docGrid w:type="snapToChars" …/>`：东亚全角字符按格位排列，Latin text 按宽度占用必要格位并居中，其余格位不受影响。
+
+`charSpace` 不是每行字数本身，而是目标字距与 Normal 正文字号之差乘以 4096。计算时必须使用实际页面参数经 `convertMillimetersToTwip()` 后的结果：当前 A4 版心为 **8844 twip**，缺省 28 字、16pt 正文对应 **-848**。先用约数心算再把断言写成 -841，会把实现错误地引向估算值。规范示意图只能说明机制，项目验收仍须检查实际 DOCX XML，并用外部 Word/WPS/LibreOffice 渲染核对。
+
+### 派生配置要保持语义独立
+
+固定行距同时用于段落 `w:spacing` 和网格 `linePitch`，因此不另设“每页行数”形成双源。正文首行缩进按“字符数 × 正文字号”换算，但目录层级缩进只应随正文字号变化；把 `firstLineIndentChars=0` 错误地复用到目录，会把所有目录层级压成同一层。列表嵌套缩进同样独立于首行缩进字符数。
+
+### 验证要分层，不能只测配置 getter
+
+1. 纯函数测试：默认合并、字体槽位、非法数值、0.5 步进、单位与网格公式。
+2. VS Code 配置测试：读取的是 `docx.*`，不是编辑器的 `fonts.*`；package.json schema 与代码默认值一致。
+3. DOCX/OOXML 测试：实际打包后用 JSZip 读取 `document.xml`、`styles.xml`、`footer*.xml`，断言每个角色真实落地。
+4. 外部渲染测试：LibreOffice/WPS/Word 检查分页、28 字换行、中英混排、字体回退和图片裁切。XML 正确不等于所有渲染器行为完全一致，外部差异必须如实记录。

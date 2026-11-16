@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import type { Root, Image, Content } from "mdast";
 import type { ImageWarning } from "./image-resolver";
+import { config } from "../config";
 
 // ── Output Channel（懒初始化）───────────────────
 //
@@ -273,7 +274,7 @@ async function runExport(
         progress.report({ message: "正在生成 DOCX...", increment: 30 });
         const exporter = (await getExporter())!;
         const fidelity: string[] = [];
-        const doc = exporter.convertToDocx(ast, images, fidelity);
+        const doc = exporter.convertToDocx(ast, images, fidelity, config.docx.typography());
         log("DOCX Document 对象生成完成");
         for (const f of fidelity) {
           log(`  保真降级: ${f}`);

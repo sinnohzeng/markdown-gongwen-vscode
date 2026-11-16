@@ -203,6 +203,69 @@
           "description": "覆盖 @提及 和 #引用 的可点击链接行为",
           "markdownDescription": "覆盖 @提及 和 #引用 的可点击链接行为：`true` 强制开启、`false` 强制关闭；留空（不设置）则跟随 git 远程自动检测。"
         },
+        "markdownGongwen.docx.fonts": {
+          "type": "object",
+          "default": {},
+          "description": "按角色覆盖 DOCX 字体，未设置的字体槽位沿用 GB/T 9704 默认值",
+          "markdownDescription": "按角色覆盖 DOCX 字体。每个角色可设置 `eastAsia`、`ascii`、`hAnsi`、`cs`；未设置的槽位沿用 GB/T 9704 默认值。支持 `body`、`title`、`heading1`、`heading2`、`heading3`、`emphasis`、`tableHeader`、`caption`、`pageNumber`、`code`。",
+          "patternProperties": {
+            "^(body|title|heading1|heading2|heading3|emphasis|tableHeader|caption|pageNumber|code)$": {
+              "type": "object",
+              "properties": {
+                "eastAsia": { "type": "string", "minLength": 1, "description": "东亚文字字体" },
+                "ascii": { "type": "string", "minLength": 1, "description": "ASCII 字体" },
+                "hAnsi": { "type": "string", "minLength": 1, "description": "高 ANSI 字体" },
+                "cs": { "type": "string", "minLength": 1, "description": "复杂文种字体" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "markdownGongwen.docx.fontSizesPt": {
+          "type": "object",
+          "default": {},
+          "description": "按角色覆盖 DOCX 字号（磅），未设置的角色沿用 GB/T 9704 默认值",
+          "markdownDescription": "按角色覆盖 DOCX 字号（磅），可设置 `title`、`heading`、`body`、`pageNumber`、`table`、`caption`、`footnote`、`code`，未设置的角色沿用 GB/T 9704 默认值。",
+          "properties": {
+            "title": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "heading": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "body": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "pageNumber": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "table": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "caption": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "footnote": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
+            "code": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 }
+          },
+          "additionalProperties": false
+        },
+        "markdownGongwen.docx.charsPerLine": {
+          "type": "number",
+          "default": 28,
+          "minimum": 1,
+          "maximum": 100,
+          "multipleOf": 1,
+          "description": "DOCX 每行东亚全角字符数，使用 Word 文档网格实现",
+          "markdownDescription": "DOCX 每行东亚全角字符数，使用 `snapToChars` 文档网格实现；拉丁文字按实际宽度占用网格。GB/T 9704 默认值为 28。"
+        },
+        "markdownGongwen.docx.lineSpacingPt": {
+          "type": "number",
+          "default": 28,
+          "minimum": 6,
+          "maximum": 144,
+          "multipleOf": 0.5,
+          "description": "DOCX 正文固定行距（磅），同时作为文档网格行距",
+          "markdownDescription": "DOCX 正文固定行距（磅），同时作为文档网格 `linePitch`。GB/T 9704 默认值为 28；减小到小于字号可能裁切文字或图片。"
+        },
+        "markdownGongwen.docx.firstLineIndentChars": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 10,
+          "multipleOf": 0.5,
+          "description": "DOCX 正文首行缩进字符数，按正文字号换算",
+          "markdownDescription": "DOCX 正文首行缩进字符数，按正文字号换算；设为 0 可取消首行缩进。GB/T 9704 默认值为 2。"
+        },
         "markdownGongwen.colors.heading1": {
           "type": "string",
           "description": "一级标题颜色（十六进制）",
