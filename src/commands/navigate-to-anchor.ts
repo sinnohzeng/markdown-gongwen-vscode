@@ -24,12 +24,12 @@ async function navigateToAnchor(anchor: string, documentUri: string): Promise<vo
     return;
   }
 
-  void vscode.window.showInformationMessage(`Anchor "${anchor}" not found`);
+  void vscode.window.showInformationMessage(`未找到锚点“${anchor}”`);
 }
 
 export function createNavigateToAnchorCommand(): vscode.Disposable {
   return vscode.commands.registerCommand(
-    'markdown-inline-editor.navigateToAnchor',
+    'gongwen.navigateToAnchor',
     navigateToAnchor
   );
 }

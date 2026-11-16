@@ -13,6 +13,7 @@ import type {
   ListItem,
   ThematicBreak,
   Text,
+  Paragraph,
   Table,
   TableCell,
 } from "mdast";
@@ -51,6 +52,7 @@ import {
   processStrong as processStrongHelper,
 } from "./inline-formatting";
 import { processCodeBlock as processCodeBlockHelper } from "./code-blocks";
+import { processParagraph as processParagraphHelper } from "./body";
 import {
   processBlockquote as processBlockquoteHelper,
   processListItem as processListItemHelper,
@@ -171,6 +173,7 @@ export class MarkdownParser {
     const decorations: DecorationRange[] = [];
     const scopes: ScopeRange[] = [];
     const mermaidBlocks: MermaidBlock[] = [];
+    const bodyRanges: DecorationRange[] = [];
 
     // Process frontmatter before remark parsing to avoid conflicts with thematic break detection
     this.processFrontmatter(normalizedText, decorations, scopes);
@@ -180,7 +183,7 @@ export class MarkdownParser {
       const ast = this.processor.parse(normalizedText) as Root;
 
       // Process AST nodes and extract decorations + scopes
-      this.processAST(ast, normalizedText, decorations, scopes, mermaidBlocks);
+      this.processAST(ast, normalizedText, decorations, scopes, mermaidBlocks, bodyRanges);
 
       // Handle edge cases: empty image alt text that remark doesn't parse as Image node
       this.handleEmptyImageAlt(normalizedText, decorations);
@@ -193,6 +196,9 @@ export class MarkdownParser {
       // Safety net: Remove any markdown formatting decorations that fall within code blocks
       // Ancestor checks in processors prevent most cases, but this catches edge cases
       this.filterDecorationsInCodeBlocks(decorations, scopes, normalizedText);
+
+      // Paragraph ranges are added after code-block filtering to preserve body typography.
+      decorations.push(...bodyRanges);
 
       // Sort decorations by start position
       decorations.sort((a, b) => a.startPos - b.startPos);
@@ -225,6 +231,7 @@ export class MarkdownParser {
     decorations: DecorationRange[],
     scopes: ScopeRange[],
     mermaidBlocks: MermaidBlock[],
+    bodyRanges: DecorationRange[],
   ): void {
     // Track processed blockquote positions to avoid duplicates from nested blockquotes
     const processedBlockquotePositions = new Set<number>();
@@ -382,6 +389,10 @@ export class MarkdownParser {
                 scopes,
                 currentAncestors,
               );
+              break;
+
+            case "paragraph":
+              processParagraphHelper(node as Paragraph, bodyRanges);
               break;
           }
         } catch (error) {

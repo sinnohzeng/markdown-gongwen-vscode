@@ -111,42 +111,40 @@ export function CodeBlockLanguageDecorationType(opacity: number = 0.3) {
   });
 }
 
-/**
- * Creates a decoration type for bold text styling.
- *
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses default (no color override)
- * @returns {vscode.TextEditorDecorationType} A decoration type for bold text
- */
-export function BoldDecorationType(color?: string | ThemeColor) {
-  const options: Record<string, unknown> = { fontWeight: 'bold' };
+/** Default CJK serif family used for bold content when no override is configured. */
+const BOLD_DEFAULT_FONT_FAMILY = '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "SimSun", serif';
+
+/** Creates bold text styling, including optional CJK font and weight overrides. */
+export function BoldDecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string) {
+  const cssParts = ['none', `font-weight: ${fontWeight ?? 'bold'}`, `font-family: ${fontFamily ?? BOLD_DEFAULT_FONT_FAMILY}`];
+  const options: Record<string, unknown> = { textDecoration: cssParts.join('; ') + ';' };
   if (color !== undefined) {
     options.color = color;
   }
   return window.createTextEditorDecorationType(options);
 }
 
-/**
- * Creates a decoration type for italic text styling.
- *
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses default
- * @returns {vscode.TextEditorDecorationType} A decoration type for italic text
- */
-export function ItalicDecorationType(color?: string | ThemeColor) {
+/** Creates italic text styling with an optional font-family override. */
+export function ItalicDecorationType(color?: string | ThemeColor, fontFamily?: string) {
+  const cssParts = ['none'];
+  if (fontFamily) cssParts.push(`font-family: ${fontFamily}`);
   const options: Record<string, unknown> = { fontStyle: 'italic' };
+  if (cssParts.length > 1) {
+    options.textDecoration = cssParts.join('; ') + ';';
+  }
   if (color !== undefined) {
     options.color = color;
   }
   return window.createTextEditorDecorationType(options);
 }
 
-/**
- * Creates a decoration type for bold+italic text styling.
- *
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses default
- * @returns {vscode.TextEditorDecorationType} A decoration type for bold+italic text
- */
-export function BoldItalicDecorationType(color?: string | ThemeColor) {
-  const options: Record<string, unknown> = { fontWeight: 'bold', fontStyle: 'italic' };
+/** Creates bold+italic text styling with optional CJK font and weight overrides. */
+export function BoldItalicDecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string) {
+  const cssParts = ['none', `font-weight: ${fontWeight ?? 'bold'}`, `font-family: ${fontFamily ?? BOLD_DEFAULT_FONT_FAMILY}`];
+  const options: Record<string, unknown> = {
+    fontStyle: 'italic',
+    textDecoration: cssParts.join('; ') + ';',
+  };
   if (color !== undefined) {
     options.color = color;
   }
@@ -287,60 +285,61 @@ export function HeadingDecorationType() {
   });
 }
 
-/**
- * Heading decoration configuration
- */
+/** GB/T 9704-oriented editor defaults; each level can be overridden independently. */
+const BODY_DEFAULT_FONT_FAMILY = '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "SimSun", serif';
 const HEADING_CONFIG = [
-  { size: '180%', bold: true },  // H1: Distinct, but not overwhelming
-  { size: '140%', bold: true },  // H2: Clearly a subsection
-  { size: '120%', bold: true },  // H3: Just above body text
-  { size: '110%', bold: false }, // H4: Subtle bump
-  { size: '100%', bold: false }, // H5: Same size, usually distinct by color/bold
-  { size: '90%', bold: false }, // H6: Slightly diminished
+  { size: '137%', bold: true, fontFamily: BODY_DEFAULT_FONT_FAMILY },
+  { size: '100%', bold: false, fontFamily: 'SimHei, "Heiti SC", "Microsoft YaHei", sans-serif' },
+  { size: '100%', bold: false, fontFamily: 'KaiTi, STKaiti, "KaiTi_GB2312", serif' },
+  { size: '100%', bold: true, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },
+  { size: '100%', bold: false, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },
+  { size: '90%', bold: false, fontFamily: '' },
 ];
-/**
- * Creates a heading decoration type with the specified level.
- *
- * @param {number} level - Heading level (1-6)
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color. When **undefined** (empty extension setting = theme default), the decoration **omits** `color` so the editor keeps syntax-highlighted markdown heading colors for the active theme. When set, that color overrides the token foreground for the decorated range.
- * @returns {vscode.TextEditorDecorationType} A decoration type for the heading level
- */
-function createHeadingDecoration(level: number, color?: string | ThemeColor) {
-  const config = HEADING_CONFIG[level - 1];
-  if (!config) throw new Error(`Invalid heading level: ${level}`);
-  const options: Record<string, unknown> = {
-    textDecoration: `none; font-size: ${config.size};`,
-    ...(config.bold ? { fontWeight: 'bold' } : {}),
-  };
-  if (color !== undefined) {
-    options.color = color;
-  }
+
+function createHeadingDecoration(
+  level: number,
+  color?: string | ThemeColor,
+  fontFamily?: string,
+  fontWeight?: string,
+  fontSize?: string,
+) {
+  const heading = HEADING_CONFIG[level - 1];
+  if (!heading) throw new Error(`Invalid heading level: ${level}`);
+  const cssParts = [`none; font-size: ${fontSize ?? heading.size}`];
+  const weight = fontWeight ?? (heading.bold ? 'bold' : undefined);
+  const family = fontFamily ?? heading.fontFamily;
+  if (weight) cssParts.push(`font-weight: ${weight}`);
+  if (family) cssParts.push(`font-family: ${family}`);
+  const options: Record<string, unknown> = { textDecoration: cssParts.join('; ') + ';' };
+  if (color !== undefined) options.color = color;
   return window.createTextEditorDecorationType(options);
 }
 
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
-export function Heading1DecorationType(color?: string | ThemeColor) {
-  return createHeadingDecoration(1, color);
+export function Heading1DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
+  return createHeadingDecoration(1, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
-export function Heading2DecorationType(color?: string | ThemeColor) {
-  return createHeadingDecoration(2, color);
+export function Heading2DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
+  return createHeadingDecoration(2, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
-export function Heading3DecorationType(color?: string | ThemeColor) {
-  return createHeadingDecoration(3, color);
+export function Heading3DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
+  return createHeadingDecoration(3, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
-export function Heading4DecorationType(color?: string | ThemeColor) {
-  return createHeadingDecoration(4, color);
+export function Heading4DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
+  return createHeadingDecoration(4, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
-export function Heading5DecorationType(color?: string | ThemeColor) {
-  return createHeadingDecoration(5, color);
+export function Heading5DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
+  return createHeadingDecoration(5, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
-export function Heading6DecorationType(color?: string | ThemeColor) {
-  return createHeadingDecoration(6, color);
+export function Heading6DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
+  return createHeadingDecoration(6, color, fontFamily, fontWeight, fontSize);
+}
+
+/** Creates paragraph styling without changing VS Code's wrapping column calculation. */
+export function BodyTextDecorationType(fontFamily?: string, fontWeight?: string, fontSize?: string, lineHeight?: string) {
+  const cssParts = [`none; font-size: ${fontSize ?? '100%'}; line-height: ${lineHeight ?? '1.8'}`];
+  cssParts.push(`font-weight: ${fontWeight ?? 'normal'}`);
+  cssParts.push(`font-family: ${fontFamily ?? BODY_DEFAULT_FONT_FAMILY}`);
+  return window.createTextEditorDecorationType({ textDecoration: cssParts.join('; ') + ';' });
 }
 
 /**

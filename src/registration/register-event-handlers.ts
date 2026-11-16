@@ -25,34 +25,43 @@ export function registerEventHandlers(
       }
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (event.affectsConfiguration('markdownInlineEditor.defaultBehaviors.diffView.applyDecorations')) {
+      if (event.affectsConfiguration('markdownGongwen.defaultBehaviors.diffView.applyDecorations')) {
         const diffViewApplyDecorations = config.diffView.applyDecorations();
         decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
         decorator.updateDecorationsForSelection();
       }
 
-      if (event.affectsConfiguration('markdownInlineEditor.decorations.ghostFaintOpacity')) {
+      if (event.affectsConfiguration('markdownGongwen.decorations.ghostFaintOpacity')) {
         decorator.recreateGhostFaintDecorationType();
       }
 
-      if (event.affectsConfiguration('markdownInlineEditor.decorations.frontmatterDelimiterOpacity')) {
+      if (event.affectsConfiguration('markdownGongwen.decorations.frontmatterDelimiterOpacity')) {
         decorator.recreateFrontmatterDelimiterDecorationType();
       }
 
-      if (event.affectsConfiguration('markdownInlineEditor.decorations.codeBlockLanguageOpacity')) {
+      if (event.affectsConfiguration('markdownGongwen.decorations.codeBlockLanguageOpacity')) {
         decorator.recreateCodeBlockLanguageDecorationType();
       }
 
-      if (event.affectsConfiguration('markdownInlineEditor.links.singleClickOpen')) {
+      if (event.affectsConfiguration('markdownGongwen.links.singleClickOpen')) {
         linkClickHandler.setEnabled(config.links.singleClickOpen());
       }
 
-      if (event.affectsConfiguration('markdownInlineEditor.links.showEmoji')) {
+      if (event.affectsConfiguration('markdownGongwen.links.showEmoji')) {
         decorator.recreateLinkDecorationType();
       }
 
-      if (event.affectsConfiguration('markdownInlineEditor.colors')) {
+      if (event.affectsConfiguration('markdownGongwen.colors') || event.affectsConfiguration('markdownGongwen.fonts')) {
         decorator.recreateColorDependentTypes();
+      }
+
+      if (
+        event.affectsConfiguration('markdownGongwen.orderedLists') ||
+        event.affectsConfiguration('markdownGongwen.emojis.enabled') ||
+        event.affectsConfiguration('markdownGongwen.math.enabled') ||
+        event.affectsConfiguration('markdownGongwen.mentions')
+      ) {
+        decorator.refreshContentDecorations();
       }
 
       if (event.affectsConfiguration('editor.fontSize') || event.affectsConfiguration('editor.lineHeight')) {

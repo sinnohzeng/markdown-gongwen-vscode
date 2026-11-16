@@ -24,7 +24,7 @@ describe('toggle-decorations command', () => {
     handler?.();
 
     expect(vscode.commands.registerCommand).toHaveBeenCalledWith(
-      'mdInline.toggleDecorations',
+      'gongwen.toggleDecorations',
       expect.any(Function)
     );
     expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(

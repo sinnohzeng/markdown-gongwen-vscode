@@ -5,7 +5,7 @@ let outputChannel: vscode.OutputChannel | undefined;
 
 function getOutputChannel(): vscode.OutputChannel {
   if (!outputChannel) {
-    outputChannel = vscode.window.createOutputChannel('Markdown Inline Editor');
+    outputChannel = vscode.window.createOutputChannel('Markdown 公文');
   }
   return outputChannel;
 }

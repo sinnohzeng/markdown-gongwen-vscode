@@ -114,6 +114,30 @@ export class Decorator {
       getImageColor: () => config.colors.image(),
       getHorizontalRuleColor: () => config.colors.horizontalRule(),
       getCheckboxColor: () => config.colors.checkbox(),
+      getHeading1FontFamily: () => config.fonts.heading1FontFamily(),
+      getHeading1FontWeight: () => config.fonts.heading1FontWeight(),
+      getHeading1FontSize: () => config.fonts.heading1FontSize(),
+      getHeading2FontFamily: () => config.fonts.heading2FontFamily(),
+      getHeading2FontWeight: () => config.fonts.heading2FontWeight(),
+      getHeading2FontSize: () => config.fonts.heading2FontSize(),
+      getHeading3FontFamily: () => config.fonts.heading3FontFamily(),
+      getHeading3FontWeight: () => config.fonts.heading3FontWeight(),
+      getHeading3FontSize: () => config.fonts.heading3FontSize(),
+      getHeading4FontFamily: () => config.fonts.heading4FontFamily(),
+      getHeading4FontWeight: () => config.fonts.heading4FontWeight(),
+      getHeading4FontSize: () => config.fonts.heading4FontSize(),
+      getHeading5FontFamily: () => config.fonts.heading5FontFamily(),
+      getHeading5FontWeight: () => config.fonts.heading5FontWeight(),
+      getHeading5FontSize: () => config.fonts.heading5FontSize(),
+      getHeading6FontFamily: () => config.fonts.heading6FontFamily(),
+      getHeading6FontWeight: () => config.fonts.heading6FontWeight(),
+      getHeading6FontSize: () => config.fonts.heading6FontSize(),
+      getEmphasisFontFamily: () => config.fonts.emphasisFontFamily(),
+      getEmphasisFontWeight: () => config.fonts.emphasisFontWeight(),
+      getBodyFontFamily: () => config.fonts.bodyFontFamily(),
+      getBodyFontWeight: () => config.fonts.bodyFontWeight(),
+      getBodyFontSize: () => config.fonts.bodyFontSize(),
+      getBodyLineHeight: () => config.fonts.bodyLineHeight(),
     });
   }
 
@@ -601,6 +625,14 @@ export class Decorator {
     this.parseCache.clear(documentUri);
   }
 
+  /** Re-parses content-affecting settings instead of waiting for the next edit. */
+  refreshContentDecorations(): void {
+    this.clearCache();
+    if (this.activeEditor && this.isMarkdownDocument()) {
+      this.updateDecorationsForSelection();
+    }
+  }
+
   /**
    * Handles document change events with change tracking.
    * 
@@ -669,7 +701,7 @@ export class Decorator {
 
   /**
    * Recreates all decoration types that depend on color settings or theme.
-   * Called when markdownInlineEditor.colors or active color theme changes.
+   * Called when markdownGongwen.colors or active color theme changes.
    */
   recreateColorDependentTypes(): void {
     this.decorationTypes.recreateColorDependentTypes();

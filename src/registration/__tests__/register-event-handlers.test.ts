@@ -134,12 +134,12 @@ describe('registerEventHandlers', () => {
     registerEventHandlers(decorator as any, linkClickHandler as any);
 
     const changedKeys = new Set([
-      'markdownInlineEditor.defaultBehaviors.diffView.applyDecorations',
-      'markdownInlineEditor.decorations.ghostFaintOpacity',
-      'markdownInlineEditor.decorations.frontmatterDelimiterOpacity',
-      'markdownInlineEditor.decorations.codeBlockLanguageOpacity',
-      'markdownInlineEditor.links.singleClickOpen',
-      'markdownInlineEditor.colors',
+      'markdownGongwen.defaultBehaviors.diffView.applyDecorations',
+      'markdownGongwen.decorations.ghostFaintOpacity',
+      'markdownGongwen.decorations.frontmatterDelimiterOpacity',
+      'markdownGongwen.decorations.codeBlockLanguageOpacity',
+      'markdownGongwen.links.singleClickOpen',
+      'markdownGongwen.colors',
       'editor.fontSize',
       'editor.lineHeight',
     ]);

@@ -2,13 +2,13 @@ import * as vscode from 'vscode';
 import { Decorator } from '../decorator';
 
 export function createToggleDecorationsCommand(decorator: Decorator): vscode.Disposable {
-  return vscode.commands.registerCommand('mdInline.toggleDecorations', () => {
+  return vscode.commands.registerCommand('gongwen.toggleDecorations', () => {
     const enabled = decorator.toggleDecorations();
     const fileName = decorator.activeEditor
       ? vscode.workspace.asRelativePath(decorator.activeEditor.document.uri)
-      : 'this file';
+      : '当前文件';
     void vscode.window.showInformationMessage(
-      `Markdown decorations ${enabled ? 'enabled' : 'disabled'} for ${fileName}`
+      `已${enabled ? '开启' : '关闭'} Markdown 渲染：${fileName}`
     );
   });
 }

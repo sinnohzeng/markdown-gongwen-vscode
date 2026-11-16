@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 'CodeSmith.markdown-inline-editor-vscode';
+const EXTENSION_ID = 'sinnohzeng.markdown-gongwen-vscode';
 
 // ── Minimal mirror types for ext.exports ─────────────────────────────────────
 // These parallel src/parser.ts::DecorationRange, src/markdown-parse-cache.ts::ParseEntry,
@@ -54,8 +54,8 @@ suite('Extension E2E', () => {
   test('toggle command is registered', async () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(
-      commands.includes('mdInline.toggleDecorations'),
-      'mdInline.toggleDecorations not registered'
+      commands.includes('gongwen.toggleDecorations'),
+      'gongwen.toggleDecorations not registered'
     );
   });
 
@@ -120,9 +120,9 @@ suite('Extension E2E', () => {
     });
     await vscode.window.showTextDocument(doc);
     await delay(300);
-    await vscode.commands.executeCommand('mdInline.toggleDecorations');
+    await vscode.commands.executeCommand('gongwen.toggleDecorations');
     await delay(200);
-    await vscode.commands.executeCommand('mdInline.toggleDecorations');
+    await vscode.commands.executeCommand('gongwen.toggleDecorations');
   });
 
   // Issue #28: per-file toggle state
@@ -141,7 +141,7 @@ suite('Extension E2E', () => {
     await vscode.window.showTextDocument(docA);
     await delay(300);
     assert.ok(decoratorApi?.isEnabled(), 'File A should start enabled');
-    await vscode.commands.executeCommand('mdInline.toggleDecorations');
+    await vscode.commands.executeCommand('gongwen.toggleDecorations');
     await delay(200);
     assert.strictEqual(decoratorApi?.isEnabled(), false, 'File A should now be disabled');
 
@@ -156,7 +156,7 @@ suite('Extension E2E', () => {
     assert.strictEqual(decoratorApi?.isEnabled(), false, 'File A should still be disabled');
 
     // Re-enable file A to leave state clean for subsequent tests
-    await vscode.commands.executeCommand('mdInline.toggleDecorations');
+    await vscode.commands.executeCommand('gongwen.toggleDecorations');
     await delay(200);
   });
 
@@ -356,8 +356,8 @@ suite('Extension E2E', () => {
   test('navigateToAnchor command is registered', async () => {
     const commands = await vscode.commands.getCommands(true);
     assert.ok(
-      commands.includes('markdown-inline-editor.navigateToAnchor'),
-      'markdown-inline-editor.navigateToAnchor not registered'
+      commands.includes('gongwen.navigateToAnchor'),
+      'gongwen.navigateToAnchor not registered'
     );
   });
 
@@ -505,7 +505,7 @@ suite('Extension E2E', () => {
       async (_doc, uri) => {
         // Navigate to "introduction" (normalizeAnchorText lowercases the heading).
         await vscode.commands.executeCommand(
-          'markdown-inline-editor.navigateToAnchor',
+          'gongwen.navigateToAnchor',
           'introduction',
           uri.toString()
         );
@@ -528,7 +528,7 @@ suite('Extension E2E', () => {
       '# Title\n\n## Sub section\n\nText.\n\n### Deep\n',
       async (_doc, uri) => {
         await vscode.commands.executeCommand(
-          'markdown-inline-editor.navigateToAnchor',
+          'gongwen.navigateToAnchor',
           'sub-section',
           uri.toString()
         );
@@ -549,7 +549,7 @@ suite('Extension E2E', () => {
     await withTempFile('# Only heading\n\nParagraph.', async (doc, uri) => {
       const before = doc.getText();
       await vscode.commands.executeCommand(
-        'markdown-inline-editor.navigateToAnchor',
+        'gongwen.navigateToAnchor',
         'this-anchor-is-not-in-the-document',
         uri.toString()
       );
@@ -1097,7 +1097,7 @@ suite('Extension E2E', () => {
     try {
       // Phase 1: decorations OFF — applyDecorations short-circuits, onApply not called
       phase = 1;
-      await vscode.commands.executeCommand('mdInline.toggleDecorations');
+      await vscode.commands.executeCommand('gongwen.toggleDecorations');
       await vscode.commands.executeCommand('cursorMove', { to: 'right' });
       await delay(300);
       assert.strictEqual(
@@ -1108,7 +1108,7 @@ suite('Extension E2E', () => {
 
       // Phase 2: decorations ON — applyDecorations runs, onApply fires with count > 0
       phase = 2;
-      await vscode.commands.executeCommand('mdInline.toggleDecorations');
+      await vscode.commands.executeCommand('gongwen.toggleDecorations');
       await vscode.commands.executeCommand('cursorMove', { to: 'right' });
       await delay(300);
       assert.ok(
@@ -1119,7 +1119,7 @@ suite('Extension E2E', () => {
       decoratorApi.onApply = undefined;
       // Guard: ensure decorations end up ON regardless of test outcome
       if (!decoratorApi.isEnabled()) {
-        await vscode.commands.executeCommand('mdInline.toggleDecorations');
+        await vscode.commands.executeCommand('gongwen.toggleDecorations');
       }
     }
   });

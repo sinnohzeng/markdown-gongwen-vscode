@@ -1,66 +1,70 @@
 import * as vscode from 'vscode';
+import { Decorator } from './decorator';
+import { MarkdownLinkProvider } from './link-provider';
+import { MarkdownImageHoverProvider } from './image-hover-provider';
+import { MarkdownLinkHoverProvider } from './link-hover-provider';
+import { CodeBlockHoverProvider } from './code-block-hover-provider';
+import { LinkClickHandler } from './link-click-handler';
+import { config } from './config';
+import { MarkdownParser } from './parser';
+import { MarkdownParseCache } from './markdown-parse-cache';
+import { initMermaidRenderer, disposeMermaidRenderer } from './mermaid/mermaid-renderer';
+import { processSvg } from './mermaid/svg-processor';
 import { createNavigateToAnchorCommand } from './commands/navigate-to-anchor';
 import { createToggleDecorationsCommand } from './commands/toggle-decorations';
-import { config } from './config';
-import { Decorator } from './decorator';
-import { MarkdownParseCache } from './markdown-parse-cache';
-import { MarkdownParser } from './parser';
-import { disposeMermaidRenderer, initMermaidRenderer } from './mermaid/mermaid-renderer';
-import { processSvg } from './mermaid/svg-processor';
-import { checkRecommendedExtensions } from './recommendations';
+import { registerDocumentProviders } from './registration/register-document-providers';
 import { registerEventHandlers } from './registration/register-event-handlers';
-import { registerProviders } from './registration/register-providers';
 import { disposeLogger } from './logging';
+import { createExportDocxCommand, createExportDocxQuickCommand } from './export/export-command';
 
-/**
- * Public API exposed via `vscode.extensions.getExtension(id).exports`.
- *
- * Intended for integration / E2E tests — allows test code to inspect the
- * parse cache and decorator without monkey-patching or modifying the source.
- */
+/** Public API exposed for integration tests without monkey-patching source modules. */
 export type ExtensionApi = {
-  /** The live parse cache; call `.get(document)` to read decoration ranges. */
   parseCache: MarkdownParseCache;
-  /** The live decorator instance; exposes isEnabled(), activeEditor, etc. */
   decorator: Decorator;
-  /** SVG processing utilities exposed for integration tests. */
   svgProcessor: {
     processSvg: (svgString: string, height: number, maxWidth?: number) => string;
   };
 };
 
+/** Activates the Markdown 公文 extension and wires independent feature modules. */
 export function activate(context: vscode.ExtensionContext): ExtensionApi {
   initMermaidRenderer(context);
 
   const parser = new MarkdownParser();
   const parseCache = new MarkdownParseCache(parser);
   const decorator = new Decorator(parseCache, context.workspaceState);
-  decorator.updateDiffViewDecorationSetting(!config.diffView.applyDecorations());
+  const diffViewApplyDecorations = config.diffView.applyDecorations();
+  decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
   decorator.setActiveEditor(vscode.window.activeTextEditor);
 
-  checkRecommendedExtensions(context);
-
-  const { disposables: providerDisposables, linkClickHandler } = registerProviders(parseCache);
+  const linkProvider = new MarkdownLinkProvider(parseCache);
+  const imageHoverProvider = new MarkdownImageHoverProvider(parseCache);
+  const linkHoverProvider = new MarkdownLinkHoverProvider(parseCache);
+  const codeBlockHoverProvider = new CodeBlockHoverProvider(parseCache);
+  const linkClickHandler = new LinkClickHandler(parseCache);
   linkClickHandler.setEnabled(config.links.singleClickOpen());
 
-  const eventDisposables = registerEventHandlers(decorator, linkClickHandler);
-  const commandDisposables = [
+  context.subscriptions.push(
+    ...registerDocumentProviders({
+      linkProvider,
+      imageHoverProvider,
+      linkHoverProvider,
+      codeBlockHoverProvider,
+    }),
+    ...registerEventHandlers(decorator, linkClickHandler),
     createToggleDecorationsCommand(decorator),
     createNavigateToAnchorCommand(),
-  ];
-
-  context.subscriptions.push(
-    ...providerDisposables,
-    ...eventDisposables,
-    ...commandDisposables,
+    vscode.commands.registerCommand('gongwen.exportDocx', createExportDocxCommand(context)),
+    vscode.commands.registerCommand('gongwen.exportDocxQuick', createExportDocxQuickCommand(context)),
     { dispose: () => decorator.dispose() },
+    { dispose: () => linkClickHandler.dispose() },
     { dispose: () => disposeLogger() },
   );
 
   return { parseCache, decorator, svgProcessor: { processSvg } };
 }
 
+/** Releases resources that are not owned by the extension subscription list. */
 export function deactivate(): void {
-  disposeLogger();
   disposeMermaidRenderer();
 }
