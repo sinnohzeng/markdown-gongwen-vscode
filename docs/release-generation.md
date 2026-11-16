@@ -26,7 +26,7 @@ node scripts/release.js 2.3.1
 This script will:
 
 1. **Validate the environment**: Ensures you're on the `main` branch with a clean working tree
-2. **Run validation checks**: Executes `lint:docs`, `test`, and `build` to ensure everything passes
+2. **Run validation checks**: Executes `npm run validate` (feature docs, ESLint, Vitest and build), exactly matching the everyday quality gate
 3. **Determine the next version**: Uses the version passed as an argument if there is one; otherwise analyzes commits since the last tag using `git-cliff` to determine the appropriate version bump (major/minor/patch) based on conventional commits
 4. **Update CHANGELOG.md**: Prepends a new release section generated from commit messages (grouped by type) above the existing entries. Hand-written sections are kept as they are. Edit the new section by hand before pushing if the generated wording is not what users should read
 5. **Update package.json**: Bumps the version in `package.json` and `package-lock.json`
@@ -54,6 +54,9 @@ The automated script (`npm run release` or `node scripts/release.js`) is recomme
 - Reduces manual work and potential errors
 
 ## Requirements
+
+- **Node.js**: Use `>=22.12.0` and a release supported by Vitest 5 (`^22.12`, `^24`, or `>=26`). CI uses 22.12.0, 24.x and 26.x rather than following an unsupported odd `current` release.
+- **VS Code API baseline**: Keep `@types/vscode` aligned with `engines.vscode` (`1.100.0`); dependency updates must not silently raise the installation baseline.
 
 - **git-cliff**: The script uses `npx git-cliff`, which will be downloaded automatically if not installed. For better performance, you can install it globally:
   ```bash

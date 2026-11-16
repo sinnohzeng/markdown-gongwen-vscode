@@ -7,8 +7,8 @@ src/**
 tsconfig.json
 tsconfig.build.json
 tsconfig.e2e.json
-jest.config.js
-jest.setup.js
+tsconfig.vitest.json
+vitest.config.ts
 eslint.config.mjs
 .vscode-test-cursor.mjs
 .vscode-test.mjs

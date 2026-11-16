@@ -38,7 +38,7 @@
   ],
   "engines": {
     "vscode": "^1.100.0",
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "categories": [
     "Formatters",
@@ -212,10 +212,26 @@
             "^(body|title|heading1|heading2|heading3|emphasis|tableHeader|caption|pageNumber|code)$": {
               "type": "object",
               "properties": {
-                "eastAsia": { "type": "string", "minLength": 1, "description": "东亚文字字体" },
-                "ascii": { "type": "string", "minLength": 1, "description": "ASCII 字体" },
-                "hAnsi": { "type": "string", "minLength": 1, "description": "高 ANSI 字体" },
-                "cs": { "type": "string", "minLength": 1, "description": "复杂文种字体" }
+                "eastAsia": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "东亚文字字体"
+                },
+                "ascii": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "ASCII 字体"
+                },
+                "hAnsi": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "高 ANSI 字体"
+                },
+                "cs": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "复杂文种字体"
+                }
               },
               "additionalProperties": false
             }
@@ -228,14 +244,54 @@
           "description": "按角色覆盖 DOCX 字号（磅），未设置的角色沿用 GB/T 9704 默认值",
           "markdownDescription": "按角色覆盖 DOCX 字号（磅），可设置 `title`、`heading`、`body`、`pageNumber`、`table`、`caption`、`footnote`、`code`，未设置的角色沿用 GB/T 9704 默认值。",
           "properties": {
-            "title": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "heading": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "body": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "pageNumber": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "table": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "caption": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "footnote": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 },
-            "code": { "type": "number", "minimum": 6, "maximum": 72, "multipleOf": 0.5 }
+            "title": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "heading": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "body": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "pageNumber": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "table": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "caption": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "footnote": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            },
+            "code": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 72,
+              "multipleOf": 0.5
+            }
           },
           "additionalProperties": false
         },
@@ -507,21 +563,92 @@
           "default": "",
           "description": "正文的 CSS 行高",
           "markdownDescription": "正文的 CSS 行高（如 `1.8`、`28px`），默认 `1.8`。**注意**：此项只影响行内文字垂直位置；真正的编辑器行距需在 VS Code 设置中改 `editor.lineHeight`（字号 150%+ 时建议 `2.2` 以上）。留空使用插件默认。"
+        },
+        "markdownGongwen.highlight.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "行内渲染 ==高亮文字==（默认关闭）",
+          "markdownDescription": "行内渲染 `==高亮文字==`。关闭后 `==` 定界符按原始文本显示。"
+        },
+        "markdownGongwen.tables.style": {
+          "type": "string",
+          "enum": [
+            "preview",
+            "grid"
+          ],
+          "enumDescriptions": [
+            "预览风格：隐藏管道符、固定宽度列、加粗表头与细分隔线",
+            "字符网格：使用 │ 管道符与虚线分隔行"
+          ],
+          "default": "grid",
+          "description": "GFM 表格的行内渲染方式",
+          "markdownDescription": "GFM 表格的行内渲染方式。\n\n- `preview`：隐藏 `|` 管道符，以固定宽度盒子布局单元格，中英混排和比例字体下也能对齐；表头加粗并显示细分隔线。\n- `grid`：保留原字符网格外观，要求全角字符与半角字符严格符合设定宽度比。"
+        },
+        "markdownGongwen.tables.cjkWidthRatio": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 3,
+          "description": "全角字符相对于半角字符的显示宽度比",
+          "markdownDescription": "计算表格列宽时使用的全角（CJK）字符宽度比，默认 `2`。字符被裁切时可调大，列过宽时可调小。"
+        },
+        "markdownGongwen.tables.maxColumnWidth": {
+          "type": "number",
+          "default": 48,
+          "minimum": 3,
+          "maximum": 200,
+          "description": "表格单列最大宽度（字符宽度）",
+          "markdownDescription": "单列最大字符宽度；超长内容在渲染视图中裁切，光标进入表格后仍显示完整源文本。仅在 `#markdownGongwen.tables.style#` 为 `preview` 时生效。"
+        },
+        "markdownGongwen.tables.highlightHeaders": {
+          "type": "boolean",
+          "default": false,
+          "description": "高亮表头单元格（默认关闭）",
+          "markdownDescription": "使用当前主题的链接颜色高亮表头单元格；关闭后表头与正文单元格同色。"
+        },
+        "markdownGongwen.tables.rowSeparators": {
+          "type": "boolean",
+          "default": true,
+          "description": "显示表格数据行分隔线",
+          "markdownDescription": "像 Markdown 预览一样在每个数据行下方显示细分隔线。仅在 `#markdownGongwen.tables.style#` 为 `preview` 时生效。"
+        },
+        "markdownGongwen.debug.logging.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用公文扩展调试日志",
+          "markdownDescription": "将调试和警告消息写入 `Markdown 公文` 输出通道，默认关闭。"
+        },
+        "markdownGongwen.debug.performance.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用性能指标日志",
+          "markdownDescription": "将解析和装饰耗时指标写入 `Markdown 公文` 输出通道，默认关闭。"
+        },
+        "markdownGongwen.colors.highlight": {
+          "type": "string",
+          "description": "高亮文字颜色（十六进制）",
+          "format": "color",
+          "markdownDescription": "`==高亮文字==` 的前景色（十六进制），留空跟随主题。"
+        },
+        "markdownGongwen.colors.highlightBackground": {
+          "type": "string",
+          "description": "高亮文字背景色（十六进制）",
+          "format": "color",
+          "markdownDescription": "`==高亮文字==` 的背景色（十六进制），留空使用主题默认的半透明黄色。"
         }
       }
     }
   },
   "scripts": {
-    "postinstall": "node scripts/copy-mermaid.js",
     "lint": "eslint .",
     "lint:docs": "node scripts/validate-feature-outline.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
-    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "npm run bundle && npm run compile:e2e && vscode-test",
     "test:e2e:cursor": "npm run bundle && npm run compile:e2e && node scripts/cursor-test.mjs",
-    "test:report": "NODE_OPTIONS=--experimental-vm-modules jest && echo 'HTML report generated at: dist/test-report/report.html'",
-    "test:crlf": "NODE_OPTIONS=--experimental-vm-modules jest --testPathPatterns='(crlf|position-mapping|cache-crlf)'",
+    "test:report": "vitest run --coverage && echo HTML coverage report: dist/coverage/index.html",
+    "test:crlf": "vitest run src/parser/__tests__/parser-crlf.test.ts src/link-provider/__tests__/link-provider-crlf.test.ts src/decorator/__tests__/decorator-crlf.test.ts src/decorator/__tests__/decorator-cache-crlf.test.ts src/position-mapping/__tests__/position-mapping.test.ts",
     "clean": "rimraf dist",
     "copy:mermaid": "node scripts/copy-mermaid.js",
     "compile": "tsc --project tsconfig.build.json",
@@ -533,48 +660,49 @@
     "validate": "npm run lint:docs && npm run lint && npm test && npm run build",
     "compile:e2e": "tsc -p tsconfig.e2e.json",
     "release": "node scripts/release.js",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build",
+    "postinstall": "node scripts/copy-mermaid.js"
   },
   "overrides": {
+    "@azure/msal-node": "^7.1.2",
     "@xmldom/xmldom": "^0.9.10",
-    "dompurify": "^3.4.13",
+    "diff": "^8.0.3",
+    "dompurify": "^3.4.18",
     "lodash-es": "^4.18.1",
-    "undici": "^7.29.0"
+    "serialize-javascript": "^7.0.4",
+    "undici": "^7.30.1"
   },
   "dependencies": {
     "cheerio": "1.2.0",
-    "docx": "^9.7.1",
+    "docx": "^9.15.4",
+    "katex": "^0.19.1",
     "mathjax-full": "^3.2.2",
-    "mermaid": "11.16.1",
+    "mermaid": "12.3.0",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",
-    "unist-util-visit": "5.1.0"
+    "unist-util-visit": "5.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tsconfig/node-lts": "^24.0.1",
-    "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.9.7",
+    "@types/node": "^26.6.6",
     "@types/unist": "^3.0.3",
     "@types/vscode": "1.100.0",
-    "@typescript-eslint/eslint-plugin": "^8.57.2",
-    "@typescript-eslint/parser": "^8.57.2",
+    "@vitest/coverage-v8": "^5.1.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
-    "@vscode/vsce": "^3.9.2",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.28.2",
-    "eslint": "^10.10.0",
-    "git-cliff": "^2.13.1",
-    "jest": "^30.5.1",
-    "jest-html-reporters": "^3.1.7",
+    "eslint": "^10.15.0",
+    "git-cliff": "^2.14.2",
     "jszip": "^3.10.2",
-    "ovsx": "^0.10.12",
-    "rimraf": "^6.1.3",
-    "ts-jest": "^29.4.12",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.70.0"
+    "ovsx": "^1.4.0",
+    "rimraf": "^6.1.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^5.1.0"
   }
 }

@@ -14,7 +14,7 @@
 
 ## 两件事
 
-**编辑**：打开 `.md` 文件，标题、加粗、链接、图片、表格、公式、Mermaid 图表全部在编辑区行内渲染，不用开预览面板。语法标记自动隐藏，光标靠近时淡入，点击后完全显示。文件始终是标准 Markdown，插件只做视觉渲染，不改动内容。
+**编辑**：打开 `.md` 文件，标题、加粗、链接、图片、表格、公式、Mermaid 图表全部在编辑区行内渲染，不用开预览面板。语法标记自动隐藏，光标靠近时淡入，点击后完全显示。表格可选字符网格或预览风格，任务列表可点击切换。文件始终是标准 Markdown，插件只做视觉渲染，不改动内容。
 
 **导出**：点一下编辑器右上角的 Word 图标，当前文档导出为 `.docx`。页面、字体、行距、页码按 GB/T 9704 设定，插图、表格、题注随文导出，正文版式不用再动。
 
@@ -89,8 +89,8 @@
 
 ## 支持的功能
 
-- **文本**：粗体、斜体、删除线、行内代码
-- **结构**：六级标题（公文字体风格）、链接、图片、引用、分割线、GFM 表格
+- **文本**：粗体、斜体、删除线、行内代码、可选 `==高亮==`
+- **结构**：六级标题（公文字体风格）、链接、图片、引用、分割线、GFM 表格（字符网格或固定宽度预览风格）
 - **列表**：无序列表、有序列表（自动连续编号，源文件不动）、任务列表（可点击切换）
 - **扩展**：代码块、YAML frontmatter、Emoji 短代码、GitHub @提及 与 #引用
 - **图形**：Mermaid 图表行内渲染、LaTeX 公式（`$...$`、`$$...$$`）行内渲染
@@ -114,7 +114,14 @@
 | `markdownGongwen.math.enabled` | 渲染 LaTeX 数学公式 | `true` |
 | `markdownGongwen.mentions.enabled` | 启用 @提及 和 #引用 | `true` |
 | `markdownGongwen.mentions.linksEnabled` | 强制开/关提及链接（默认跟随 git 远程） | 未设置 |
-| `markdownGongwen.colors.*` | 15 个颜色自定义 | 跟随主题 |
+| `markdownGongwen.highlight.enabled` | 行内渲染 `==高亮文字==`；为避免改变既有公文外观，默认关闭 | `false` |
+| `markdownGongwen.tables.style` | 表格渲染风格：`grid` 字符网格 / `preview` 固定宽度预览 | `grid` |
+| `markdownGongwen.tables.cjkWidthRatio` | 全角字符相对半角字符的列宽比 | `2` |
+| `markdownGongwen.tables.maxColumnWidth` | 预览风格单列最大字符宽度 | `48` |
+| `markdownGongwen.tables.highlightHeaders` | 使用主题链接色高亮表头；默认关闭以保持既有外观 | `false` |
+| `markdownGongwen.tables.rowSeparators` | 预览风格显示数据行分隔线 | `true` |
+| `markdownGongwen.debug.*` | 调试日志与性能指标日志 | `false` |
+| `markdownGongwen.colors.*` | 17 个颜色自定义（含高亮前景/背景） | 跟随主题 |
 | `markdownGongwen.fonts.*` | 标题/正文/强调的字体、字重、字号与正文行高 | 内置公文风格 |
 
 ### DOCX 排版配置
@@ -150,6 +157,8 @@ DOCX 使用独立的 `markdownGongwen.docx.*` 设置，缺省仍是 GB/T 9704 �
 
 每行字数由真实 OOXML 网格控制，不通过截断或补空格模拟；拉丁文字按实际宽度占用格位。没有单独的“每页行数”设置，修改固定行距即改变每页可容纳行数。完整角色、取值范围与网格公式见 [DOCX 导出规范](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/features/docx-export.md)。
 
+> 兼容性边界：OOXML 网格值已独立检查，但 LibreOffice 当前试验中实际换行约为目标字数的一半，根因尚未分清；本轮按要求暂停外部渲染，不能据此宣称 Word/WPS 的 28/30 字每行已验收。
+
 ## 常见问题
 
 活动栏里为什么有个“Markdown Gongwen”图标（Mermaid 渲染视图）、导出字体、大文件性能等，见 [docs/FAQ.md](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/FAQ.md)。
@@ -163,24 +172,27 @@ npm install   # postinstall 自动准备 Mermaid 资源
 npm test
 ```
 
-按 `F5` 启动 Extension Development Host。
+开发环境要求 Node.js `>=22.12.0`；VS Code API 基线仍为 `1.100`。按 `F5` 启动 Extension Development Host。
 
 | 命令 | 说明 |
 |------|------|
-| `npm test` | 全部单元测试（Jest） |
+| `npm test` | 全部单元测试（Vitest） |
 | `npm run lint` | ESLint 检查 |
-| `npm run validate` | 文档检查、测试与完整构建 |
+| `npm run validate` | 文档检查、ESLint、Vitest 与完整构建 |
 | `npm run build` | 完整构建并打出 `.vsix` |
 
 ```
 src/
-├── extension.ts          入口
-├── parser.ts             Markdown 解析（remark）
-├── decorator.ts          装饰协调（三态可见性）
+├── extension.ts          入口与依赖装配
+├── parser/               模块化 Markdown 解析与正文装饰
+├── decorator/            三态可见性、装饰类型与交互
+├── registration/         VS Code provider 与事件接线
+├── commands/             锚点导航、逐文件切换
+├── link-targets/         本地与 Remote-SSH 资源 URI
 ├── export/               DOCX 导出（mdast → GB/T 9704 OOXML）
 ├── math/                 LaTeX 行内渲染
 ├── mermaid/              Mermaid 行内渲染（懒加载 webview）
-└── */__tests__/          测试
+└── */__tests__/          Vitest 测试
 ```
 
 ## 已知限制
@@ -191,6 +203,13 @@ src/
 - 图表题注自动识别仅限以 `图N` / `表N` 开头的写法，其余按普通正文输出
 - 超过 1MB 的文件解析可能较慢
 - 行间距需手动设置 `editor.lineHeight`（VS Code 不允许插件按语言改行高）
+
+## 维护文档
+
+- [文档索引](docs/README.md)
+- [上游、依赖与历史债务审查](docs/review/upstream-dependency-debt-review.md)
+- [上游同步 ADR](docs/architecture/ADR/upstream-sync.md)
+- [上游结构性对齐经验](docs/experience/upstream-realignment-lessons.md)
 
 ## 许可证与致谢
 

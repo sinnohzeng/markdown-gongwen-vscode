@@ -30,11 +30,13 @@ src/export/
 ├── typography.ts       配置合并、校验、单位换算与文档网格参数（纯函数）
 ├── gbt9704-styles.ts   样式定义、页面布局、文档网格、页脚
 ├── ast-to-docx.ts      语法树到 Word 文档的纯函数映射（不碰 VS Code API）
-├── image-resolver.ts   图片路径解析、尺寸读取、版心缩放
-└── export-command.ts   按钮点击后的交互流程编排
+├── image-resolver.ts   通过 workspace.fs 读取 file/vscode-remote 图片、尺寸解析与版心缩放
+└── export-command.ts   按钮交互、保存位置、进度、通知与日志
+
+src/link-targets/resource-schemes.ts 集中定义可读取资源 scheme 与保留 authority 的 URI 构造，链接、图片和导出路径共用。
 ```
 
-`ast-to-docx.ts` 是纯函数，拿到语法树就能出文档，跟 VS Code 没有半点关系，Jest 直接测。
+`ast-to-docx.ts` 是纯函数，拿到语法树就能出文档，跟 VS Code 没有半点关系，Vitest 可直接测。
 
 ---
 
@@ -105,6 +107,19 @@ charSpace = round((目标字距 - 正文字号) × 4096)
 ```
 
 配置在 VS Code schema 与纯转换层各校验一次。非法数值、非整数每行字数、错误步进、空字体都会使导出失败并显示具体原因，不会静默退回默认版式。
+
+### 外部渲染验收的未决异常
+
+真实 DOCX 的 ZIP/OOXML 独立检查曾确认：缺省网格为 `type=snapToChars,linePitch=560,charSpace=-848`，自定义 30 字、18pt 为 `linePitch=600,charSpace=-13353`。这只能证明文件结构和公式落地，不能证明渲染结果。
+
+LibreOffice 对同一 90 个连续中文字符的试验结果为：
+
+| 样例 | 实际分行 | MuPDF 测得正文步进 | 目标网格步进 |
+|------|----------|--------------------|--------------|
+| 缺省 28 字、16pt | `13 + 14×5 + 7` | 约 31.488pt | `8844/20/28 ≈ 15.793pt` |
+| 自定义 30 字、18pt | `14 + 15×5 + 1` | 约 29.376pt | `8844/20/30 = 14.74pt` |
+
+FODT 又显示导入的 `layout-grid-base-width` 分别约 15.7608pt、14.7096pt，接近目标而非两倍；因此不能简单归因为“网格宽度导入错误”。Writer 布局、Normal 样式配合或缺失 OOXML 属性仍未分清。WPS CLI/GUI 验证未完成，本轮按用户要求未继续外部实验。恢复验证前不得宣称“每行 28/30 字已验收”。
 
 ---
 
@@ -317,7 +332,7 @@ Markdown 里也可以写一个独占段落的 `[TOC]`（`[[TOC]]` 亦可，大�
 
 完成/失败通知必须在 `withProgress` 的回调 Promise resolve 之后再弹：带按钮的通知要等用户交互才 resolve，若在进度回调内 `await`，进度通知会一直挂住不消失（v2.0.x 曾有此 Bug）。
 
-导出路径自动记住，下次默认用上次的目录。出错时弹窗带“查看日志”按钮，点开就是输出面板“DOCX 导出”通道里的完整记录，每条带时间戳与级别。
+导出路径自动记住，下次默认用上次的目录。`file` 与 `vscode-remote` 文档的默认保存位置、快速导出目标均继承原文档 scheme/authority；图片通过 `workspace.fs` 读取，避免 Remote-SSH 被错误降为本地 `file:` 路径。HTTP(S) 图片仍不联网下载。出错时弹窗带“查看日志”按钮，点开就是输出面板“DOCX 导出”通道里的完整记录，每条带时间戳与级别。
 
 ---
 
@@ -325,7 +340,8 @@ Markdown 里也可以写一个独占段落的 `[TOC]`（`[[TOC]]` 亦可，大�
 
 - 导出的 DOCX 符合 GB/T 9704-2012 版面规格（纸张、边距、行距、字号）
 - 缺省配置不改变既有输出；自定义字体、字号、行距和首行缩进均写入实际 `document.xml`、`styles.xml` 与页脚
-- `w:docGrid` 为 `snapToChars`，缺省写入 `linePitch=560`、`charSpace=-848`；自定义值按规范公式换算
+- `w:docGrid` 为 `snapToChars`，缺省写入 `linePitch=560`、`charSpace=-848`；自定义值按规范公式换算，但这只是 OOXML 验收，不替代外部换行验收
+- `file` 与 `vscode-remote` 资源 URI 保留 scheme/authority，图片和导出文件都走 `workspace.fs`
 - 标题层级字体映射正确（方正小标宋 / 黑体 / 楷体 / 仿宋）
 - 引用块为楷体正文版式（无斜体、无底纹、首行缩进）
 - 列表段落首行缩进 2 字符、回行顶格（无“文本之前”左缩进）
@@ -347,7 +363,8 @@ Markdown 里也可以写一个独占段落的 `[TOC]`（`[[TOC]]` 亦可，大�
 | YAML Frontmatter | 跳过，不输出 |
 | Mermaid 图表 | 等宽代码块加提示文字 |
 | LaTeX 公式 | 等宽纯文本 |
-| 远程图片 | 黑色占位文字 |
+| HTTP(S) 图片 | 不联网下载，黑色占位文字 |
+| Remote-SSH 图片或文档保存 | 通过 `workspace.fs` 与保留 authority 的 URI 处理；本轮未做实机验证 |
 | 本地图片找不到 | 黑色占位文字加汇总警告 |
 | 图片太宽 | 等比缩放到版心 156mm |
 | 图片 alt 非“图N”格式 | 不产题注，按普通图片输出 |

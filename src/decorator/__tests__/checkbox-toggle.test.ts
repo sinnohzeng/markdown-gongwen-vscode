@@ -78,4 +78,32 @@ describe('parser-backed checkbox toggling', () => {
     expect(toggle(makeEditor('first\r\n- [ ] second', 1, 3))).toBe(true);
     expect(edit().getEdits()[0].range.start).toEqual(new Position(1, 3));
   });
+
+  describe('rendered checkbox click at list marker position', () => {
+    it('toggles [ ] to [x] when cursor lands at column 0 on the list marker', () => {
+      // Clicking the rendered checkbox decoration lands the cursor on the list marker
+      expect(toggle(makeEditor('- [ ] task', 0, 0))).toBe(true);
+      expect(edit().getEdits()[0].newText).toBe('x');
+    });
+
+    it('toggles [ ] to [x] when cursor is on the space between marker and brackets', () => {
+      expect(toggle(makeEditor('- [ ] task', 0, 1))).toBe(true);
+    });
+
+    it('toggles indented task list item when cursor is on the indented marker', () => {
+      expect(toggle(makeEditor('  - [ ] task', 0, 2))).toBe(true);
+    });
+  });
+
+  describe('does not toggle inside code', () => {
+    it('returns false when cursor is inside empty brackets in a fenced code block', () => {
+      expect(toggle(makeEditor('```js\nconst arr = [ ];\n```', 1, 13))).toBe(false);
+      expect(workspace.applyEdit).not.toHaveBeenCalled();
+    });
+
+    it('returns false when cursor is inside empty brackets in inline code', () => {
+      expect(toggle(makeEditor('Here is code: `const a = [ ];` in text', 0, 26))).toBe(false);
+      expect(workspace.applyEdit).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -1,4 +1,5 @@
 // Mock VS Code API for testing
+import { promises as fs } from 'node:fs';
 import { vi } from 'vitest';
 
 class MockRange {
@@ -68,24 +69,57 @@ export const Position = class {
 
 export const Uri = {
   parse: (value: string) => {
-    const schemeMatch = value.match(/^([^:]+):/);
+    const hashIndex = value.indexOf("#");
+    const baseValue = hashIndex !== -1 ? value.substring(0, hashIndex) : value;
+    const fragment = hashIndex !== -1 ? value.substring(hashIndex + 1) : "";
+    const schemeMatch = baseValue.match(/^([^:]+):/);
     const scheme = schemeMatch ? schemeMatch[1] : "file";
+    const authorityMatch = baseValue.match(/^[a-z][a-z0-9+.-]*:\/\/([^/]*)/i);
+    const authority = authorityMatch?.[1] ?? "";
+    const path = scheme === "file" && !authorityMatch
+      ? baseValue.replace(/^file:\/\//, "")
+      : baseValue.slice((authorityMatch?.[0].length ?? 0));
     return {
+      path,
+      fsPath: path,
+      scheme,
+      authority,
+      fragment,
       toString: () => value,
-      scheme: scheme,
+      with: function (change: { fragment?: string; path?: string; query?: string }) {
+        const newFrag = change.fragment !== undefined ? change.fragment : fragment;
+        const newPath = change.path ?? path;
+        const base = change.path !== undefined
+          ? `${scheme}://${authority}${newPath}`
+          : baseValue;
+        const fullStr = newFrag ? `${base}#${newFrag}` : base;
+        return Uri.parse(fullStr);
+      },
     };
   },
-  file: (path: string) => ({
-    toString: () => `file://${path}`,
-    scheme: "file",
-  }),
-  joinPath: (base: any, ...segments: string[]) => {
-    const basePath = base.toString().replace("file://", "");
-    const joined = [basePath, ...segments].join("/");
-    return {
-      toString: () => `file://${joined}`,
+  file: (path: string) => {
+    const uri = {
+      path,
+      fsPath: path,
       scheme: "file",
+      authority: "",
+      fragment: "",
+      toString: () => `file://${path}${uri.fragment ? "#" + uri.fragment : ""}`,
+      with: function (change: { fragment?: string; path?: string; query?: string }) {
+        const newPath = change.path ?? uri.path;
+        const newFrag = change.fragment !== undefined ? change.fragment : uri.fragment;
+        const updated = Uri.file(newPath);
+        (updated as any).fragment = newFrag;
+        return updated;
+      },
     };
+    return uri;
+  },
+  joinPath: (base: any, ...segments: string[]) => {
+    const basePath = (base.path ?? base.toString().replace("file://", "")).split("#")[0];
+    const joined = [basePath, ...segments].join("/");
+    if ((base.scheme ?? "file") === "file") return Uri.file(joined);
+    return Uri.parse(`${base.scheme}://${base.authority ?? ""}${joined}`);
   },
 };
 
@@ -222,6 +256,12 @@ export const window = {
   }),
   createOutputChannel: vi.fn(() => ({
     appendLine: vi.fn(),
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    show: vi.fn(),
     dispose: vi.fn(),
   })),
   activeTextEditor: undefined as any,
@@ -230,6 +270,9 @@ export const window = {
     kind: ColorThemeKind.Dark,
   },
   showInformationMessage: vi.fn(),
+  showWarningMessage: vi.fn(),
+  showErrorMessage: vi.fn(),
+  showSaveDialog: vi.fn(),
   showTextDocument: vi.fn(async (document: MockTextDocument) => new MockTextEditor(document, [])),
   onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
   onDidChangeTextEditorSelection: () => ({ dispose: () => {} }),
@@ -254,6 +297,13 @@ export const workspace = {
   onDidChangeConfiguration: () => ({ dispose: () => {} }),
   onDidRenameFiles: () => ({ dispose: () => {} }),
   applyEdit: vi.fn().mockResolvedValue(true),
+  fs: {
+    stat: vi.fn(async (uri: { fsPath?: string; path?: string }) => fs.stat(uri.fsPath ?? uri.path ?? '')),
+    readFile: vi.fn(async (uri: { fsPath?: string; path?: string }) => fs.readFile(uri.fsPath ?? uri.path ?? '')),
+    writeFile: vi.fn(async (uri: { fsPath?: string; path?: string }, content: Uint8Array) =>
+      fs.writeFile(uri.fsPath ?? uri.path ?? '', content)
+    ),
+  },
   openTextDocument: vi.fn(async (uri: ReturnType<typeof Uri.file>) => new MockTextDocument(uri, "markdown", 1, "")),
   asRelativePath: vi.fn((uri: { toString?: () => string } | string) => {
     const value = typeof uri === "string" ? uri : uri.toString?.() ?? "";

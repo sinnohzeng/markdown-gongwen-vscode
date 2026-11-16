@@ -59,8 +59,11 @@ export function registerEventHandlers(
         event.affectsConfiguration('markdownGongwen.orderedLists') ||
         event.affectsConfiguration('markdownGongwen.emojis.enabled') ||
         event.affectsConfiguration('markdownGongwen.math.enabled') ||
-        event.affectsConfiguration('markdownGongwen.mentions')
+        event.affectsConfiguration('markdownGongwen.mentions') ||
+        event.affectsConfiguration('markdownGongwen.tables') ||
+        event.affectsConfiguration('markdownGongwen.highlight.enabled')
       ) {
+        // These settings are baked into parsed decoration ranges.
         decorator.refreshContentDecorations();
       }
 

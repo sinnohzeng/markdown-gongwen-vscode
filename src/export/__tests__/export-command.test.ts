@@ -1,6 +1,7 @@
 /**
  * export-command 单元测试：命令入口守卫与图片 URL 收集。
  */
+import { vi, type Mock } from "vitest";
 import type { Root } from "mdast";
 import { window } from "../../test/__mocks__/vscode";
 import {
@@ -10,12 +11,12 @@ import {
 } from "../export-command";
 
 const fakeContext = {
-  workspaceState: { get: () => undefined, update: jest.fn() },
+  workspaceState: { get: () => undefined, update: vi.fn() },
 } as never;
 
 describe("导出命令入口守卫", () => {
   beforeEach(() => {
-    (window.showWarningMessage as jest.Mock).mockClear();
+    (window.showWarningMessage as Mock).mockClear();
   });
 
   it("Untitled 文档提示先保存再导出（对话框版）", async () => {

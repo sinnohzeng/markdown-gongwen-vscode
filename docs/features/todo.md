@@ -44,11 +44,11 @@ Markdown Gongwen 公文的候选功能清单。已实现的条目移入 [done/](
 
 ## 表格
 
-完整 GFM 表格渲染：隐藏管道符、对齐样式、多行单元格、选中还原。
+已实现字符网格、固定宽度预览、CJK 宽度配置、表头着色与行分隔线；后续候选：
 
-- 隐藏 `|` 分隔符；渲染 `:---` / `:---:` / `---:` 对齐
-- 格式化文本（加粗/代码）导致的列宽错位需要文本测量方案，难度较高
-- 公文正文表格多，需求真实；边缘情况多，风险中等
+- 多行单元格与单元格内软换行
+- 大表格解析、布局和装饰更新的性能测量
+- 编辑视图与 DOCX 表格能力的差异说明与按需增强
 
 ---
 
@@ -57,3 +57,6 @@ Markdown Gongwen 公文的候选功能清单。已实现的条目移入 [done/](
 - 提及与引用样式 → [done/mentions-references.md](done/mentions-references.md)
 - 有序列表自动编号 → 2026-07 自上游 #31 移植（`markdownGongwen.orderedLists.*`）
 - 按文件记忆渲染开关 → 已实现（workspaceState 持久化）
+- 预览风格表格 → [done/preview-style-tables.md](done/preview-style-tables.md)
+- 行内 `==高亮==` → [done/highlight.md](done/highlight.md)，默认关闭以保持公文既有外观
+- DOCX 五项排版配置 → [docx-export.md](docx-export.md)，外部渲染兼容性仍待验收

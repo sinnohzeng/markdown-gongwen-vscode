@@ -1,57 +1,43 @@
-# Coverage Gaps
+# 测试覆盖缺口
 
-Files excluded from the Jest coverage gate and the reason why unit testing them is not feasible in a pure Node/Jest environment.
+本文对应 `vitest.config.ts` 的当前覆盖配置。历史文档中的 Jest、Puppeteer 或固定通过率不再作为现状依据；实际通过率只能以最新 `npm test` / `npm run test:coverage` 输出为准。
 
-## Excluded from coverage collection
+## 覆盖率排除项
 
-### `src/extension.ts` — VS Code activation entry point
+| 路径 | 原因 | 应有的验证层级 |
+|------|------|----------------|
+| `src/extension.ts` | VS Code 激活、provider 注册与资源释放依赖 Extension Host | E2E 激活与导出冒烟 |
+| `src/mermaid/**` | 真实 webview、CSP、本地 ESM、SVG/DOM 与生命周期不能只靠 Node mock 证明 | Extension Host 与手测 |
+| `src/code-block-hover-provider.ts` | 同时依赖 VS Code HoverProvider 和 Mermaid 渲染管线 | E2E/手测；纯 HTML 逻辑可抽离单测 |
+| `src/decorator/decoration-type-registry.ts` | 创建真实 `TextEditorDecorationType` 资源 | 真实编辑器集成测试 |
+| `src/math/math-decorations.ts` | 依赖活动主题、编辑器字体与渲染输出 | 编辑器集成；高度计算可纯函数化 |
+| `src/forge-context.ts`、`src/github-context.ts` | Git 仓库、远程地址和外部环境状态 | 注入 Git/进程边界后单测，另做仓库集成 |
 
-This file calls `vscode.extensions.getExtension`, registers event listeners, creates disposables via `vscode.window` and `vscode.workspace`, and initialises the Mermaid renderer. All of these require a live VS Code extension host. The `activate` and `deactivate` exports have no logic that can run outside VS Code. Integration coverage belongs in the e2e test suite (see `src/test/e2e/`).
+`src/test/**`、声明文件和 `node_modules` 也不计入覆盖率。
 
-### `src/mermaid/**` — Webview and Mermaid integration
+## 已抽离、应优先单测的纯逻辑
 
-Mermaid rendering invokes headless Chromium via Puppeteer (or the VS Code webview API), fetches remote scripts, and manipulates SVG/DOM. None of this is available in a Node test process without a browser binary, and mocking the entire rendering pipeline would test the mocks rather than the implementation. The module is verified by the e2e tests and manual smoke-testing.
+- `parser/*.ts`：语法识别与 decoration 元数据。
+- `decorator/visibility-model.ts`：三态过滤、范围与表格样式计算。
+- `export/typography.ts`、`ast-to-docx.ts`、`image-dimensions.ts`：配置、OOXML 和图片尺寸，不依赖 VS Code。
+- `link-targets.ts`、`link-targets/resource-schemes.ts`：本地与 `vscode-remote` URI 解析。
+- `math/math-scanner.ts`：代码段排除、段落边界和数学区域识别。
+- `svg-processor.ts`：SVG 后处理与尺寸约束。
 
-### `src/code-block-hover-provider.ts` — Hover provider requiring VS Code + Mermaid
+## 仍需集成或人工证明的风险
 
-`CodeBlockHoverProvider` implements `vscode.HoverProvider` and directly calls `renderMermaidSvgNatural`, `svgToDataUri`, and Cheerio to build hover previews. It depends on both the Mermaid/Chromium renderer and VS Code's provider API, making isolated unit testing impractical for the same reasons as `src/mermaid/**`.
+1. **Remote-SSH**：URI 单测只能证明 scheme/authority 未丢失，不能证明真实 SSH 文件系统、保存对话框和权限行为。
+2. **Mermaid 12.3.0**：资产生成成功不等于首次懒加载、CSP、所有图表类型和销毁路径兼容。
+3. **DOCX 外部排版**：ZIP/OOXML 正确不等于 Word/WPS/LibreOffice 换行、字体回退和分页一致。
+4. **差异视图与复选框**：需要真实编辑器确认逐编辑器策略和点击位置。
+5. **发布链**：VSIX 内容、Node 22 bundle、Marketplace/OpenVSX 凭据和 tag 触发不能由单元测试覆盖。
 
-### `src/decorator/decoration-type-registry.ts` — VS Code decoration type factory
+## 降低缺口的优先顺序
 
-This file calls `vscode.window.createTextEditorDecorationType` for every decoration type in the system. That API creates real OS-level resources inside VS Code and returns opaque handles. The mock in `src/test/__mocks__/vscode.ts` provides a stub, but the registry file itself is only ever instantiated from `Decorator`, which is already excluded from high-coverage expectations because it requires VS Code event subscriptions.
+1. 先恢复 TypeScript 编译、ESLint 与 Vitest，消除合并后的未知错误。
+2. 再跑 Extension Host E2E，重点覆盖激活、DOCX、Mermaid、差异视图和复选框。
+3. 在真实 Remote-SSH 工作区验证链接、图片与导出路径。
+4. 以 Word/WPS 为主、LibreOffice 为对照验收 DOCX；定位当前字符网格双倍步进异常。
+5. 最后才把 VS Code/Git/渲染边界进一步依赖注入，避免为了覆盖率把 mock 当成产品行为。
 
-### `src/math/math-decorations.ts` — Math rendering with VS Code editor APIs
-
-`math-decorations.ts` reads `workspace.getConfiguration('editor')` for font size and line height, calls `window.activeColorTheme.kind` for theme detection, and calls `renderMathToDataUri` (KaTeX). Its logic is tightly coupled to the VS Code window state (active editor, theme) and the math renderer output. The math renderer itself is tested in `src/math/__tests__/`, covering the core rendering logic.
-
----
-
-## Files below 80% (included in coverage)
-
-These files are in the coverage collection but fall below 80% because specific code paths depend on VS Code APIs or require complex integration state.
-
-### `src/decorator.ts` (~62%)
-
-The `Decorator` class is the central orchestrator that subscribes to VS Code events (`onDidChangeActiveTextEditor`, `onDidChangeTextEditorSelection`, `onDidChangeTextDocument`), calls `setDecorations` on real `TextEditor` instances, manages async update queues, and initialises `DecorationTypeRegistry`. Most of these paths require a live VS Code instance. The business logic within decorating (filtering, scoping, range computation) is extracted into `visibility-model.ts` and tested there. Lines in `decorator.ts` that are untested are event subscription callbacks, `setDecorations` calls, and the theme-change reload path.
-
-### `src/diff-context.ts` (~73%)
-
-The `isDiffLikeUri` function includes branches that inspect `uri.query` and `uri.fragment`. The VS Code mock in `src/test/__mocks__/vscode.ts` does not populate those properties (they are `undefined` in the test environment), so those specific branches (lines 16-28) cannot be reached without extending the mock or using a VS Code instance that produces real URI objects.
-
-### `src/parser-remark.ts` (~67%)
-
-The synchronous require path (`require('unified')`) succeeds in Jest when the modules are installed as CommonJS, so after calling `getRemarkProcessorSync()` the cached value is reused by `getRemarkProcessor()`. The fallback ESM dynamic-import branch inside the `catch` block is therefore not exercised in practice — the try always succeeds. Covering it would require forcing a CJS require failure, which is not practical without module mocking at the Node internals level.
-
----
-
-## How to improve
-
-| File | What would make it testable |
-|------|----------------------------|
-| `src/extension.ts` | Extract activation logic into a plain function that accepts injected dependencies (window, workspace, context). The injected version can be unit-tested; the thin wrapper calls VS Code APIs. |
-| `src/mermaid/**` | Dependency-inject the Puppeteer launcher so tests can supply a mock browser, or split the SVG post-processing (pure functions) into a separate module that is tested independently. |
-| `src/code-block-hover-provider.ts` | Accept a `renderFn` parameter instead of calling `renderMermaidSvgNatural` directly, and inject a `MarkdownParseCache` interface. The hover logic (hover range computation, HTML construction) can then be tested with mocked I/O. |
-| `src/decorator/decoration-type-registry.ts` | Abstract the `createTextEditorDecorationType` call behind an injectable factory function, and use the existing mock implementation in tests. |
-| `src/math/math-decorations.ts` | Extract `getEditorHeights()` and the color resolution logic into pure functions that take configuration values as parameters. Test those functions directly; the VS Code-specific callers remain untested. |
-| `src/forge-context.ts` | Inject the `execSync` and `fs` dependencies so tests can provide a fake git output without spawning a real subprocess. The URL parsing and context-assembly logic is already partially tested. |
-| `src/diff-context.ts` (query/fragment branches) | Extend the URI mock to accept a query string and fragment, or pass a hand-crafted plain object with `query` and `fragment` set. |
+本轮按用户要求未执行上述测试、编译或外部渲染。

@@ -235,7 +235,7 @@ export class MermaidWebviewManager {
           startOnLoad: false,
           securityLevel: 'strict',
         });
-        // Render the diagram - Mermaid v11 returns { svg } from render()
+        // Render the diagram - Mermaid v12 returns { svg } from render()
         // Gantt depends on parentElement.offsetWidth; when webview layout width is 0,
         // create a hidden container with explicit width to give Mermaid a real layout width.
         let svg;

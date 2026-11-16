@@ -10,7 +10,7 @@ Pandoc 功能强大，但对 VS Code 扩展来说有两个硬伤：一是用户�
 
 ### 核心转换做成纯函数
 
-`ast-to-docx.ts` 不引入任何 VS Code API，拿到语法树和图片 buffer，直接出 Word 文档对象。好处是 Jest 直接测，不用启动 Extension Development Host。VS Code 扩展里凡是能抽成纯函数的逻辑，都该抽出来。
+`ast-to-docx.ts` 不引入任何 VS Code API，拿到语法树和图片 buffer，直接出 Word 文档对象。好处是可以直接做 Node 单元测试（当时使用 Jest，2026-11 已统一为 Vitest），不用启动 Extension Development Host。VS Code 扩展里凡是能抽成纯函数的逻辑，都该抽出来。
 
 ### 图片尺寸自己读，不装额外的包
 
@@ -105,7 +105,7 @@ WPS 自动目录插出来的“目录”二字不带任何样式，用户实测�
 
 ### patch 版依赖也能弄坏构建
 
-`@tsconfig/node-lts` 从 24.0.0 到 24.0.1 加了 `"types": ["node"]`，jest 全局类型随之从 tsc 视野里消失，`src/test/__mocks__/vscode.ts` 里的 `jest.fn` 全部报错。本仓库 `tsconfig.json` 现在显式写 `"types": ["node", "jest"]`。`npm update` 之后必须跑一遍 `npm run compile`，`npm test` 走 ts-jest 不会暴露这个问题。
+`@tsconfig/node-lts` 从 24.0.0 到 24.0.1 加了 `"types": ["node"]`，当时导致 Jest 全局类型从 tsc 视野消失，`src/test/__mocks__/vscode.ts` 里的 `jest.fn` 报错。当时的修复是在 Jest tsconfig 中显式声明类型。2026-11 已改为 `tsconfig.vitest.json` 显式使用 Vitest globals 与 VS Code mock，不再保留 Jest/ts-jest 双栈。经验不变：升级 tsconfig 或测试基建后必须分别检查生产编译和测试类型，单一测试路径不能证明两条路径都正确。
 
 ---
 
@@ -133,3 +133,21 @@ WPS 自动目录插出来的“目录”二字不带任何样式，用户实测�
 2. VS Code 配置测试：读取的是 `docx.*`，不是编辑器的 `fonts.*`；package.json schema 与代码默认值一致。
 3. DOCX/OOXML 测试：实际打包后用 JSZip 读取 `document.xml`、`styles.xml`、`footer*.xml`，断言每个角色真实落地。
 4. 外部渲染测试：LibreOffice/WPS/Word 检查分页、28 字换行、中英混排、字体回退和图片裁切。XML 正确不等于所有渲染器行为完全一致，外部差异必须如实记录。
+
+---
+
+## 2026-11-16 二次补记：外部证据互相矛盾时先停结论
+
+### 网格 XML 正确，LibreOffice 却约按两倍步进排版
+
+独立解包 DOCX 得到的缺省/自定义 `docGrid` 都符合公式，但 LibreOffice 导出 PDF 后，90 个连续中文字符在缺省样例中为 `13+14×5+7`，自定义样例中为 `14+15×5+1`，约为目标每行字数的一半。MuPDF 坐标进一步给出约 31.488pt / 29.376pt 的实际步进，均接近目标网格步进的两倍。
+
+不能据此直接改 `charSpace` 抵消：FODT 中的 `layout-grid-base-width` 约为 15.7608pt / 14.7096pt，反而接近目标值 15.793pt / 14.74pt。说明至少“导入的网格宽度就是两倍”这个简单根因不成立。下一步应做最小 OOXML 对照实验，分别改变 Normal 字号、`snapToChars`、段落 `snapToGrid`、行距规则和渲染器，而不是在当前完整文档里盲调常量。
+
+### 工具能力、权限和结果要分开记录
+
+WPS CLI 存在 `word2pdf` 能力，不等于已经转换成功；macOS GUI 自动化权限不足，也不等于 WPS 无法打开文档。未完成的 WPS 验证只能写“未执行/未完成”，不能写“通过”或“失败”。同理，LibreOffice 异常不能外推为 Word/WPS 也异常，更不能把 XML 检查当作三种渲染器共同验收。
+
+### Remote-SSH 的 URI 不能先降级为字符串路径
+
+旧图片读取虽然调用了 `workspace.fs`，但先把资源转为路径字符串，再用 `Uri.file()` 构造读取目标，`vscode-remote` 的 scheme/authority 已在途中丢失。修复必须贯穿链接解析、图片解析、默认保存位置和快速导出：统一由 `resource-schemes.ts` 构造 URI，再由 `workspace.fs` 读取/写入。单元测试中的 URI mock 也必须保留这些字段，否则 mock 会把生产缺陷重新藏起来。

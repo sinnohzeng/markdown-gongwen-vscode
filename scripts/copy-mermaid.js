@@ -2,7 +2,7 @@
 
 /**
  * Copies the Mermaid ESM bundle used by the webview into assets/mermaid/.
- * Wipes the destination first so upgrades (v10 → v11, chunk layout changes)
+ * Wipes the destination first so major upgrades and chunk-layout changes
  * do not leave stale or duplicate files.
  */
 
