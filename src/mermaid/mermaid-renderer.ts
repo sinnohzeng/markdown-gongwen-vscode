@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { LRUCache } from '../utils/lru-cache';
+import { logWarn } from '../logging';
 import { MermaidWebviewManager } from './webview-manager';
 import { processSvg } from './svg-processor';
 import { createErrorSvg, extractErrorMessage } from './error-handler';
@@ -19,7 +20,7 @@ let hasLoggedWaitingForWebview = false;
 async function waitForWebviewOnceLogged(manager: MermaidWebviewManager): Promise<void> {
   if (!hasLoggedWaitingForWebview) {
     hasLoggedWaitingForWebview = true;
-    console.warn('Mermaid: waiting for webview');
+    logWarn('Mermaid: waiting for webview');
   }
   await manager.waitForWebview();
 }

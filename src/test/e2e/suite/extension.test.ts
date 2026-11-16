@@ -4,7 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 
-const EXTENSION_ID = 'sinnohzeng.markdown-gongwen-vscode';
+const EXTENSION_ID = 'sinnohzeng.markdown-gongwen';
 
 // ── Minimal mirror types for ext.exports ─────────────────────────────────────
 // These parallel src/parser.ts::DecorationRange, src/markdown-parse-cache.ts::ParseEntry,

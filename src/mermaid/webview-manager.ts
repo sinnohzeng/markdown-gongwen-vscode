@@ -4,6 +4,7 @@ import { ColorThemeKind } from 'vscode';
 import type { PendingRender, RenderResponse } from './types';
 import { MERMAID_CONSTANTS } from './constants';
 import { createErrorSvg } from './error-handler';
+import { logError, logWarn } from '../logging';
 
 /**
  * Manages the Mermaid webview lifecycle and communication
@@ -79,7 +80,7 @@ export class MermaidWebviewManager {
             })
             .catch((err: unknown) => {
               if (err instanceof Error && err.message === 'timeout') {
-                console.warn('Mermaid: Webview not ready after opening view');
+                logWarn('Mermaid: Webview not ready after opening view');
               }
               this.initTimeoutId = setTimeout(() => {
                 this.switchBackToEditor();
@@ -89,7 +90,7 @@ export class MermaidWebviewManager {
         },
         (err: unknown) => {
           if (err !== undefined) {
-            console.warn('Mermaid: Failed to focus view', err);
+            logWarn('Mermaid: Failed to focus view', err);
           }
           // 聚焦失败则 webview 不会创建；重置一次性标志，让下次渲染重试，
           // 否则 initTriggered 永久停在 true，Mermaid 再也无法初始化。
@@ -334,7 +335,7 @@ export class MermaidWebviewManager {
     // 项12: 按 type 收窄消费——仅识别 ready/error/svg/loadError 四类；
     // 其余（含未知消息）一律忽略。webview 侧只发这四种消息，无需兼容旧格式。
     if (message && message.loadError) {
-      console.error('Mermaid: webview 资源加载失败:', message.loadError);
+      logError('Mermaid: webview 资源加载失败', message.loadError);
       return;
     }
   }

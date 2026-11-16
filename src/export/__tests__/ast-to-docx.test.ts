@@ -399,7 +399,7 @@ describe("图题（独占段图片 alt 匹配图N）", () => {
 
   it("已解析图片同样追加图题（图段含 w:drawing）", async () => {
     const images = new Map<string, ResolvedImage>([
-      ["./arch.png", { buffer: Buffer.alloc(8), width: 10, height: 10 }],
+      ["./arch.png", { buffer: Buffer.alloc(8), width: 10, height: 10, format: "png" }],
     ]);
     const xml = await toDocumentXml(figAst, images);
     expect(xml).toContain("<w:drawing>");
@@ -583,6 +583,34 @@ describe("导出保真告警（fidelitySink）", () => {
     const sink: string[] = [];
     convertToDocx(ast, new Map(), sink);
     expect(sink[0]).toContain("第 7 行");
+  });
+
+  it("块级节点异常进入保真记录且不中断打包", async () => {
+    const broken = {
+      type: "paragraph",
+      get children(): Content[] {
+        throw new Error("块级读取失败");
+      },
+    } as Content;
+    const sink: string[] = [];
+    const doc = convertToDocx(root(broken), new Map(), sink);
+
+    expect(sink).toEqual(["无法转换 paragraph 节点：块级读取失败"]);
+    await expect(packToBuffer(doc)).resolves.toBeInstanceOf(Buffer);
+  });
+
+  it("内联节点异常进入保真记录且保留后续内容", async () => {
+    const broken = {
+      type: "text",
+      get value(): string {
+        throw new Error("内联读取失败");
+      },
+    } as unknown as Content;
+    const sink: string[] = [];
+    const doc = convertToDocx(root(paragraph(broken, text("后续内容"))), new Map(), sink);
+
+    expect(sink).toEqual(["无法转换内联 text 节点：内联读取失败"]);
+    await expect(packToBuffer(doc)).resolves.toBeInstanceOf(Buffer);
   });
 });
 

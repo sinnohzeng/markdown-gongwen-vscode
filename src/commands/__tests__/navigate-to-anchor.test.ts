@@ -48,7 +48,7 @@ describe('navigate-to-anchor command', () => {
     createNavigateToAnchorCommand();
     await handler?.('missing', 'file:///test.md');
 
-    expect(vscode.window.showInformationMessage).toHaveBeenCalledWith('Anchor "missing" not found');
+    expect(vscode.window.showInformationMessage).toHaveBeenCalledWith('未找到锚点“missing”');
   });
 
   it('matches headings in CRLF documents', async () => {

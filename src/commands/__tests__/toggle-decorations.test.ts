@@ -28,7 +28,7 @@ describe('toggle-decorations command', () => {
       expect.any(Function)
     );
     expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
-      'Markdown decorations disabled for test.md'
+      '已关闭 Markdown 渲染：test.md'
     );
   });
 
@@ -48,7 +48,7 @@ describe('toggle-decorations command', () => {
     handler?.();
 
     expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
-      'Markdown decorations enabled for this file'
+      '已开启 Markdown 渲染：当前文件'
     );
   });
 });

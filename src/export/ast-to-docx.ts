@@ -1,8 +1,8 @@
 /**
  * mdast AST → docx Document 纯函数转换。
  *
- * 零 VS Code API 依赖，可直接用 Jest 单元测试。
- * 每个节点处理器独立 try/catch —— 单节点失败只插入诊断文字，不中断整体导出。
+ * 零 VS Code API 依赖，可直接用 Vitest 单元测试。
+ * 每个节点处理器独立 try/catch —— 单节点失败只插入诊断文字并记录保真问题，不中断整体导出。
  */
 import type { Root, Content, Heading, Paragraph as MdParagraph, Table as MdTable, List, ListItem, Blockquote, Code, Image, Link, Text, Strong, Emphasis, InlineCode, Delete, TableRow as MdTableRow, TableCell as MdTableCell, PhrasingContent } from "mdast";
 import {
@@ -57,7 +57,7 @@ export function convertToDocx(
   typographyOverrides: DocxTypographyOverrides = {},
 ): Document {
   const typography = resolveDocxTypography(typographyOverrides);
-  const children = convertNodes(ast.children, resolvedImages, { typography }, fidelitySink);
+  const children = convertNodes(ast.children, resolvedImages, { typography, fidelitySink });
 
   // 空文档保护：至少一个空段落
   if (children.length === 0) {
@@ -95,6 +95,8 @@ export async function packToBuffer(doc: Document): Promise<Buffer> {
 
 interface RunContext {
   typography: ResolvedDocxTypography;
+  /** 降级与节点转换异常的可选收集器，保持转换层独立于 VS Code 日志 API。 */
+  fidelitySink?: string[];
   bold?: boolean;
   italic?: boolean;
   strikethrough?: boolean;
@@ -108,7 +110,6 @@ function convertNodes(
   nodes: Content[],
   images: Map<string, ResolvedImage>,
   ctx: RunContext,
-  fidelitySink?: string[],
 ): DocxChild[] {
   const result: DocxChild[] = [];
 
@@ -120,22 +121,22 @@ function convertNodes(
 
       switch (node.type) {
         case "heading":
-          result.push(convertHeading(node as Heading, images, ctx.typography));
+          result.push(convertHeading(node as Heading, images, ctx));
           break;
         case "paragraph":
           result.push(...convertParagraph(node as MdParagraph, images, ctx, nodes[i + 1]));
           break;
         case "table":
-          result.push(convertTable(node as MdTable, images, ctx.typography));
+          result.push(convertTable(node as MdTable, images, ctx));
           break;
         case "list":
           result.push(...convertList(node as List, images, 0, ctx));
           break;
         case "blockquote":
-          result.push(...convertBlockquote(node as Blockquote, images, ctx.typography));
+          result.push(...convertBlockquote(node as Blockquote, images, ctx));
           break;
         case "code":
-          result.push(...convertCodeBlock(node as Code, ctx.typography, fidelitySink));
+          result.push(...convertCodeBlock(node as Code, ctx.typography, ctx.fidelitySink));
           break;
         case "thematicBreak":
           result.push(convertThematicBreak());
@@ -153,13 +154,14 @@ function convertNodes(
         default:
           // 未知块级节点：尝试递归子节点
           if ("children" in node && Array.isArray((node as { children: Content[] }).children)) {
-            result.push(...convertNodes((node as { children: Content[] }).children, images, ctx, fidelitySink));
+            result.push(...convertNodes((node as { children: Content[] }).children, images, ctx));
           }
           break;
       }
     } catch (err) {
-      // 错误边界：单节点失败不中断整体导出；错误如实记录到控制台，不静默吞掉
-      console.error(`[ast-to-docx] 无法转换 ${node.type} 节点:`, err);
+      // 错误边界：单节点失败不中断整体导出；诊断同时进入文档和保真收集器。
+      const detail = err instanceof Error ? err.message : String(err);
+      ctx.fidelitySink?.push(`无法转换 ${node.type} 节点：${detail}`);
       result.push(
         new Paragraph({
           children: [
@@ -193,12 +195,12 @@ function convertNodes(
 function convertHeading(
   node: Heading,
   images: Map<string, ResolvedImage>,
-  typography: ResolvedDocxTypography,
+  ctx: RunContext,
 ): Paragraph {
   // 公文标题层级到 H5（四级标题）为止；更深的 H6 回退到四级标题样式。
   const spec = HEADING_LEVEL_SPEC[node.depth] ?? HEADING_LEVEL_SPEC[5];
   const runs = convertInlineNodes(node.children as PhrasingContent[], images, {
-    typography,
+    ...ctx,
     inheritStyle: true,
   });
 
@@ -383,8 +385,9 @@ function convertImageParagraph(
 function convertTable(
   node: MdTable,
   images: Map<string, ResolvedImage>,
-  typography: ResolvedDocxTypography,
+  ctx: RunContext,
 ): Table {
+  const { typography } = ctx;
   const rows = node.children as MdTableRow[];
   const alignments = node.align ?? [];
 
@@ -404,7 +407,7 @@ function convertTable(
             cell.children as PhrasingContent[],
             images,
             {
-              typography,
+              ...ctx,
               font: isHeader ? typography.fonts.tableHeader : typography.fonts.body,
               size: typography.fontSizeHalfPt.table,
             },
@@ -499,8 +502,9 @@ function convertList(
 function convertBlockquote(
   node: Blockquote,
   images: Map<string, ResolvedImage>,
-  typography: ResolvedDocxTypography,
+  ctx: RunContext,
 ): DocxChild[] {
+  const { typography } = ctx;
   const result: DocxChild[] = [];
 
   for (const child of node.children as Content[]) {
@@ -508,7 +512,7 @@ function convertBlockquote(
       const runs = convertInlineNodes(
         (child as MdParagraph).children as PhrasingContent[],
         images,
-        { typography, font: typography.fonts.emphasis },
+        { ...ctx, font: typography.fonts.emphasis },
       );
 
       result.push(
@@ -525,7 +529,7 @@ function convertBlockquote(
         }),
       );
     } else {
-      result.push(...convertNodes([child], images, { typography, font: typography.fonts.emphasis }));
+      result.push(...convertNodes([child], images, { ...ctx, font: typography.fonts.emphasis }));
     }
   }
 
@@ -750,7 +754,9 @@ function convertInlineNodes(
           break;
       }
     } catch (err) {
-      console.error(`[ast-to-docx] 无法转换内联 ${node.type} 节点:`, err);
+      // 保留文档内诊断，同时通过显式收集器上报；纯转换层不依赖 VS Code。
+      const detail = err instanceof Error ? err.message : String(err);
+      ctx.fidelitySink?.push(`无法转换内联 ${node.type} 节点：${detail}`);
       result.push(
         new TextRun({
           text: `[转换错误: ${node.type}]`,

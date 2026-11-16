@@ -180,7 +180,7 @@ describe('registerEventHandlers', () => {
       recreateCodeBlockLanguageDecorationType: vi.fn(),
       recreateColorDependentTypes: vi.fn(),
       clearMathDecorationCache: vi.fn(),
-      clearCache: vi.fn(),
+      refreshContentDecorations: vi.fn(),
     };
     const linkClickHandler = { setEnabled: vi.fn() };
 
@@ -190,8 +190,7 @@ describe('registerEventHandlers', () => {
       affectsConfiguration: (section: string) => section === 'markdownGongwen.tables',
     });
 
-    // Table settings feed the parser, so the cached decorations have to be discarded
-    expect(decorator.clearCache).toHaveBeenCalledTimes(1);
-    expect(decorator.updateDecorationsForSelection).toHaveBeenCalled();
+    // Content-affecting settings invalidate parsed ranges and refresh through one decorator boundary.
+    expect(decorator.refreshContentDecorations).toHaveBeenCalledTimes(1);
   });
 });

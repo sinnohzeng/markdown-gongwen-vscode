@@ -1,10 +1,5 @@
 import * as vscode from 'vscode';
 import { Decorator } from './decorator';
-import { MarkdownLinkProvider } from './link-provider';
-import { MarkdownImageHoverProvider } from './image-hover-provider';
-import { MarkdownLinkHoverProvider } from './link-hover-provider';
-import { CodeBlockHoverProvider } from './code-block-hover-provider';
-import { LinkClickHandler } from './link-click-handler';
 import { config } from './config';
 import { MarkdownParser } from './parser';
 import { MarkdownParseCache } from './markdown-parse-cache';
@@ -12,7 +7,7 @@ import { initMermaidRenderer, disposeMermaidRenderer } from './mermaid/mermaid-r
 import { processSvg } from './mermaid/svg-processor';
 import { createNavigateToAnchorCommand } from './commands/navigate-to-anchor';
 import { createToggleDecorationsCommand } from './commands/toggle-decorations';
-import { registerDocumentProviders } from './registration/register-document-providers';
+import { registerProviders } from './registration/register-providers';
 import { registerEventHandlers } from './registration/register-event-handlers';
 import { disposeLogger } from './logging';
 import { createExportDocxCommand, createExportDocxQuickCommand } from './export/export-command';
@@ -37,20 +32,11 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
   decorator.updateDiffViewDecorationSetting(!diffViewApplyDecorations);
   decorator.setActiveEditor(vscode.window.activeTextEditor);
 
-  const linkProvider = new MarkdownLinkProvider(parseCache);
-  const imageHoverProvider = new MarkdownImageHoverProvider(parseCache);
-  const linkHoverProvider = new MarkdownLinkHoverProvider(parseCache);
-  const codeBlockHoverProvider = new CodeBlockHoverProvider(parseCache);
-  const linkClickHandler = new LinkClickHandler(parseCache);
+  const { disposables: providerDisposables, linkClickHandler } = registerProviders(parseCache);
   linkClickHandler.setEnabled(config.links.singleClickOpen());
 
   context.subscriptions.push(
-    ...registerDocumentProviders({
-      linkProvider,
-      imageHoverProvider,
-      linkHoverProvider,
-      codeBlockHoverProvider,
-    }),
+    ...providerDisposables,
     ...registerEventHandlers(decorator, linkClickHandler),
     createToggleDecorationsCommand(decorator),
     createNavigateToAnchorCommand(),

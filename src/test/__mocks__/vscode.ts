@@ -1,5 +1,6 @@
 // Mock VS Code API for testing
 import { promises as fs } from 'node:fs';
+import { posix as posixPath } from 'node:path';
 import { vi } from 'vitest';
 
 class MockRange {
@@ -117,7 +118,7 @@ export const Uri = {
   },
   joinPath: (base: any, ...segments: string[]) => {
     const basePath = (base.path ?? base.toString().replace("file://", "")).split("#")[0];
-    const joined = [basePath, ...segments].join("/");
+    const joined = posixPath.normalize([basePath, ...segments].join("/"));
     if ((base.scheme ?? "file") === "file") return Uri.file(joined);
     return Uri.parse(`${base.scheme}://${base.authority ?? ""}${joined}`);
   },
