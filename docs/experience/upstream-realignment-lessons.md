@@ -104,3 +104,25 @@ README、AGENTS、功能 done、ADR、发布、覆盖缺口和项目关系必须
 | Extension Host / Remote-SSH / Word/WPS/LibreOffice | 对应环境的真实行为 | 其他环境天然一致 |
 
 用户暂停测试时，最高只能交付“实现与静态审查检查点”。把每一级证据说清楚，是避免过度承诺的一部分，而不是附加说明。
+
+## 11. 合并后的失败测试先对齐真实契约
+
+恢复验证后，不能用“全绿”倒推所有修改都合理，也不能为迎合旧测试改坏产品。本次按双亲源码、当前模块和真实 manifest 逐项区分：
+
+- `extension.ts` 必须导入真实存在的 `registration/register-providers.ts`，不能凭命名习惯创造 `register-document-providers.ts`。
+- 中文通知、`mdInline.decorationsEnabled.*` 和 `refreshContentDecorations()` 是双亲及当前产品的真实契约，应修正合并后仍断言英文、旧状态键或旧调用序列的测试。
+- VS Code mock 的 `Uri.joinPath` 必须像真实 URI 一样规范化 `..`；mock 只拼字符串会制造生产环境不存在的 `/doc.md/../pic.png` 与 ENOTDIR。
+- E2E 扩展 ID 必须来自 `publisher + "." + name`。旧常量 `sinnohzeng.markdown-gongwen-vscode` 与 manifest 不符，正确值是 `sinnohzeng.markdown-gongwen`。
+- `docx` 新版 `ImageRun` 要求图片 `format`；生产解析器本来就返回 `png/jpg`，应补齐测试夹具，不应放宽生产类型或增加静默 fallback。
+
+标准顺序是：先看双亲与当前真实实现，再判断是生产回归、测试陈旧还是 mock 失真；每类修复都要留下对应回归测试。
+
+## 12. 纯转换器不能为日志反向依赖 VS Code
+
+`ast-to-docx.ts` 的价值是零 VS Code API 依赖。消除 `console` 时，不能图方便导入扩展 logger。本次把既有 `fidelitySink` 纳入 `RunContext`，让块级、标题、表格、引用和内联异常都进入同一保真收集器，同时仍把诊断 TextRun/Paragraph 写入 DOCX；公开 `convertToDocx` 参数顺序不变。Mermaid 这类扩展内模块则复用 `src/logging.ts` 的输出频道。两条路径都满足 lint，也保持模块依赖方向。
+
+## 13. E2E 的进程状态不等于 Mocha 结论
+
+本次默认下载的 VS Code 1.146.0 宿主曾出现扩展已激活、但 CLI 长时间没有汇总；本机 `/usr/local/bin/code` 外层 CLI 又可能提前返回 0，而真实测试仍在 Extension Host 内运行。最终结论来自 `.vscode-test/user-data/logs/<timestamp>/window1/renderer.log` 的 **59 passing (28s)**，以及 exthost 的正常退出记录，而不是“窗口启动了”“进程返回 0”或“没有报错”。
+
+本机 1.100.3 在新版 macOS 上 SIGSEGV、1.105.1 下载中止，都只能记为测试环境未建立，不能记为产品失败。使用 `useInstallation.fromPath` 的本机临时配置应在验证后删除，不把绝对路径硬编码进仓库；CI 仍应保留自己的标准 `npm run test:e2e` 结果作为独立证据。

@@ -157,7 +157,7 @@ DOCX 使用独立的 `markdownGongwen.docx.*` 设置，缺省仍是 GB/T 9704 �
 
 每行字数由真实 OOXML 网格控制，不通过截断或补空格模拟；拉丁文字按实际宽度占用格位。没有单独的“每页行数”设置，修改固定行距即改变每页可容纳行数。完整角色、取值范围与网格公式见 [DOCX 导出规范](https://github.com/sinnohzeng/markdown-gongwen-vscode/blob/main/docs/features/docx-export.md)。
 
-> 兼容性边界：OOXML 网格值已独立检查，但 LibreOffice 当前试验中实际换行约为目标字数的一半，根因尚未分清；本轮按要求暂停外部渲染，不能据此宣称 Word/WPS 的 28/30 字每行已验收。
+> 兼容性边界：2026-11-17 已从当前源码重新生成默认/自定义 DOCX，独立确认完整正文与 OOXML 网格，并由 LibreOffice 成功转成单页 A4 PDF；但实际换行仍约为目标字数的一半，根因尚未分清，不能据此宣称 Word/WPS 的 28/30 字每行已验收。
 
 ## 常见问题
 

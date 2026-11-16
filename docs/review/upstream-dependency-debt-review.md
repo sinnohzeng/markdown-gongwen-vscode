@@ -1,9 +1,9 @@
 # 上游、依赖与历史债务审查
 
-日期：2026-11-16
+日期：2026-11-16；验证补记：2026-11-17
 分支：`feat/upstream-realignment`
 上游：`SeardnaSchmid/markdown-inline-editor-vscode`
-审查边界：源码、Git、manifest/lockfile、registry 元数据、官方安全审计与既有 DOCX 外部渲染证据。按用户要求，本轮未编译、未 lint、未运行测试、未做新的外部渲染、未推送或发布。
+审查边界：源码、Git、manifest/lockfile、registry 元数据、官方安全审计、完整 validate、真实 VS Code E2E，以及从当前源码重新生成的 DOCX/OOXML/LibreOffice 证据。未推送、未打 tag、未发布。
 
 ## 1. 结论
 
@@ -11,7 +11,7 @@
 2. **上游截至 `77d051a` 的变更值得接纳。** 其中缺陷修复、parser 模块化、Vitest 和依赖更新直接降低维护成本；表格预览/highlight/表头着色按公文兼容策略保留，后两者默认关闭。
 3. **DOCX 五项配置已模块化实现，但每行字数仍有外部渲染未决异常。** OOXML 公式正确不能替代 Word/WPS/LibreOffice 验收。
 4. **直接依赖已升级到当前兼容范围内的最新版本。** 仅保留四项有明确理由的 latest 偏差，不盲目追版本号。
-5. **结构合并已完成，但还不能称为已验收或可发布版本。** 第二阶段真实双亲 merge commit 为 `c35a69de60e5134ec0105563d641d09619ed581f`；编译、代码 lint、测试和新的外部渲染仍未恢复。
+5. **结构合并后的基础质量门与真实 E2E 已通过，但仍不能直接发布。** 完整 validate 为 76 个测试文件、1055 通过、1 跳过；本机 VS Code 1.146.0 的完整 E2E 为 59 通过。Remote-SSH、Word/WPS、字符网格异常和发布包清单仍需独立收口。
 
 ## 2. Git 与上游事实
 
@@ -26,6 +26,7 @@
 | `5a381f75087ac6829c84bcd6ee2e3e4c1620c296` | 公文语义回迁 |
 | `77d051ad5b3c27f6cfe81acfa4939e1b8b87f7ec` | 第二阶段上游尖端 |
 | `c35a69de60e5134ec0105563d641d09619ed581f` | 第二阶段双亲 merge；parent 为 `5a381f7` 与 `77d051a` |
+| `7ab5d5d7821baecba470f73d6a0bb4f02362d115` | 验证修复：provider 接线、诊断日志、测试契约、URI mock 与真实 E2E 扩展 ID |
 
 `git ls-remote upstream refs/heads/main` 在本次最终核对时仍返回 `77d051a`，且该提交已通过 `c35a69d` 成为本仓库真实祖先。后续同步可直接普通 merge 新的 upstream/main，不需要再次全仓回迁。
 
@@ -67,7 +68,7 @@
 
 ### 3.3 Mermaid 安全边界
 
-本地 Mermaid 12.3.0 资产已由脚本重建；严格安全级别、CSP、nonce、懒创建 webview、错误中文化和资源清理保留。升级后的真实渲染未运行，不能仅凭资产生成判定兼容。
+本地 Mermaid 12.3.0 资产已由脚本重建；严格安全级别、CSP、nonce、懒创建 webview、错误中文化和资源清理保留。完整 validate 与真实 E2E 的 SVG/代码块装饰用例已通过，但完整 Mermaid webview 渲染、主题和销毁路径仍需专项验证。
 
 ## 4. 直接依赖最终快照
 
@@ -129,12 +130,13 @@
 
 ## 6. 历史债务分级
 
-### P0：交付前必须解决，但本轮被明确暂停
+### P0：本轮复核结果
 
-| 债务 | 当前证据 | 下一步 |
+| 债务 / 验证项 | 当前证据 | 状态与下一步 |
 |---|---|---|
-| 合并后未编译、代码 lint、测试 | 本轮无任何最新通过结果 | 用户恢复验证后运行完整 `npm run validate` |
-| DOCX 外部字符网格异常 | LibreOffice 实际步进约为目标两倍 | 最小 OOXML 对照实验 + Word/WPS 主验收 |
+| 合并后编译、代码 lint、单测、构建 | 完整 `npm run validate`：76 个测试文件、1055 通过、1 跳过，TypeScript/bundle/VSIX 成功 | 已关闭；后续变更继续执行同一质量门 |
+| 真实 VS Code E2E | 本机 1.146.0 的 Mocha 汇总 59 passing (28s)，扩展宿主正常退出 | 已关闭本机缺口；下一次 CI 仍需标准下载宿主结果 |
+| DOCX 外部字符网格异常 | 当前源码重出默认/自定义 DOCX；正文与 OOXML 完整，LibreOffice 转 PDF 成功，但实际步进约为目标两倍 | 未关闭；最小 OOXML 对照实验 + Word/WPS 主验收 |
 
 ### P1：高相关剩余风险
 
@@ -151,7 +153,9 @@
 2. DOCX 转换、VS Code 命令和外部验收已分层，但 Word 样式兼容矩阵应进一步自动化，而不是只增长 snapshot。
 3. Mermaid vendor chunks 纳入 Git 保证离线可复现，同时制造大量 hash 文件 diff；必须坚持脚本生成和版本审查，不手工维护。
 4. `==highlight==` 仅编辑视图、DOCX 不支持，是当前明确产品边界；如未来需要导出，应单独写 SDD，而不是隐式映射成 Word highlight。
-5. 差异视图、复选框、链接点击等仍需要真实编辑器 E2E，Node mock 覆盖率不能替代用户行为。
+5. 本机 59 项真实 E2E 已覆盖激活、链接、锚点、装饰、表格、CRLF、SVG 和缓存；真实 Remote-SSH、完整 Mermaid webview 与下一次 CI 下载宿主仍需各自证据。
+6. E2E 默认追随 stable，宿主退出/CLI 输出行为可能随版本变化；必须检查 Mocha 汇总。`useInstallation.fromPath` 可用于本机排障，但绝对路径配置不得硬编码进仓库。
+7. 本地验证 VSIX 曾包含 `dist/typography-verification/` 和 `.specify/`。CI 的 `npm run clean` 会清理 `dist`，但 `.specify/` 仍要发布前检查；未获明确要求不得擅自修改 `.vscodeignore`。
 
 ### P3：文档与历史材料
 
@@ -161,24 +165,27 @@
 
 ## 7. DOCX 外部排版未决异常
 
-真实 ZIP/OOXML 曾测得：
+2026-11-17 已从当前 `ast-to-docx.ts` 重新构建独立转换器并生成默认/自定义 DOCX，而非复用历史样例。独立 ZIP/OOXML 与文本检查确认：
 
-- 缺省：`type=snapToChars`、`linePitch=560`、`charSpace=-848`。
-- 自定义 30 字/18pt：`linePitch=600`、`charSpace=-13353`。
+- 缺省：完整 90 字正文、`type=snapToChars`、`linePitch=560`、`charSpace=-848`。
+- 自定义 30 字/18pt：完整 90 字正文、`linePitch=600`、`charSpace=-13353`。
 - 版心宽 8844 twip；缺省公式 `(8844/20/28-16)×4096≈-848`。
+- LibreOffice 成功将两份 DOCX 转为单页 A4 PDF。`pdftotext -layout` 的布局空格曾造成连续字符串匹配假阴性；按实际输出核对后，标题、正文、混排和结束标记均存在。
 
-但 LibreOffice 对 90 个连续中文字符排出 `13+14×5+7` 与 `14+15×5+1`；MuPDF 步进约 31.488pt / 29.376pt，接近目标两倍。FODT `layout-grid-base-width` 却约 15.7608pt / 14.7096pt，接近目标值，因此不能简单断言“导入网格宽度翻倍”。
+但 LibreOffice 对 90 个连续中文字符仍排出 `13+14×5+7` 与 `14+15×5+1`；MuPDF 步进约 31.488pt / 29.376pt，接近目标两倍。FODT `layout-grid-base-width` 却约 15.7608pt / 14.7096pt，接近目标值，因此不能简单断言“导入网格宽度翻倍”。
+
+当前较符合证据的机制假设是：默认 16pt、目标格距约 15.793pt，自定义 18pt、目标格距约 14.74pt，字号均略大于单格宽度，LibreOffice 可能把无法落入一格的字形推到下一格，形成约两倍步进。该解释仍需最小对照实验证实，不能作为修改公式的依据，也不能外推为 Word/WPS 结论。
 
 后续应分别控制 Normal 字号、`snapToChars`、段落 `snapToGrid`、行距规则和渲染器做最小对照，并以 Word/WPS 为主验收。当前不得宣称“每行 28/30 字已通过外部验收”。规范参考：[ECMA docGrid](https://webapp.docx4java.org/OnlineDemo/ecma376/WordML/docGrid.html)。
 
-## 8. 后续验证顺序
+## 8. 后续环境验收顺序
 
-第二阶段 merge commit `c35a69d` 已完成并核对双亲，文档收尾独立提交。
+完整 validate、本机真实 E2E 和 LibreOffice 外部复核已完成；验证修复提交为 `7ab5d5d7821baecba470f73d6a0bb4f02362d115`。剩余顺序为：
 
-1. 经用户恢复授权后运行 `npm run validate`；先修静态/类型/单测，再进入 E2E。
-2. 跑 Extension Host：激活、差异视图、复选框、表格、highlight、Mermaid、DOCX。
-3. 在真实 Remote-SSH 中验证链接、图片、快速/普通导出。
-4. 用 Word/WPS/LibreOffice 验收 DOCX，并解决字符网格异常。
-5. 最后才构建发布 VSIX；push、tag、发布继续单独授权。
+1. 在真实 Remote-SSH 中验证链接、图片、快速/普通导出和保存对话框。
+2. 用 Word/WPS 主验收 DOCX，并以最小 OOXML 对照实验定位字符网格双倍步进。
+3. 在下一次 CI 或干净下载宿主中取得标准 `npm run test:e2e` 的 Mocha 汇总；本机结果不能替代 CI。
+4. 发布前从干净目录检查 VSIX 清单，尤其核对 `.specify/`；不把含验证材料的本地 VSIX 直接当作发布包。
+5. push、tag、发布继续单独授权；本轮均未执行。
 
 长期同步规则见 [ADR](../architecture/ADR/upstream-sync.md) 与 [标准工作范式](../experience/upstream-realignment-lessons.md)。

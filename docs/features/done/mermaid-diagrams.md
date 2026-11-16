@@ -1,6 +1,6 @@
 ---
 status: DONE
-updateDate: 2026-11-16
+updateDate: 2026-11-17
 priority: High
 ---
 
@@ -43,9 +43,9 @@ Feature: Mermaid 行内图表
 
 ## 依赖升级边界
 
-Mermaid 12.3.0 与 DOMPurify 安全 override 已落地，本地资产已重新生成，生产依赖审计为 0。本轮按用户要求未启动 Extension Host 或外部渲染，因此“资产与 CSP 源码已更新”不等于 Mermaid 12 的运行兼容性已验收。
+Mermaid 12.3.0 与 DOMPurify 安全 override 已落地，本地资产已重新生成，生产依赖审计为 0。2026-11-17 完整 validate 通过，真实 E2E 的 SVG 尺寸处理和 Mermaid 代码块装饰用例也已通过。
 
-恢复验证时至少覆盖：流程图、时序图、含中文标签、非法语法、深色/浅色主题、首次懒加载、连续更新和销毁清理。
+这些结果不等于 Mermaid 12 的所有 webview 渲染行为已验收。后续仍至少覆盖：流程图、时序图、含中文标签、非法语法、深色/浅色主题、首次懒加载、连续更新和销毁清理。
 
 更多背景见 [ADR: Mermaid 渲染](../../architecture/ADR/mermaid.md) 与 [Mermaid 踩坑记录](../../experience/mermaid-rendering-findings.md)。
 
@@ -53,7 +53,7 @@ Mermaid 12.3.0 与 DOMPurify 安全 override 已落地，本地资产已重新�
 
 - Mermaid 与 LaTeX 当前导出 DOCX 时保留占位文本或源码，不声称导出为原生 Word 图形。
 - 非法语法、超大图、连续修改和 webview 销毁都必须保留可恢复路径。
-- Mermaid 12.3.0 的真实渲染行为尚未验证。
+- Mermaid 12.3.0 的完整真实图表、主题切换与 webview 生命周期尚未逐项人工验证；现有 E2E 通过不等于这些场景全部覆盖。
 
 ## 示例
 

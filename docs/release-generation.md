@@ -65,6 +65,12 @@ The automated script (`npm run release` or `node scripts/release.js`) is recomme
 
 - **Conventional Commits**: All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for the version detection to work correctly.
 
+## Release evidence boundary
+
+- `npm run validate` covers feature docs, ESLint, Vitest, TypeScript, bundling and VSIX packaging; it does **not** run the VS Code Extension Host suite. Before release, also obtain the standard `npm run test:e2e` result in CI or a clean downloaded host and check the actual Mocha summary. A host window or an outer CLI exit code alone is not an E2E pass.
+- The 2026-11-17 local gate passed `npm run validate` (76 files, 1055 passed, 1 skipped) and the real VS Code 1.146.0 E2E suite (59 passed in 28s). These are local evidence, not a substitute for the next release CI run.
+- Do not publish a VSIX produced in a working directory that contains verification artifacts. The local validation VSIX included `dist/typography-verification/` and `.specify/`. Release CI runs `npm run clean` before building, which removes `dist`; inspect the final package list separately for `.specify/` and other non-runtime files. `.vscodeignore` is intentionally unchanged because project rules require an explicit user request before editing it.
+
 ## Changelog Format
 
 The generated changelog follows the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format with sections:

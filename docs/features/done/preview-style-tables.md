@@ -1,6 +1,6 @@
 ---
 status: DONE
-updateDate: 2026-11-16
+updateDate: 2026-11-17
 priority: Medium Priority
 ---
 
@@ -67,7 +67,7 @@ Feature: 预览风格表格
 
 - 单元格不能软换行；超宽表格建议关闭 `editor.wordWrap`，否则单元格盒会跨视觉行断开。
 - 固定宽度只决定盒子，不保证被裁切内容全部可见；源码始终保留。
-- 上游原始用例已随 Vitest 单栈迁移，并按本仓库默认关闭表头着色调整；本轮按用户要求未运行测试或编译。
+- 上游原始用例已随 Vitest 单栈迁移，并按本仓库默认关闭表头着色调整；2026-11-17 完整 validate 已通过。真实 E2E 的 GFM 表格装饰用例通过，但 preview 模式的视觉对齐仍需人工主题/字体组合验收。
 - 上游相关背景：[issue #21](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/21)、[issue #41](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/41)、[issue #76](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/issues/76)、[PR #116](https://github.com/SeardnaSchmid/markdown-inline-editor-vscode/pull/116)。
 
 ## 边缘情况
