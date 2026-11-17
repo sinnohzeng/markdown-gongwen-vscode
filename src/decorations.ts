@@ -8,10 +8,6 @@ const BRIGHTNESS_OVERLAY_OPACITY = 0.1;
 
 /** Size of the checkbox box (width and height). */
 const CHECKBOX_BOX_SIZE = '1em';
-/** Gap between checkbox and adjacent text. */
-const CHECKBOX_GAP_SIZE = '0.6em';
-/** Left padding applied after the checkbox. */
-const CHECKBOX_PADDING = '0.2em';
 
 /**
  * Determines if the current theme is dark or high contrast.
@@ -33,6 +29,27 @@ export function HideDecorationType() {
     // Hide the item
     textDecoration: 'none; display: none;',
     // This forces the editor to re-layout following text correctly
+    after: {
+      contentText: '',
+    },
+  });
+}
+
+/**
+ * Creates a decoration type that collapses the list marker of a rendered
+ * checkbox.
+ *
+ * This must be its own decoration type instance, not a reuse of
+ * {@link HideDecorationType}: decorations are applied with one
+ * `setDecorations` call per parser type, so two parser types sharing an
+ * instance make each call overwrite the other (which made markers flicker
+ * into view).
+ *
+ * @returns {vscode.TextEditorDecorationType} A decoration type that hides a checkbox marker
+ */
+export function CheckboxMarkerDecorationType() {
+  return window.createTextEditorDecorationType({
+    textDecoration: 'none; display: none;',
     after: {
       contentText: '',
     },
@@ -94,36 +111,20 @@ export function CodeBlockLanguageDecorationType(opacity: number = 0.3) {
   });
 }
 
-/** Default bold font — Source Han Serif SC Bold for consistent CJK bold rendering. */
+/** Default CJK serif family used for bold content when no override is configured. */
 const BOLD_DEFAULT_FONT_FAMILY = '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "SimSun", serif';
 
-/**
- * Creates a decoration type for bold text styling.
- * Uses Source Han Serif SC Bold by default for CJK bold rendering.
- */
+/** Creates bold text styling, including optional CJK font and weight overrides. */
 export function BoldDecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string) {
-  const effectiveWeight = fontWeight ?? 'bold';
-  const effectiveFont = fontFamily ?? BOLD_DEFAULT_FONT_FAMILY;
-  // fontWeight MUST go inside textDecoration hack, never as native property
-  const cssParts = ['none'];
-  cssParts.push(`font-weight: ${effectiveWeight}`);
-  cssParts.push(`font-family: ${effectiveFont}`);
-  const options: Record<string, unknown> = {
-    textDecoration: cssParts.join('; ') + ';',
-  };
+  const cssParts = ['none', `font-weight: ${fontWeight ?? 'bold'}`, `font-family: ${fontFamily ?? BOLD_DEFAULT_FONT_FAMILY}`];
+  const options: Record<string, unknown> = { textDecoration: cssParts.join('; ') + ';' };
   if (color !== undefined) {
     options.color = color;
   }
   return window.createTextEditorDecorationType(options);
 }
 
-/**
- * Creates a decoration type for italic text styling.
- *
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses default
- * @param {string | undefined} fontFamily - Optional CSS font-family override
- * @returns {vscode.TextEditorDecorationType} A decoration type for italic text
- */
+/** Creates italic text styling with an optional font-family override. */
 export function ItalicDecorationType(color?: string | ThemeColor, fontFamily?: string) {
   const cssParts = ['none'];
   if (fontFamily) cssParts.push(`font-family: ${fontFamily}`);
@@ -137,20 +138,9 @@ export function ItalicDecorationType(color?: string | ThemeColor, fontFamily?: s
   return window.createTextEditorDecorationType(options);
 }
 
-/**
- * Creates a decoration type for bold+italic text styling.
- *
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses default
- * @param {string | undefined} fontFamily - Optional CSS font-family override
- * @param {string | undefined} fontWeight - Optional CSS font-weight override (default: 'bold')
- * @returns {vscode.TextEditorDecorationType} A decoration type for bold+italic text
- */
+/** Creates bold+italic text styling with optional CJK font and weight overrides. */
 export function BoldItalicDecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string) {
-  const effectiveWeight = fontWeight ?? 'bold';
-  const effectiveFont = fontFamily ?? BOLD_DEFAULT_FONT_FAMILY;
-  const cssParts = ['none'];
-  cssParts.push(`font-weight: ${effectiveWeight}`);
-  cssParts.push(`font-family: ${effectiveFont}`);
+  const cssParts = ['none', `font-weight: ${fontWeight ?? 'bold'}`, `font-family: ${fontFamily ?? BOLD_DEFAULT_FONT_FAMILY}`];
   const options: Record<string, unknown> = {
     fontStyle: 'italic',
     textDecoration: cssParts.join('; ') + ';',
@@ -173,6 +163,44 @@ export function StrikethroughDecorationType() {
 }
 
 /**
+ * Creates a decoration type for highlighted text styling (==text==).
+ *
+ * Uses a theme-aware semi-transparent yellow background:
+ * - Dark themes: rgba(255, 214, 0, 0.28) for high contrast and clear white text readability
+ * - Light themes: rgba(255, 235, 59, 0.40) for classic highlighter aesthetic
+ *
+ * @param {string | ThemeColor | undefined} color - Optional hex or theme color for text
+ * @param {string | ThemeColor | undefined} backgroundColor - Optional hex or theme color for background overlay
+ * @returns {vscode.TextEditorDecorationType} A decoration type for highlighted text
+ */
+export function HighlightDecorationType(
+  color?: string | ThemeColor,
+  backgroundColor?: string | ThemeColor,
+) {
+  const isDark = isDarkTheme();
+  let bgColor: string | ThemeColor;
+  if (backgroundColor !== undefined) {
+    bgColor = backgroundColor;
+  } else {
+    bgColor = isDark
+      ? 'rgba(255, 214, 0, 0.28)'
+      : 'rgba(255, 235, 59, 0.40)';
+  }
+  const options: Record<string, unknown> = {};
+  if (typeof bgColor === 'string') {
+    // Apply background directly to text span to retain styling when delimiters are hidden
+    options.textDecoration = `none; background-color: ${bgColor}; border-radius: 3px;`;
+  } else {
+    options.backgroundColor = bgColor;
+    options.borderRadius = '3px';
+  }
+  if (color !== undefined) {
+    options.color = color;
+  }
+  return window.createTextEditorDecorationType(options);
+}
+
+/**
  * Creates a decoration type for inline code styling.
  *
  * Uses the editor background color with theme-aware brightness adjustment:
@@ -183,7 +211,7 @@ export function StrikethroughDecorationType() {
  * overlays that composite over the editor background.
  *
  * Note: This decoration type is automatically recreated when the theme changes
- * via {@link DecorationTypeRegistry.recreateColorDependentTypes}, ensuring the background color
+ * via {@link Decorator.recreateCodeDecorationType}, ensuring the background color
  * adapts to the current theme without requiring a restart.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color for text; when undefined only background is applied
@@ -295,132 +323,61 @@ export function HeadingDecorationType() {
   });
 }
 
-/**
- * Default body text font configuration.
- * Uses Times New Roman for English, Source Han Serif SC / Noto Serif SC for Chinese.
- */
+/** GB/T 9704-oriented editor defaults; each level can be overridden independently. */
 const BODY_DEFAULT_FONT_FAMILY = '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "SimSun", serif';
-const BODY_DEFAULT_FONT_WEIGHT = 'normal';
-/**
- * Default body font size — 100% (no enlargement via decoration).
- * For larger body text, users should set `editor.fontSize` in `[markdown]` scope.
- * This avoids the word-wrap mismatch where VS Code calculates wrap positions
- * using the base font but decorations render at a different size.
- */
-const BODY_DEFAULT_FONT_SIZE = '100%';
-/**
- * Default body line height — injected via CSS hack but only affects in-line vertical positioning.
- * For actual editor line spacing, users must also set `editor.lineHeight` in VS Code settings.
- * Recommended: editor.lineHeight = 2.2 (or higher) when using 150%+ font sizes.
- */
-const BODY_DEFAULT_LINE_HEIGHT = '1.8';
-
-/**
- * Heading decoration configuration.
- *
- * Mapping rationale: In practice, H1 is used as the document/file title,
- * so the actual government document heading levels start from H2:
- *   H1 = 文件标题（思源宋体粗体）
- *   H2 = 公文一级标题（黑体）
- *   H3 = 公文二级标题（楷体）
- *   H4 = 公文三级标题（仿宋加粗）
- *   H5 = 公文四级标题（仿宋）
- *   H6 = 备用
- */
 const HEADING_CONFIG = [
-  { size: '137%', bold: true,  fontFamily: '"Source Han Serif SC", "Noto Serif SC", "Songti SC", "SimSun", serif' },  // H1: 公文标题 — 思源宋体/宋体粗体，二号 22pt (22/16=137%)
-  { size: '100%', bold: false, fontFamily: 'SimHei, "Heiti SC", "Microsoft YaHei", sans-serif' },        // H2: 一级标题 — 黑体，三号 16pt
-  { size: '100%', bold: false, fontFamily: 'KaiTi, STKaiti, "KaiTi_GB2312", serif' },                    // H3: 二级标题 — 楷体，三号 16pt
-  { size: '100%', bold: true,  fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H4: 三级标题 — 仿宋加粗，三号 16pt
-  { size: '100%', bold: false, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },           // H5: 四级标题 — 仿宋，三号 16pt
-  { size: '90%',  bold: false, fontFamily: '' },                                                          // H6: 备用
+  { size: '137%', bold: true, fontFamily: BODY_DEFAULT_FONT_FAMILY },
+  { size: '100%', bold: false, fontFamily: 'SimHei, "Heiti SC", "Microsoft YaHei", sans-serif' },
+  { size: '100%', bold: false, fontFamily: 'KaiTi, STKaiti, "KaiTi_GB2312", serif' },
+  { size: '100%', bold: true, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },
+  { size: '100%', bold: false, fontFamily: 'FangSong, STFangsong, "FangSong_GB2312", serif' },
+  { size: '90%', bold: false, fontFamily: '' },
 ];
-/**
- * Creates a heading decoration type with the specified level.
- *
- * @param {number} level - Heading level (1-6)
- * @param {string | ThemeColor | undefined} color - Optional hex or theme color. When **undefined** (empty extension setting = theme default), the decoration **omits** `color` so the editor keeps syntax-highlighted markdown heading colors for the active theme. When set, that color overrides the token foreground for the decorated range.
- * @param {string | undefined} fontFamily - Optional CSS font-family override
- * @param {string | undefined} fontWeight - Optional CSS font-weight override; when undefined, uses HEADING_CONFIG default
- * @param {string | undefined} fontSize - Optional CSS font-size override; when undefined, uses HEADING_CONFIG default
- * @returns {vscode.TextEditorDecorationType} A decoration type for the heading level
- */
-function createHeadingDecoration(level: number, color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
-  const cfg = HEADING_CONFIG[level - 1];
-  if (!cfg) throw new Error(`Invalid heading level: ${level}`);
-  const effectiveSize = fontSize ?? cfg.size;
-  const effectiveWeight = fontWeight ?? (cfg.bold ? 'bold' : undefined);
-  const effectiveFont = fontFamily ?? cfg.fontFamily;
 
-  // Build CSS injection string via textDecoration hack
-  // IMPORTANT: fontWeight MUST go inside the textDecoration string, NOT as a native property.
-  // When both textDecoration and native fontWeight are present, VS Code's renderer breaks the CSS hack.
-  const cssParts = [`none; font-size: ${effectiveSize}`];
-  if (effectiveWeight) cssParts.push(`font-weight: ${effectiveWeight}`);
-  if (effectiveFont) cssParts.push(`font-family: ${effectiveFont}`);
-
-  const options: Record<string, unknown> = {
-    textDecoration: cssParts.join('; ') + ';',
-  };
-  if (color !== undefined) {
-    options.color = color;
-  }
+function createHeadingDecoration(
+  level: number,
+  color?: string | ThemeColor,
+  fontFamily?: string,
+  fontWeight?: string,
+  fontSize?: string,
+) {
+  const heading = HEADING_CONFIG[level - 1];
+  if (!heading) throw new Error(`Invalid heading level: ${level}`);
+  const cssParts = [`none; font-size: ${fontSize ?? heading.size}`];
+  const weight = fontWeight ?? (heading.bold ? 'bold' : undefined);
+  const family = fontFamily ?? heading.fontFamily;
+  if (weight) cssParts.push(`font-weight: ${weight}`);
+  if (family) cssParts.push(`font-family: ${family}`);
+  const options: Record<string, unknown> = { textDecoration: cssParts.join('; ') + ';' };
+  if (color !== undefined) options.color = color;
   return window.createTextEditorDecorationType(options);
 }
 
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
 export function Heading1DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
   return createHeadingDecoration(1, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
 export function Heading2DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
   return createHeadingDecoration(2, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
 export function Heading3DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
   return createHeadingDecoration(3, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
 export function Heading4DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
   return createHeadingDecoration(4, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
 export function Heading5DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
   return createHeadingDecoration(5, color, fontFamily, fontWeight, fontSize);
 }
-/** @param color - When undefined (empty setting), omit `color` so theme markdown heading syntax colors apply. */
 export function Heading6DecorationType(color?: string | ThemeColor, fontFamily?: string, fontWeight?: string, fontSize?: string) {
   return createHeadingDecoration(6, color, fontFamily, fontWeight, fontSize);
 }
 
-/**
- * Creates a decoration type for body/paragraph text styling.
- *
- * Injects font-size and line-height via the textDecoration CSS hack (same
- * technique used by headings).  Note: CSS `line-height` affects text
- * positioning inside the line box; for actual editor line spacing the user
- * should also set `editor.lineHeight` in VS Code settings.
- *
- * @param {string | undefined} fontFamily - Optional CSS font-family
- * @param {string | undefined} fontWeight - Optional CSS font-weight
- * @param {string | undefined} fontSize - Optional CSS font-size (default: 105%)
- * @param {string | undefined} lineHeight - Optional CSS line-height (default: 1.8)
- * @returns {vscode.TextEditorDecorationType} A decoration type for body text
- */
+/** Creates paragraph styling without changing VS Code's wrapping column calculation. */
 export function BodyTextDecorationType(fontFamily?: string, fontWeight?: string, fontSize?: string, lineHeight?: string) {
-  const effectiveFont = fontFamily ?? BODY_DEFAULT_FONT_FAMILY;
-  const effectiveWeight = fontWeight ?? BODY_DEFAULT_FONT_WEIGHT;
-  const effectiveFontSize = fontSize ?? BODY_DEFAULT_FONT_SIZE;
-  const effectiveLineHeight = lineHeight ?? BODY_DEFAULT_LINE_HEIGHT;
-
-  // IMPORTANT: fontWeight MUST go inside the textDecoration string, NOT as a native property.
-  // When both textDecoration and native fontWeight are present, VS Code's renderer breaks the CSS hack.
-  const cssParts = [`none; font-size: ${effectiveFontSize}; line-height: ${effectiveLineHeight}`];
-  if (effectiveWeight) cssParts.push(`font-weight: ${effectiveWeight}`);
-  if (effectiveFont) cssParts.push(`font-family: ${effectiveFont}`);
-  return window.createTextEditorDecorationType({
-    textDecoration: cssParts.join('; ') + ';',
-  });
+  const cssParts = [`none; font-size: ${fontSize ?? '100%'}; line-height: ${lineHeight ?? '1.8'}`];
+  cssParts.push(`font-weight: ${fontWeight ?? 'normal'}`);
+  cssParts.push(`font-family: ${fontFamily ?? BODY_DEFAULT_FONT_FAMILY}`);
+  return window.createTextEditorDecorationType({ textDecoration: cssParts.join('; ') + ';' });
 }
 
 /**
@@ -429,7 +386,7 @@ export function BodyTextDecorationType(fontFamily?: string, fontWeight?: string,
  * Sets cursor to pointer on hover to indicate clickability.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses textLink.foreground
- * @param {boolean} showEmoji - When true, appends a chain icon after link text (off keeps monospace tables aligned).
+ * @param {boolean} showEmoji - When true, appends a chain icon after link text (can misalign monospace tables when off is preferred).
  * @returns {vscode.TextEditorDecorationType} A decoration type for links
  */
 export function LinkDecorationType(color?: string | ThemeColor, showEmoji = false) {
@@ -579,27 +536,32 @@ export function HorizontalRuleDecorationType(color?: string | ThemeColor) {
 }
 
 /**
- * Creates the before block options for checkbox decorations.
- * Shared between CheckboxUncheckedDecorationType and CheckboxCheckedDecorationType.
+ * Creates the box options shared by both checkbox states.
+ *
+ * The box and the state glyph are the same element, so the glyph is centered
+ * inside the box by construction. `pointer-events: none` keeps this overlay
+ * from swallowing the click that has to reach the real `[ ]` range underneath;
+ * the negative-margin pair cancels the box's own width so the range keeps its
+ * 3-character footprint and the box stays centered within it.
  */
-function createCheckboxBeforeOptions(resolvedColor: string | ThemeColor) {
+function createCheckboxBeforeOptions(resolvedColor: string | ThemeColor, contentText: string) {
   return {
-    contentText: ' ',
+    contentText,
     color: resolvedColor,
     height: CHECKBOX_BOX_SIZE,
     width: CHECKBOX_BOX_SIZE,
     border: '1px solid',
     borderColor: resolvedColor,
-    // Negative margin-right pulls the 'after' element inside the box border.
-    textDecoration: `display: inline-block; box-sizing: border-box; vertical-align: middle; margin-right: -${CHECKBOX_BOX_SIZE}; cursor: pointer;`,
+    textDecoration: `display: inline-block; box-sizing: border-box; vertical-align: middle; text-align: center; line-height: calc(${CHECKBOX_BOX_SIZE} - 2px); margin-left: calc((3ch - ${CHECKBOX_BOX_SIZE}) / 2); margin-right: calc((${CHECKBOX_BOX_SIZE} - 3ch) / 2 - ${CHECKBOX_BOX_SIZE}); pointer-events: none;`,
   };
 }
 
 /**
  * Creates a decoration type for unchecked checkbox styling.
  *
- * Replaces [ ] with an empty checkbox.
- * Click inside the brackets to toggle.
+ * The range stays laid out (its glyphs are hidden with `color`, not by
+ * collapsing it) so it is a real, hoverable, clickable target, and `cursor`
+ * gives it the pointer. The box itself is drawn by the `before` overlay.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses editor.foreground
  * @returns {vscode.TextEditorDecorationType} A decoration type for unchecked checkboxes
@@ -608,28 +570,17 @@ export function CheckboxUncheckedDecorationType(color?: string | ThemeColor) {
   const resolvedColor = color ?? new ThemeColor('editor.foreground');
 
   return window.createTextEditorDecorationType({
-    textDecoration: 'none; display: none;',
-    before: createCheckboxBeforeOptions(resolvedColor),
-    after: {
-      contentText: ' ',
-      color: resolvedColor,
-      textDecoration: `
-        display: inline-block;
-        position: relative;
-        width: ${CHECKBOX_BOX_SIZE};
-        cursor: pointer;
-        margin-right: ${CHECKBOX_GAP_SIZE};
-        margin-left: ${CHECKBOX_PADDING};
-      `
-    }
+    color: 'transparent',
+    cursor: 'pointer',
+    textDecoration: 'none;',
+    before: createCheckboxBeforeOptions(resolvedColor, ' '),
   });
 }
 
 /**
  * Creates a decoration type for checked checkbox styling.
  *
- * Replaces [x] or [X] with a checked checkbox.
- * Click inside the brackets to toggle.
+ * Same box as the unchecked state, with a check glyph drawn inside it.
  *
  * @param {string | ThemeColor | undefined} color - Optional hex or theme color; when undefined uses editor.foreground
  * @returns {vscode.TextEditorDecorationType} A decoration type for checked checkboxes
@@ -638,20 +589,10 @@ export function CheckboxCheckedDecorationType(color?: string | ThemeColor) {
   const resolvedColor = color ?? new ThemeColor('editor.foreground');
 
   return window.createTextEditorDecorationType({
-    textDecoration: 'none; display: none;',
-    before: createCheckboxBeforeOptions(resolvedColor),
-    after: {
-      contentText: '✔',
-      color: resolvedColor,
-      textDecoration: `
-        display: inline-block;
-        position: relative;
-        width: ${CHECKBOX_BOX_SIZE};
-        cursor: pointer;
-        margin-right: ${CHECKBOX_GAP_SIZE};
-        margin-left: ${CHECKBOX_PADDING};
-      `
-    }
+    color: 'transparent',
+    cursor: 'pointer',
+    textDecoration: 'none;',
+    before: createCheckboxBeforeOptions(resolvedColor, '✔'),
   });
 }
 
@@ -705,6 +646,24 @@ export function TableSeparatorDashDecorationType() {
     before: {
       contentText: '',
       color: new ThemeColor('editorLineNumber.foreground'),
+    },
+  });
+}
+
+/**
+ * Creates a decoration type for the separator row of a preview-style table.
+ *
+ * Hides the `|---|---|` line and renders a single horizontal rule spanning the table,
+ * which doubles as the underline of the header row. The rule width is supplied per range
+ * via `renderOptions.before`.
+ *
+ * @returns {vscode.TextEditorDecorationType} A decoration type for the table rule
+ */
+export function TableRuleDecorationType() {
+  return window.createTextEditorDecorationType({
+    textDecoration: 'none; display: none;',
+    before: {
+      contentText: '',
     },
   });
 }

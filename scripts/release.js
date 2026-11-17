@@ -47,14 +47,9 @@ try {
     );
   }
 
-  // Run validation checks
-  log("🔍 Running validation checks...");
-  log("  📝 Validating feature file structure...");
-  run("npm run lint:docs");
-  log("  🧪 Running tests...");
-  run("npm test");
-  log("  🔨 Building extension...");
-  run("npm run build");
+  // Keep release validation identical to the everyday quality gate.
+  log("🔍 Running full validation (docs, ESLint, Vitest, build)...");
+  run("npm run validate");
   log("✅ All validation checks passed");
 
   // Check if git-cliff is available

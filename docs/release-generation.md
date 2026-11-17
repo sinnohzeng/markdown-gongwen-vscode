@@ -26,7 +26,7 @@ node scripts/release.js 2.3.1
 This script will:
 
 1. **Validate the environment**: Ensures you're on the `main` branch with a clean working tree
-2. **Run validation checks**: Executes `lint:docs`, `test`, and `build` to ensure everything passes
+2. **Run validation checks**: Executes `npm run validate` (feature docs, ESLint, Vitest and build), exactly matching the everyday quality gate
 3. **Determine the next version**: Uses the version passed as an argument if there is one; otherwise analyzes commits since the last tag using `git-cliff` to determine the appropriate version bump (major/minor/patch) based on conventional commits
 4. **Update CHANGELOG.md**: Prepends a new release section generated from commit messages (grouped by type) above the existing entries. Hand-written sections are kept as they are. Edit the new section by hand before pushing if the generated wording is not what users should read
 5. **Update package.json**: Bumps the version in `package.json` and `package-lock.json`
@@ -55,12 +55,21 @@ The automated script (`npm run release` or `node scripts/release.js`) is recomme
 
 ## Requirements
 
+- **Node.js**: Use `>=22.12.0` and a release supported by Vitest 5 (`^22.12`, `^24`, or `>=26`). CI uses 22.12.0, 24.x and 26.x rather than following an unsupported odd `current` release.
+- **VS Code API baseline**: Keep `@types/vscode` aligned with `engines.vscode` (`1.100.0`); dependency updates must not silently raise the installation baseline.
+
 - **git-cliff**: The script uses `npx git-cliff`, which will be downloaded automatically if not installed. For better performance, you can install it globally:
   ```bash
   npm install -g git-cliff
   ```
 
 - **Conventional Commits**: All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for the version detection to work correctly.
+
+## Release evidence boundary
+
+- `npm run validate` covers feature docs, ESLint, Vitest, TypeScript, bundling and VSIX packaging; it does **not** run the VS Code Extension Host suite. Before release, also obtain the standard `npm run test:e2e` result in CI or a clean downloaded host and check the actual Mocha summary. A host window or an outer CLI exit code alone is not an E2E pass.
+- The 2026-11-17 local gate passed `npm run validate` (76 files, 1055 passed, 1 skipped) and the real VS Code 1.146.0 E2E suite (59 passed in 28s). These are local evidence, not a substitute for the next release CI run.
+- Do not publish a VSIX produced in a working directory that contains verification artifacts. The local validation VSIX included `dist/typography-verification/` and `.specify/`. Release CI runs `npm run clean` before building, which removes `dist`; inspect the final package list separately for `.specify/` and other non-runtime files. `.vscodeignore` is intentionally unchanged because project rules require an explicit user request before editing it.
 
 ## Changelog Format
 

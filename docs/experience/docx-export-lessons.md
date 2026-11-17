@@ -10,7 +10,7 @@ Pandoc 功能强大，但对 VS Code 扩展来说有两个硬伤：一是用户�
 
 ### 核心转换做成纯函数
 
-`ast-to-docx.ts` 不引入任何 VS Code API，拿到语法树和图片 buffer，直接出 Word 文档对象。好处是 Jest 直接测，不用启动 Extension Development Host。VS Code 扩展里凡是能抽成纯函数的逻辑，都该抽出来。
+`ast-to-docx.ts` 不引入任何 VS Code API，拿到语法树和图片 buffer，直接出 Word 文档对象。好处是可以直接做 Node 单元测试（当时使用 Jest，2026-11 已统一为 Vitest），不用启动 Extension Development Host。VS Code 扩展里凡是能抽成纯函数的逻辑，都该抽出来。
 
 ### 图片尺寸自己读，不装额外的包
 
@@ -105,4 +105,69 @@ WPS 自动目录插出来的“目录”二字不带任何样式，用户实测�
 
 ### patch 版依赖也能弄坏构建
 
-`@tsconfig/node-lts` 从 24.0.0 到 24.0.1 加了 `"types": ["node"]`，jest 全局类型随之从 tsc 视野里消失，`src/test/__mocks__/vscode.ts` 里的 `jest.fn` 全部报错。本仓库 `tsconfig.json` 现在显式写 `"types": ["node", "jest"]`。`npm update` 之后必须跑一遍 `npm run compile`，`npm test` 走 ts-jest 不会暴露这个问题。
+`@tsconfig/node-lts` 从 24.0.0 到 24.0.1 加了 `"types": ["node"]`，当时导致 Jest 全局类型从 tsc 视野消失，`src/test/__mocks__/vscode.ts` 里的 `jest.fn` 报错。当时的修复是在 Jest tsconfig 中显式声明类型。2026-11 已改为 `tsconfig.vitest.json` 显式使用 Vitest globals 与 VS Code mock，不再保留 Jest/ts-jest 双栈。经验不变：升级 tsconfig 或测试基建后必须分别检查生产编译和测试类型，单一测试路径不能证明两条路径都正确。
+
+---
+
+## 2026-11-16 补记：可配置排版与真实字符网格
+
+### 只改 styles.xml 不会让全文字体配置生效
+
+这个导出器不是“所有文字都靠 Normal 继承”：正文、表格、列表、引用、代码、行内代码、强调、图片与错误占位都有直接 run 格式。只把 `DocumentDefaults` 改成用户字体，表面看配置已经接上，实际 `document.xml` 仍保留原来的 FangSong/KaiTi/Consolas。正确做法是让 `typography.ts` 一次性合并并校验配置，再通过 `RunContext` 把同一份结果传到所有转换分支；样式、节属性和页脚也接收同一对象。
+
+页码还有另一个坑：`SimpleField("PAGE")` 自身不能设置 run 字体。仅给两侧 Em Dash 设置宋体，不代表 PAGE 域也使用宋体。`PageNumber` 段落样式用于给域和一字线提供一致的字号字体，页脚段显式引用这个样式。
+
+### “每行 28 字”必须是 `w:docGrid`，不能是字符串处理
+
+截断、补空格、按 JavaScript 字符数换行都不能模拟 Word 的排版，也无法正确处理比例字体和中英混排。OOXML 的正确机制是 `<w:docGrid w:type="snapToChars" …/>`：东亚全角字符按格位排列，Latin text 按宽度占用必要格位并居中，其余格位不受影响。
+
+`charSpace` 不是每行字数本身，而是目标字距与 Normal 正文字号之差乘以 4096。计算时必须使用实际页面参数经 `convertMillimetersToTwip()` 后的结果：当前 A4 版心为 **8844 twip**，缺省 28 字、16pt 正文对应 **-848**。先用约数心算再把断言写成 -841，会把实现错误地引向估算值。规范示意图只能说明机制，项目验收仍须检查实际 DOCX XML，并用外部 Word/WPS/LibreOffice 渲染核对。
+
+### 派生配置要保持语义独立
+
+固定行距同时用于段落 `w:spacing` 和网格 `linePitch`，因此不另设“每页行数”形成双源。正文首行缩进按“字符数 × 正文字号”换算，但目录层级缩进只应随正文字号变化；把 `firstLineIndentChars=0` 错误地复用到目录，会把所有目录层级压成同一层。列表嵌套缩进同样独立于首行缩进字符数。
+
+### 验证要分层，不能只测配置 getter
+
+1. 纯函数测试：默认合并、字体槽位、非法数值、0.5 步进、单位与网格公式。
+2. VS Code 配置测试：读取的是 `docx.*`，不是编辑器的 `fonts.*`；package.json schema 与代码默认值一致。
+3. DOCX/OOXML 测试：实际打包后用 JSZip 读取 `document.xml`、`styles.xml`、`footer*.xml`，断言每个角色真实落地。
+4. 外部渲染测试：LibreOffice/WPS/Word 检查分页、28 字换行、中英混排、字体回退和图片裁切。XML 正确不等于所有渲染器行为完全一致，外部差异必须如实记录。
+
+---
+
+## 2026-11-16 二次补记：外部证据互相矛盾时先停结论
+
+### 网格 XML 正确，LibreOffice 却约按两倍步进排版
+
+独立解包 DOCX 得到的缺省/自定义 `docGrid` 都符合公式，但 LibreOffice 导出 PDF 后，90 个连续中文字符在缺省样例中为 `13+14×5+7`，自定义样例中为 `14+15×5+1`，约为目标每行字数的一半。MuPDF 坐标进一步给出约 31.488pt / 29.376pt 的实际步进，均接近目标网格步进的两倍。
+
+不能据此直接改 `charSpace` 抵消：FODT 中的 `layout-grid-base-width` 约为 15.7608pt / 14.7096pt，反而接近目标值 15.793pt / 14.74pt。说明至少“导入的网格宽度就是两倍”这个简单根因不成立。下一步应做最小 OOXML 对照实验，分别改变 Normal 字号、`snapToChars`、段落 `snapToGrid`、行距规则和渲染器，而不是在当前完整文档里盲调常量。
+
+### 工具能力、权限和结果要分开记录
+
+WPS CLI 存在 `word2pdf` 能力，不等于已经转换成功；macOS GUI 自动化权限不足，也不等于 WPS 无法打开文档。未完成的 WPS 验证只能写“未执行/未完成”，不能写“通过”或“失败”。同理，LibreOffice 异常不能外推为 Word/WPS 也异常，更不能把 XML 检查当作三种渲染器共同验收。
+
+### Remote-SSH 的 URI 不能先降级为字符串路径
+
+旧图片读取虽然调用了 `workspace.fs`，但先把资源转为路径字符串，再用 `Uri.file()` 构造读取目标，`vscode-remote` 的 scheme/authority 已在途中丢失。修复必须贯穿链接解析、图片解析、默认保存位置和快速导出：统一由 `resource-schemes.ts` 构造 URI，再由 `workspace.fs` 读取/写入。单元测试中的 URI mock 也必须保留这些字段，否则 mock 会把生产缺陷重新藏起来。
+
+---
+
+## 2026-11-17 补记：外部复核要防止假证据和假阴性
+
+### 当前源码重新出样，比沿用旧 DOCX 更有证明力
+
+本轮从当前 `ast-to-docx.ts` 重新 esbuild 独立转换器，再生成默认/自定义 DOCX。独立解包确认两份文件都保留完整 90 个中文字符，网格值分别为 `560/-848` 与 `600/-13353`；LibreOffice 也真实转换出单页 A4 PDF。这样能把“当前代码可生成”“ZIP/OOXML 可解析”“外部渲染器可读取”“文本未丢失”分别落成证据，而不是拿历史样例替当前实现背书。
+
+### PDF 文本匹配先理解布局空白
+
+`pdftotext -layout` 会为保持版面在汉字之间插入空格。最初用连续中文直接匹配，标题和正文得到 false；读取实际输出并按空白归一化后，标题、90 字正文、混排和结束标记都存在。这是验证脚本的假阴性，不是 DOCX 丢字。外部验证必须先抽样读取原始文本，再设计归一化规则，不能把第一次 false 直接写成产品失败。
+
+### 符合证据的假设仍不是根因结论
+
+缺省 16pt 略大于目标格距约 15.793pt，自定义 18pt 大于目标格距约 14.74pt；LibreOffice 可能把放不进当前格的字形推到下一格，因而出现约两倍步进。这个假设与 FODT 网格宽度接近目标值、PDF 步进接近两倍相吻合，但尚未通过最小 OOXML 对照实验证实。正确做法是保留公式与字体配置不变，后续分别控制字号、格距、`snapToGrid` 和渲染器，再由 Word/WPS 主验收，而不是按假设提前改实现。
+
+### 纯转换层的诊断走上下文，不引入扩展 logger
+
+为消除 console，本次把 `fidelitySink` 收进 `RunContext`，统一贯穿块级和内联转换；异常仍进入 DOCX 诊断段落，也进入保真收集器。新增异常测试同时验证收集器和 DOCX 打包。这保留了 `ast-to-docx.ts` 的纯 Node 边界，也避免为了日志让底层转换器反向依赖 VS Code。

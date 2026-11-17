@@ -24,7 +24,8 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [lts/*, current]
+        # Vitest 5 supports Node ^22.12, ^24, or >=26; do not follow odd current releases.
+        node-version: [22.12.0, 24.x, 26.x]
       fail-fast: false  # Continue running other matrix jobs even if one fails
     env:
       CI: true

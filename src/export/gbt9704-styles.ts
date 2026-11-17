@@ -14,6 +14,7 @@ import {
   AlignmentType,
   convertMillimetersToTwip,
   DocumentDefaults,
+  DocumentGridType,
   Footer,
   ImportedXmlComponent,
   LineRuleType,
@@ -31,18 +32,15 @@ import {
 } from "docx";
 import {
   PAGE,
-  FONT_SIZE_HALF_PT,
-  LINE_SPACING_TWIP,
   SINGLE_LINE_SPACING_TWIP,
-  FIRST_LINE_INDENT_TWIP,
-  CAPTION_SPACING_TWIP,
-  TOC_LEVEL_INDENT_TWIP,
   TOC_TAB_STOP_TWIP,
   TABLE,
-  XiaoBiaoSong, HeiTi, KaiTi, FangSong, SongTi, CaptionFont,
+  XiaoBiaoSong, HeiTi, KaiTi, FangSong,
   COLOR_BLACK,
   type FontSpec,
 } from "./constants";
+import type { DocxFont, ResolvedDocxTypography } from "./typography";
+import { resolveDocxTypography } from "./typography";
 
 // ── 标题级别单一权威源 ──────────────────────────
 //
@@ -146,8 +144,8 @@ function createDefaultStyles(): ImportedXmlComponent[] {
 // 样式级制表位要带 w:leader="dot"，StyleForParagraph 的 rightTabStop 写不出前导符，
 // 这里也用原生 XML。子元素顺序按 OOXML 架构：pPr 内 tabs → spacing → ind → jc。
 
-function createTocEntryStyle(level: number): ImportedXmlComponent {
-  const size = String(FONT_SIZE_HALF_PT.BODY);
+function createTocEntryStyle(level: number, typography: ResolvedDocxTypography): ImportedXmlComponent {
+  const size = String(typography.fontSizeHalfPt.body);
   return rawElement("w:style", { "w:type": "paragraph", "w:styleId": `TOC${level}` }, [
     rawElement("w:name", { "w:val": `toc ${level}` }),
     rawElement("w:basedOn", { "w:val": "Normal" }),
@@ -158,12 +156,16 @@ function createTocEntryStyle(level: number): ImportedXmlComponent {
       rawElement("w:tabs", undefined, [
         rawElement("w:tab", { "w:val": "right", "w:leader": "dot", "w:pos": String(TOC_TAB_STOP_TWIP) }),
       ]),
-      rawElement("w:spacing", { "w:before": "0", "w:after": "0", "w:line": String(LINE_SPACING_TWIP), "w:lineRule": "exact" }),
-      rawElement("w:ind", { "w:left": String((level - 1) * TOC_LEVEL_INDENT_TWIP), "w:firstLine": "0" }),
+      rawElement("w:spacing", { "w:before": "0", "w:after": "0", "w:line": String(typography.lineSpacingTwip), "w:lineRule": "exact" }),
+      rawElement("w:ind", { "w:left": String((level - 1) * typography.tocLevelIndentTwip), "w:firstLine": "0" }),
       rawElement("w:jc", { "w:val": "left" }),
     ]),
     rawElement("w:rPr", undefined, [
-      rawElement("w:rFonts", { "w:ascii": FangSong.ascii, "w:hAnsi": FangSong.hAnsi, "w:eastAsia": FangSong.eastAsia }),
+      rawElement("w:rFonts", {
+        "w:ascii": typography.fonts.body.ascii,
+        "w:hAnsi": typography.fonts.body.hAnsi ?? typography.fonts.body.ascii,
+        "w:eastAsia": typography.fonts.body.eastAsia,
+      }),
       rawElement("w:color", { "w:val": COLOR_BLACK }),
       rawElement("w:sz", { "w:val": size }),
       rawElement("w:szCs", { "w:val": size }),
@@ -182,10 +184,21 @@ function headingStyleName(styleId: string): string {
   return `heading ${headingLevel(styleId)}`;
 }
 
-export function createDocumentStyles(): IStylesOptions {
+function fontForHeadingStyle(
+  styleId: string,
+  typography: ResolvedDocxTypography,
+): DocxFont {
+  if (styleId === "Heading1") return typography.fonts.heading1;
+  if (styleId === "Heading2") return typography.fonts.heading2;
+  return typography.fonts.heading3;
+}
+
+export function createDocumentStyles(
+  typography: ResolvedDocxTypography = resolveDocxTypography(),
+): IStylesOptions {
   // 固定行距 28 磅（每页 22 行），段前段后 0
   const fixedLine = {
-    line: LINE_SPACING_TWIP,
+    line: typography.lineSpacingTwip,
     lineRule: LineRuleType.EXACT,
     before: 0,
     after: 0,
@@ -195,24 +208,24 @@ export function createDocumentStyles(): IStylesOptions {
   // 大纲级别写进样式，Word 导航窗格与 WPS 目录不依赖样式名推断层级
   const headingParagraph = (level: number): IParagraphStylePropertiesOptions => ({
     spacing: fixedLine,
-    indent: { firstLine: FIRST_LINE_INDENT_TWIP },
+    indent: { firstLine: typography.firstLineIndentTwip },
     keepNext: true,
     outlineLevel: level - 1,
   });
-  const headingRun = (font: FontSpec, bold: boolean): IRunStylePropertiesOptions => ({
+  const headingRun = (font: DocxFont, bold: boolean): IRunStylePropertiesOptions => ({
     font,
-    size: FONT_SIZE_HALF_PT.HEADING,
+    size: typography.fontSizeHalfPt.heading,
     color: COLOR_BLACK,
     ...(bold ? { bold: true } : {}),
   });
 
   // 文档默认（Normal 的实际格式）：仿宋三号、固定行距、首行缩进 2 字、两端对齐
   const documentDefaults = new DocumentDefaults({
-    run: { font: FangSong, size: FONT_SIZE_HALF_PT.BODY, color: COLOR_BLACK },
+    run: { font: typography.fonts.body, size: typography.fontSizeHalfPt.body, color: COLOR_BLACK },
     paragraph: {
       spacing: fixedLine,
       alignment: AlignmentType.JUSTIFIED,
-      indent: { firstLine: FIRST_LINE_INDENT_TWIP },
+      indent: { firstLine: typography.firstLineIndentTwip },
     },
   });
 
@@ -224,7 +237,7 @@ export function createDocumentStyles(): IStylesOptions {
     next: "Normal",
     uiPriority: UI_PRIORITY.TITLE,
     quickFormat: true,
-    run: { font: XiaoBiaoSong, size: FONT_SIZE_HALF_PT.TITLE, color: COLOR_BLACK },
+    run: { font: typography.fonts.title, size: typography.fontSizeHalfPt.title, color: COLOR_BLACK },
     paragraph: {
       spacing: fixedLine,
       alignment: AlignmentType.CENTER,
@@ -243,7 +256,7 @@ export function createDocumentStyles(): IStylesOptions {
       next: "Normal",
       uiPriority: UI_PRIORITY.HEADING,
       quickFormat: true,
-      run: headingRun(spec.font, spec.bold),
+      run: headingRun(fontForHeadingStyle(spec.styleId, typography), spec.bold),
       paragraph: headingParagraph(headingLevel(spec.styleId)),
     }));
 
@@ -256,7 +269,7 @@ export function createDocumentStyles(): IStylesOptions {
     next: "Normal",
     uiPriority: UI_PRIORITY.HEADING,
     quickFormat: true,
-    run: headingRun(deepestSpec.font, deepestSpec.bold),
+    run: headingRun(fontForHeadingStyle(deepestSpec.styleId, typography), deepestSpec.bold),
     paragraph: headingParagraph(level),
   }));
 
@@ -268,7 +281,7 @@ export function createDocumentStyles(): IStylesOptions {
     next: "Normal",
     uiPriority: UI_PRIORITY.TOC,
     quickFormat: true,
-    run: { font: HeiTi, size: FONT_SIZE_HALF_PT.HEADING, color: COLOR_BLACK },
+    run: { font: typography.fonts.heading1, size: typography.fontSizeHalfPt.heading, color: COLOR_BLACK },
     paragraph: {
       spacing: fixedLine,
       alignment: AlignmentType.CENTER,
@@ -289,7 +302,7 @@ export function createDocumentStyles(): IStylesOptions {
   });
 
   // 目录条目 toc 1-3
-  const tocEntryStyles = TOC_ENTRY_LEVELS.map(createTocEntryStyle);
+  const tocEntryStyles = TOC_ENTRY_LEVELS.map((level) => createTocEntryStyle(level, typography));
 
   // 超链接：公文全文纯黑，不用蓝色下划线
   const hyperlinkStyle = new StyleForCharacter({
@@ -301,8 +314,28 @@ export function createDocumentStyles(): IStylesOptions {
     run: { color: COLOR_BLACK, underline: { type: UnderlineType.NONE } },
   });
 
+  // 页码域不能直接设置 run 字体，段落样式确保 PAGE 域与两侧一字线一致。
+  const pageNumberStyle = new StyleForParagraph({
+    id: "PageNumber",
+    name: "Page Number",
+    basedOn: "Normal",
+    next: "Normal",
+    uiPriority: UI_PRIORITY.HIDDEN,
+    semiHidden: true,
+    unhideWhenUsed: true,
+    run: {
+      font: typography.fonts.pageNumber,
+      size: typography.fontSizeHalfPt.pageNumber,
+      color: COLOR_BLACK,
+    },
+  });
+
   // 脚注 / 尾注：仿宋小五、单倍行距、无首行缩进；引用编号上标
-  const noteRun: IRunStylePropertiesOptions = { font: FangSong, size: FONT_SIZE_HALF_PT.FOOTNOTE, color: COLOR_BLACK };
+  const noteRun: IRunStylePropertiesOptions = {
+    font: typography.fonts.body,
+    size: typography.fontSizeHalfPt.footnote,
+    color: COLOR_BLACK,
+  };
   const noteParagraph: IParagraphStylePropertiesOptions = {
     spacing: { line: SINGLE_LINE_SPACING_TWIP, lineRule: LineRuleType.AUTO, before: 0, after: 0 },
     indent: { firstLine: 0 },
@@ -337,6 +370,7 @@ export function createDocumentStyles(): IStylesOptions {
       wordTocHeadingStyle,
       ...tocEntryStyles,
       hyperlinkStyle,
+      pageNumberStyle,
       ...noteStyles,
     ],
   };
@@ -354,17 +388,21 @@ export function createDocumentStyles(): IStylesOptions {
 /** 题注段通用属性：居中、黑体小四、上下各约半行距，无首行缩进
  * （文档默认段落带 2 字首行缩进，居中段必须显式归零，否则整体右偏 1 字）。
  * keepNext 用于表题（与下方表格同页）。 */
-export function createCaptionParagraph(text: string, keepNext = false): Paragraph {
+export function createCaptionParagraph(
+  text: string,
+  keepNext = false,
+  typography: ResolvedDocxTypography = resolveDocxTypography(),
+): Paragraph {
   return new Paragraph({
     alignment: AlignmentType.CENTER,
     indent: { firstLine: 0 },
     keepNext: keepNext || undefined,
-    spacing: { before: CAPTION_SPACING_TWIP, after: CAPTION_SPACING_TWIP },
+    spacing: { before: typography.captionSpacingTwip, after: typography.captionSpacingTwip },
     children: [
       new TextRun({
         text,
-        font: CaptionFont,
-        size: FONT_SIZE_HALF_PT.CAPTION,
+        font: typography.fonts.caption,
+        size: typography.fontSizeHalfPt.caption,
         color: COLOR_BLACK,
       }),
     ],
@@ -375,10 +413,10 @@ export function createCaptionParagraph(text: string, keepNext = false): Paragrap
 
 /** 一字线距版心下边缘 7mm（GB/T 9704 第 7.5 条） */
 const PAGE_NUMBER_OFFSET_MM = 7;
-/** "空一字"≈ 一个三号汉字宽度（16pt ≈ 5.64mm），用于页码缩进 */
-const ONE_CHAR_TWIP = FONT_SIZE_HALF_PT.BODY * 10; // 半磅 × 10 = twip
 
-export function createSectionProperties(): ISectionPropertiesOptions {
+export function createSectionProperties(
+  typography: ResolvedDocxTypography = resolveDocxTypography(),
+): ISectionPropertiesOptions {
   return {
     page: {
       size: {
@@ -393,6 +431,11 @@ export function createSectionProperties(): ISectionPropertiesOptions {
         right: convertMillimetersToTwip(PAGE.MARGIN_RIGHT_MM),
         footer: convertMillimetersToTwip(PAGE.MARGIN_BOTTOM_MM - PAGE_NUMBER_OFFSET_MM),
       },
+    },
+    grid: {
+      type: DocumentGridType.SNAP_TO_CHARS,
+      linePitch: typography.lineSpacingTwip,
+      charSpace: typography.docGridCharSpace,
     },
   };
 }
@@ -409,37 +452,45 @@ export function createSectionProperties(): ISectionPropertiesOptions {
 function createPageNumberParagraph(
   alignment: (typeof AlignmentType)[keyof typeof AlignmentType],
   indent: { left?: number; right?: number },
+  typography: ResolvedDocxTypography,
 ): Paragraph {
   return new Paragraph({
+    style: "PageNumber",
     alignment,
     // firstLine 归零：文档默认的 2 字首行缩进会把偶数页页码推成"空三字"
     indent: { ...indent, firstLine: 0 },
     children: [
       new TextRun({
         text: "—",  // Em Dash 一字线
-        font: SongTi,
-        size: FONT_SIZE_HALF_PT.PAGE_NUMBER,
+        font: typography.fonts.pageNumber,
+        size: typography.fontSizeHalfPt.pageNumber,
       }),
       new SimpleField("PAGE"),
       new TextRun({
         text: "—",  // Em Dash 一字线
-        font: SongTi,
-        size: FONT_SIZE_HALF_PT.PAGE_NUMBER,
+        font: typography.fonts.pageNumber,
+        size: typography.fontSizeHalfPt.pageNumber,
       }),
     ],
   });
 }
 
 /** 奇数页页脚：页码居右空一字 */
-export function createDefaultFooter(): Footer {
+export function createDefaultFooter(
+  typography: ResolvedDocxTypography = resolveDocxTypography(),
+): Footer {
+  const oneCharTwip = typography.fontSizeHalfPt.body * 10;
   return new Footer({
-    children: [createPageNumberParagraph(AlignmentType.RIGHT, { right: ONE_CHAR_TWIP })],
+    children: [createPageNumberParagraph(AlignmentType.RIGHT, { right: oneCharTwip }, typography)],
   });
 }
 
 /** 偶数页页脚：页码居左空一字 */
-export function createEvenFooter(): Footer {
+export function createEvenFooter(
+  typography: ResolvedDocxTypography = resolveDocxTypography(),
+): Footer {
+  const oneCharTwip = typography.fontSizeHalfPt.body * 10;
   return new Footer({
-    children: [createPageNumberParagraph(AlignmentType.LEFT, { left: ONE_CHAR_TWIP })],
+    children: [createPageNumberParagraph(AlignmentType.LEFT, { left: oneCharTwip }, typography)],
   });
 }

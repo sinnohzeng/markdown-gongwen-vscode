@@ -1,8 +1,8 @@
 /**
  * mdast AST → docx Document 纯函数转换。
  *
- * 零 VS Code API 依赖，可直接用 Jest 单元测试。
- * 每个节点处理器独立 try/catch —— 单节点失败只插入诊断文字，不中断整体导出。
+ * 零 VS Code API 依赖，可直接用 Vitest 单元测试。
+ * 每个节点处理器独立 try/catch —— 单节点失败只插入诊断文字并记录保真问题，不中断整体导出。
  */
 import type { Root, Content, Heading, Paragraph as MdParagraph, Table as MdTable, List, ListItem, Blockquote, Code, Image, Link, Text, Strong, Emphasis, InlineCode, Delete, TableRow as MdTableRow, TableCell as MdTableCell, PhrasingContent } from "mdast";
 import {
@@ -24,21 +24,16 @@ import {
 } from "docx";
 import type { ResolvedImage } from "./image-dimensions";
 import {
-  FONT_SIZE_HALF_PT,
-  HeiTi, KaiTi, FangSong, CodeFont,
-  FIRST_LINE_INDENT_TWIP,
-  LINE_SPACING_TWIP,
   SINGLE_LINE_SPACING_TWIP,
-  CODE_LINE_SPACING_TWIP,
-  LIST_NEST_INDENT_TWIP,
   COLOR_BLACK,
   SHADING,
   TABLE as TABLE_CONST,
   TOC_HEADING_TEXT,
   TOC_HEADING_LEVELS,
   TOC_MARKER_PATTERN,
-  type FontSpec,
 } from "./constants";
+import type { DocxFont, DocxTypographyOverrides, ResolvedDocxTypography } from "./typography";
+import { resolveDocxTypography } from "./typography";
 import { createDocumentStyles, createSectionProperties, createDefaultFooter, createEvenFooter, createCaptionParagraph, HEADING_LEVEL_SPEC, TOC_HEADING_STYLE_ID } from "./gbt9704-styles";
 import { buildCaptionText } from "./caption";
 
@@ -59,8 +54,10 @@ export function convertToDocx(
   ast: Root,
   resolvedImages: Map<string, ResolvedImage>,
   fidelitySink?: string[],
+  typographyOverrides: DocxTypographyOverrides = {},
 ): Document {
-  const children = convertNodes(ast.children, resolvedImages, {}, fidelitySink);
+  const typography = resolveDocxTypography(typographyOverrides);
+  const children = convertNodes(ast.children, resolvedImages, { typography, fidelitySink });
 
   // 空文档保护：至少一个空段落
   if (children.length === 0) {
@@ -71,15 +68,15 @@ export function convertToDocx(
   const hasToc = children.some((child) => child instanceof TableOfContents);
 
   return new Document({
-    styles: createDocumentStyles(),
+    styles: createDocumentStyles(typography),
     features: hasToc ? { updateFields: true } : undefined,
     evenAndOddHeaderAndFooters: true, // 启用奇偶页不同页脚
     sections: [
       {
-        properties: createSectionProperties(),
+        properties: createSectionProperties(typography),
         footers: {
-          default: createDefaultFooter(),  // 奇数页：页码靠右
-          even: createEvenFooter(),         // 偶数页：页码靠左
+          default: createDefaultFooter(typography),  // 奇数页：页码靠右
+          even: createEvenFooter(typography),         // 偶数页：页码靠左
         },
         children,
       },
@@ -97,10 +94,13 @@ export async function packToBuffer(doc: Document): Promise<Buffer> {
 // ── 节点转换 ────────────────────────────────────
 
 interface RunContext {
+  typography: ResolvedDocxTypography;
+  /** 降级与节点转换异常的可选收集器，保持转换层独立于 VS Code 日志 API。 */
+  fidelitySink?: string[];
   bold?: boolean;
   italic?: boolean;
   strikethrough?: boolean;
-  font?: FontSpec;
+  font?: DocxFont;
   size?: number;
   /** 文字不打直接格式，字体字号由段落样式承担（标题用；否则目录域会把标题字体带进条目） */
   inheritStyle?: boolean;
@@ -110,7 +110,6 @@ function convertNodes(
   nodes: Content[],
   images: Map<string, ResolvedImage>,
   ctx: RunContext,
-  fidelitySink?: string[],
 ): DocxChild[] {
   const result: DocxChild[] = [];
 
@@ -122,22 +121,22 @@ function convertNodes(
 
       switch (node.type) {
         case "heading":
-          result.push(convertHeading(node as Heading, images));
+          result.push(convertHeading(node as Heading, images, ctx));
           break;
         case "paragraph":
           result.push(...convertParagraph(node as MdParagraph, images, ctx, nodes[i + 1]));
           break;
         case "table":
-          result.push(convertTable(node as MdTable, images));
+          result.push(convertTable(node as MdTable, images, ctx));
           break;
         case "list":
           result.push(...convertList(node as List, images, 0, ctx));
           break;
         case "blockquote":
-          result.push(...convertBlockquote(node as Blockquote, images));
+          result.push(...convertBlockquote(node as Blockquote, images, ctx));
           break;
         case "code":
-          result.push(...convertCodeBlock(node as Code, fidelitySink));
+          result.push(...convertCodeBlock(node as Code, ctx.typography, ctx.fidelitySink));
           break;
         case "thematicBreak":
           result.push(convertThematicBreak());
@@ -145,7 +144,11 @@ function convertNodes(
         case "html":
           // HTML 块：作为普通文本输出
           result.push(new Paragraph({
-            children: [new TextRun({ text: (node as { value: string }).value, font: CodeFont, size: FONT_SIZE_HALF_PT.BODY })],
+            children: [new TextRun({
+              text: (node as { value: string }).value,
+              font: ctx.typography.fonts.code,
+              size: ctx.typography.fontSizeHalfPt.body,
+            })],
           }));
           break;
         default:
@@ -156,16 +159,17 @@ function convertNodes(
           break;
       }
     } catch (err) {
-      // 错误边界：单节点失败不中断整体导出；错误如实记录到控制台，不静默吞掉
-      console.error(`[ast-to-docx] 无法转换 ${node.type} 节点:`, err);
+      // 错误边界：单节点失败不中断整体导出；诊断同时进入文档和保真收集器。
+      const detail = err instanceof Error ? err.message : String(err);
+      ctx.fidelitySink?.push(`无法转换 ${node.type} 节点：${detail}`);
       result.push(
         new Paragraph({
           children: [
             new TextRun({
               text: `[导出错误: 无法转换 ${node.type}]`,
               color: COLOR_BLACK,
-              font: FangSong,
-              size: FONT_SIZE_HALF_PT.BODY,
+              font: ctx.typography.fonts.body,
+              size: ctx.typography.fontSizeHalfPt.body,
             }),
           ],
         }),
@@ -188,10 +192,17 @@ function convertNodes(
 // "标题 1"样式即可全局生效，目录域（\h \u）也不会把黑体 / 楷体带进条目。
 // 标题编号（一、/（一）/1.）是文字内容的一部分，由 Markdown 文本控制。
 
-function convertHeading(node: Heading, images: Map<string, ResolvedImage>): Paragraph {
+function convertHeading(
+  node: Heading,
+  images: Map<string, ResolvedImage>,
+  ctx: RunContext,
+): Paragraph {
   // 公文标题层级到 H5（四级标题）为止；更深的 H6 回退到四级标题样式。
   const spec = HEADING_LEVEL_SPEC[node.depth] ?? HEADING_LEVEL_SPEC[5];
-  const runs = convertInlineNodes(node.children as PhrasingContent[], images, { inheritStyle: true });
+  const runs = convertInlineNodes(node.children as PhrasingContent[], images, {
+    ...ctx,
+    inheritStyle: true,
+  });
 
   return new Paragraph({
     style: spec.styleId,
@@ -243,7 +254,7 @@ function convertParagraph(
   if (nextNode?.type === "table") {
     const caption = buildCaptionText(plainTextOf(node.children as PhrasingContent[]), "表");
     if (caption) {
-      return [createCaptionParagraph(caption, true)];
+      return [createCaptionParagraph(caption, true, ctx.typography)];
     }
   }
 
@@ -254,9 +265,12 @@ function convertParagraph(
     if (caption) {
       // 图题在图下方（GB/T 7713.2-2022 5.4.3）。docx 库不暴露
       // keepWithPrevious，等价地在图片段上设 keepNext，保证图题与图同页
-      return [convertImageParagraph(image, images, true), createCaptionParagraph(caption)];
+      return [
+        convertImageParagraph(image, images, ctx.typography, true),
+        createCaptionParagraph(caption, false, ctx.typography),
+      ];
     }
-    return [convertImageParagraph(image, images)];
+    return [convertImageParagraph(image, images, ctx.typography)];
   }
 
   const runs = convertInlineNodes(node.children as PhrasingContent[], images, ctx);
@@ -264,9 +278,9 @@ function convertParagraph(
   return [
     new Paragraph({
       alignment: AlignmentType.JUSTIFIED,
-      indent: { firstLine: FIRST_LINE_INDENT_TWIP },
+      indent: { firstLine: ctx.typography.firstLineIndentTwip },
       spacing: {
-        line: LINE_SPACING_TWIP,
+        line: ctx.typography.lineSpacingTwip,
         lineRule: lineRuleFor(runs),
         before: 0,
         after: 0,
@@ -319,21 +333,22 @@ function plainTextOf(nodes: PhrasingContent[]): string {
 // ── 图片 ────────────────────────────────────────
 
 /** 未嵌入图片引用的公共占位文案与样式（块级与内联共用，防文案漂移） */
-function imagePlaceholderRun(url: string, ctx: RunContext = {}): TextRun {
+function imagePlaceholderRun(url: string, ctx: RunContext): TextRun {
   const isRemote = url.startsWith("http://") || url.startsWith("https://");
   const text = isRemote ? `[远程图片: ${url}]` : `[图片未找到: ${url}]`;
   return new TextRun({
     text,
     color: COLOR_BLACK,
     italics: true,
-    font: ctx.inheritStyle ? undefined : FangSong,
-    size: ctx.inheritStyle ? undefined : FONT_SIZE_HALF_PT.BODY,
+    font: ctx.inheritStyle ? undefined : ctx.typography.fonts.body,
+    size: ctx.inheritStyle ? undefined : ctx.typography.fontSizeHalfPt.body,
   });
 }
 
 function convertImageParagraph(
   node: Image,
   images: Map<string, ResolvedImage>,
+  typography: ResolvedDocxTypography,
   keepNext = false,
 ): Paragraph {
   const resolved = images.get(node.url);
@@ -343,7 +358,7 @@ function convertImageParagraph(
       alignment: AlignmentType.CENTER,
       indent: { firstLine: 0 },
       keepNext: keepNext || undefined,
-      children: [imagePlaceholderRun(node.url)],
+      children: [imagePlaceholderRun(node.url, { typography })],
     });
   }
 
@@ -367,7 +382,12 @@ function convertImageParagraph(
 // 表头黑体四号不加粗、水平居中（黑体本身够重，再加粗反而难看）；
 // 表体仿宋四号，按 GFM 列对齐；所有单元格垂直居中。
 
-function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table {
+function convertTable(
+  node: MdTable,
+  images: Map<string, ResolvedImage>,
+  ctx: RunContext,
+): Table {
+  const { typography } = ctx;
   const rows = node.children as MdTableRow[];
   const alignments = node.align ?? [];
 
@@ -387,8 +407,9 @@ function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table 
             cell.children as PhrasingContent[],
             images,
             {
-              font: isHeader ? HeiTi : FangSong,
-              size: FONT_SIZE_HALF_PT.TABLE_CELL,
+              ...ctx,
+              font: isHeader ? typography.fonts.tableHeader : typography.fonts.body,
+              size: typography.fontSizeHalfPt.table,
             },
           );
 
@@ -402,7 +423,7 @@ function convertTable(node: MdTable, images: Map<string, ResolvedImage>): Table 
                   before: 40,
                   after: 40,
                   // 单元格默认继承文档的固定 28 磅；有图片时改最小值，图片才不被裁
-                  ...(hasImageRun(runs) ? { line: LINE_SPACING_TWIP, lineRule: LineRuleType.AT_LEAST } : {}),
+                  ...(hasImageRun(runs) ? { line: typography.lineSpacingTwip, lineRule: LineRuleType.AT_LEAST } : {}),
                 },
                 children: runs,
               }),
@@ -428,7 +449,7 @@ function convertList(
   node: List,
   images: Map<string, ResolvedImage>,
   depth: number,
-  ctx: RunContext = {},
+  ctx: RunContext,
 ): Paragraph[] {
   const result: Paragraph[] = [];
   const ordered = node.ordered ?? false;
@@ -437,7 +458,7 @@ function convertList(
     for (const child of item.children as Content[]) {
       if (child.type === "paragraph") {
         const prefix = ordered ? `${(node.start ?? 1) + index}. ` : "• ";
-        const firstLine = FIRST_LINE_INDENT_TWIP + depth * LIST_NEST_INDENT_TWIP;
+        const firstLine = ctx.typography.firstLineIndentTwip + depth * ctx.typography.listNestIndentTwip;
 
         const runs = convertInlineNodes(
           (child as MdParagraph).children as PhrasingContent[],
@@ -450,7 +471,7 @@ function convertList(
             alignment: AlignmentType.JUSTIFIED,
             indent: { firstLine },
             spacing: {
-              line: LINE_SPACING_TWIP,
+              line: ctx.typography.lineSpacingTwip,
               lineRule: LineRuleType.EXACT,
               before: 0,
               after: 0,
@@ -458,8 +479,8 @@ function convertList(
             children: [
               new TextRun({
                 text: prefix,
-                font: ctx.font ?? FangSong,
-                size: ctx.size ?? FONT_SIZE_HALF_PT.BODY,
+                font: ctx.font ?? ctx.typography.fonts.body,
+                size: ctx.size ?? ctx.typography.fontSizeHalfPt.body,
               }),
               ...runs,
             ],
@@ -478,7 +499,12 @@ function convertList(
 
 // 引用块按正文版式排版（首行缩进、两端对齐、无底纹），文字改用楷体与正文
 // 区分——中文公文排版不使用斜体。
-function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>): DocxChild[] {
+function convertBlockquote(
+  node: Blockquote,
+  images: Map<string, ResolvedImage>,
+  ctx: RunContext,
+): DocxChild[] {
+  const { typography } = ctx;
   const result: DocxChild[] = [];
 
   for (const child of node.children as Content[]) {
@@ -486,15 +512,15 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
       const runs = convertInlineNodes(
         (child as MdParagraph).children as PhrasingContent[],
         images,
-        { font: KaiTi },
+        { ...ctx, font: typography.fonts.emphasis },
       );
 
       result.push(
         new Paragraph({
           alignment: AlignmentType.JUSTIFIED,
-          indent: { firstLine: FIRST_LINE_INDENT_TWIP },
+          indent: { firstLine: typography.firstLineIndentTwip },
           spacing: {
-            line: LINE_SPACING_TWIP,
+            line: typography.lineSpacingTwip,
             lineRule: LineRuleType.EXACT,
             before: 0,
             after: 0,
@@ -503,7 +529,7 @@ function convertBlockquote(node: Blockquote, images: Map<string, ResolvedImage>)
         }),
       );
     } else {
-      result.push(...convertNodes([child], images, { font: KaiTi }));
+      result.push(...convertNodes([child], images, { ...ctx, font: typography.fonts.emphasis }));
     }
   }
 
@@ -518,7 +544,11 @@ const CODE_PARAGRAPH = {
   indent: { firstLine: 0 },
 } as const;
 
-function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
+function convertCodeBlock(
+  node: Code,
+  typography: ResolvedDocxTypography,
+  fidelitySink?: string[],
+): Paragraph[] {
   const lang = node.lang ?? "";
   const line = node.position?.start.line;
   const where = line ? `（第 ${line} 行）` : "";
@@ -535,8 +565,8 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
             text: "[图表：Mermaid 图表未随文档导出，请见源 Markdown]",
             color: COLOR_BLACK,
             italics: true,
-            font: FangSong,
-            size: FONT_SIZE_HALF_PT.BODY,
+            font: typography.fonts.body,
+            size: typography.fontSizeHalfPt.body,
           }),
         ],
       }),
@@ -546,12 +576,12 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
           new Paragraph({
             ...CODE_PARAGRAPH,
             shading: { type: ShadingType.CLEAR, fill: SHADING.CODE },
-            spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
+            spacing: { line: typography.codeLineSpacingTwip, lineRule: LineRuleType.EXACT },
             children: [
               new TextRun({
                 text: line || " ",
-                font: CodeFont,
-                size: FONT_SIZE_HALF_PT.CODE,
+                font: typography.fonts.code,
+                size: typography.fontSizeHalfPt.code,
               }),
             ],
           }),
@@ -570,8 +600,8 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
           children: [
             new TextRun({
               text: line || " ",
-              font: CodeFont,
-              size: FONT_SIZE_HALF_PT.BODY,
+              font: typography.fonts.code,
+              size: typography.fontSizeHalfPt.body,
             }),
           ],
         }),
@@ -584,12 +614,12 @@ function convertCodeBlock(node: Code, fidelitySink?: string[]): Paragraph[] {
       new Paragraph({
         ...CODE_PARAGRAPH,
         shading: { type: ShadingType.CLEAR, fill: SHADING.CODE },
-        spacing: { line: CODE_LINE_SPACING_TWIP, lineRule: LineRuleType.EXACT },
+        spacing: { line: typography.codeLineSpacingTwip, lineRule: LineRuleType.EXACT },
         children: [
           new TextRun({
             text: line || " ",
-            font: CodeFont,
-            size: FONT_SIZE_HALF_PT.CODE,
+            font: typography.fonts.code,
+            size: typography.fontSizeHalfPt.code,
           }),
         ],
       }),
@@ -638,7 +668,12 @@ function convertInlineNodes(
             ...convertInlineNodes(
               (node as Strong).children as PhrasingContent[],
               images,
-              ctx.inheritStyle ? ctx : { ...ctx, bold: false, font: KaiTi, size: ctx.size ?? FONT_SIZE_HALF_PT.HEADING },
+              ctx.inheritStyle ? ctx : {
+                ...ctx,
+                bold: false,
+                font: ctx.typography.fonts.emphasis,
+                size: ctx.size ?? ctx.typography.fontSizeHalfPt.body,
+              },
             ),
           );
           break;
@@ -667,8 +702,8 @@ function convertInlineNodes(
           result.push(
             new TextRun({
               text: (node as InlineCode).value,
-              font: ctx.inheritStyle ? undefined : CodeFont,
-              size: ctx.size ?? (ctx.inheritStyle ? undefined : FONT_SIZE_HALF_PT.BODY),
+              font: ctx.inheritStyle ? undefined : ctx.typography.fonts.code,
+              size: ctx.size ?? (ctx.inheritStyle ? undefined : ctx.typography.fontSizeHalfPt.body),
               bold: ctx.bold,
               italics: ctx.italic,
             }),
@@ -719,13 +754,15 @@ function convertInlineNodes(
           break;
       }
     } catch (err) {
-      console.error(`[ast-to-docx] 无法转换内联 ${node.type} 节点:`, err);
+      // 保留文档内诊断，同时通过显式收集器上报；纯转换层不依赖 VS Code。
+      const detail = err instanceof Error ? err.message : String(err);
+      ctx.fidelitySink?.push(`无法转换内联 ${node.type} 节点：${detail}`);
       result.push(
         new TextRun({
           text: `[转换错误: ${node.type}]`,
           color: COLOR_BLACK,
-          font: FangSong,
-          size: FONT_SIZE_HALF_PT.BODY,
+          font: ctx.typography.fonts.body,
+          size: ctx.typography.fontSizeHalfPt.body,
         }),
       );
     }
@@ -737,8 +774,8 @@ function convertInlineNodes(
 function createTextRun(text: string, ctx: RunContext): TextRun {
   return new TextRun({
     text,
-    font: ctx.font ?? (ctx.inheritStyle ? undefined : FangSong),
-    size: ctx.size ?? (ctx.inheritStyle ? undefined : FONT_SIZE_HALF_PT.BODY),
+    font: ctx.font ?? (ctx.inheritStyle ? undefined : ctx.typography.fonts.body),
+    size: ctx.size ?? (ctx.inheritStyle ? undefined : ctx.typography.fontSizeHalfPt.body),
     bold: ctx.bold,
     italics: ctx.italic,
     strike: ctx.strikethrough,

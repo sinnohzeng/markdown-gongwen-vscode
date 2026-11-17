@@ -8,6 +8,8 @@ import * as vscode from "vscode";
 import * as path from "path";
 import type { Root, Image, Content } from "mdast";
 import type { ImageWarning } from "./image-resolver";
+import { config } from "../config";
+import { uriFromDocumentPath } from "../link-targets/resource-schemes";
 
 // ── Output Channel（懒初始化）───────────────────
 //
@@ -131,7 +133,7 @@ export function createExportDocxCommand(context: vscode.ExtensionContext) {
     const defaultName = path.basename(editor.document.fileName).replace(/\.(md|markdown|mdx|mdc|markdoc)$/i, "") + ".docx";
 
     const uri = await vscode.window.showSaveDialog({
-      defaultUri: vscode.Uri.file(path.join(defaultDir, defaultName)),
+      defaultUri: uriFromDocumentPath(editor.document.uri, path.join(defaultDir, defaultName)),
       filters: { "Word Document": ["docx"] },
     });
     if (!uri) return;
@@ -165,7 +167,7 @@ export function createExportDocxQuickCommand(context: vscode.ExtensionContext) {
 
     const docPath = editor.document.fileName;
     const outputPath = docPath.replace(/\.(md|markdown|mdx|mdc|markdoc)$/i, "") + ".docx";
-    const outputUri = vscode.Uri.file(outputPath);
+    const outputUri = uriFromDocumentPath(editor.document.uri, outputPath);
 
     // 文件已存在：确认覆盖。用 workspace.fs 而非 Node fs，
     // 远程/虚拟工作区（Remote-SSH、WSL）下 Node fs 探测的是本地磁盘。
@@ -273,7 +275,7 @@ async function runExport(
         progress.report({ message: "正在生成 DOCX...", increment: 30 });
         const exporter = (await getExporter())!;
         const fidelity: string[] = [];
-        const doc = exporter.convertToDocx(ast, images, fidelity);
+        const doc = exporter.convertToDocx(ast, images, fidelity, config.docx.typography());
         log("DOCX Document 对象生成完成");
         for (const f of fidelity) {
           log(`  保真降级: ${f}`);

@@ -4,6 +4,7 @@ const markerDecorationTypes: ReadonlySet<DecorationType> = new Set<DecorationTyp
   'hide',
   'transparent',
   'blockquote',
+  'body',
   'heading',
   'heading1',
   'heading2',

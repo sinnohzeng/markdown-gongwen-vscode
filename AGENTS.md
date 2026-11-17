@@ -26,8 +26,8 @@ Before making changes:
 - TypeScript (strict mode)
 - VS Code Extension API
 - [remark](https://github.com/remarkjs/remark) for markdown parsing
-- Jest for testing
-- esbuild for bundling
+- Vitest 5 for unit testing (Node.js >=22.12.0 for development)
+- esbuild for bundling (Node 22 target; VS Code API baseline 1.100)
 
 ## Project Structure
 
@@ -36,7 +36,8 @@ Before making changes:
 **Core Files:**
 - `extension.ts` - Extension entry point, activation, command registration
 - `config.ts` - Centralized configuration access (VS Code settings)
-- `parser.ts` - Main markdown parser, converts AST to decoration ranges
+- `parser.ts` - Compatibility facade; `parser/core.ts` orchestrates AST-to-decoration conversion
+- `parser/*.ts` - Focused modules for tables, frontmatter, highlight, body typography, links and other syntax
 - `parser-remark.ts` - Remark parser setup and utilities
 - `decorations.ts` - Decoration type factories (transparent, faint, etc.)
 - `decorator.ts` - Decoration orchestration, applies decorations to editors
@@ -44,6 +45,7 @@ Before making changes:
 **Specialized Modules:**
 - `diff-context.ts` - Detects diff views and applies policies
 - `link-targets.ts` - Resolves link/image URLs (relative, absolute, workspace)
+- `link-targets/resource-schemes.ts` - Preserves `file` / `vscode-remote` resource identity and authority
 - `markdown-parse-cache.ts` - Caching layer for parsed markdown (performance critical)
 - `position-mapping.ts` - Handles CRLF/LF normalization for position calculations
 
@@ -64,7 +66,8 @@ Before making changes:
 - `export/ast-to-docx.ts` - Pure mdast → docx Document conversion (fully unit-tested)
 - `export/gbt9704-styles.ts` - GB/T 9704 OOXML styles (fonts, page, footer)
 - `export/constants.ts` - GB/T 9704 typography constants (traced to docs/reference/gbt9704-typography.md)
-- `export/image-resolver.ts` - Local image loading, dimension parsing, print-area scaling
+- `export/typography.ts` - Pure configuration merging, validation, unit conversion and document-grid derivation
+- `export/image-resolver.ts` - Local/Remote-SSH image loading through `workspace.fs`, dimension parsing, print-area scaling
 
 **Math & Mermaid:**
 - `math/` - LaTeX math inline rendering (MathJax)
@@ -105,7 +108,7 @@ npm run test:crlf     # Run CRLF-specific tests
 ```bash
 npm run lint          # Run ESLint
 npm run lint:docs     # Validate feature file structure
-npm run validate      # Run ALL checks (lint:docs + test + build)
+npm run validate      # Run ALL checks (lint:docs + ESLint + Vitest + build)
 ```
 
 **Release:**
@@ -156,8 +159,8 @@ npm run release       # Automated release (see Release section)
 - Mock VS Code API when needed (see existing tests for patterns)
 
 **Current Test Coverage:**
-- 870+ passing tests across 60 test suites (run `npm test` for the authoritative count)
-- Maintain or improve this coverage
+- Vitest is the only unit-test runner; Jest configuration and APIs must not be reintroduced
+- Run `npm test` for the authoritative test count and maintain or improve coverage
 
 ### 4. Code Style
 
@@ -228,6 +231,13 @@ This runs:
 - Ensure code compiles
 - DO NOT commit until all checks pass
 
+## Upstream Synchronization
+
+- Keep upstream ancestry through ordinary merge commits on a feature branch; do not replace merges with whole-file copies.
+- Fetch with `git fetch upstream --no-tags --prune` and preserve this fork's `markdownGongwen.*`, `gongwen.*`, Chinese UX, DOCX, Mermaid security and publishing identity.
+- Regenerate Mermaid assets through `npm run copy:mermaid`; never hand-edit vendor chunks.
+- Follow `docs/architecture/ADR/upstream-sync.md` and `docs/experience/upstream-realignment-lessons.md`; record the sync point and unresolved validation separately.
+
 ## Common Tasks & Patterns
 
 ### Adding a New Markdown Feature
@@ -237,7 +247,7 @@ This runs:
    - Review similar features in the codebase
 
 2. **Modify parser:**
-   - Update `parser.ts` to detect the new markdown syntax
+   - Update `parser/core.ts` only for orchestration; put syntax-specific logic in the matching `parser/*.ts` module
    - Add decoration ranges for the new feature
    - Follow existing patterns (see headings, links, etc.)
 
@@ -434,7 +444,7 @@ Before considering a task complete:
 4. Review feature specifications in `/docs/features/`
 
 **Key Files to Read:**
-- `src/parser.ts` - Understand how markdown is parsed
+- `src/parser/core.ts` and focused `src/parser/*.ts` modules - Understand parsing and where new syntax belongs
 - `src/decorator.ts` - Understand how decorations are applied
 - `src/markdown-parse-cache.ts` - Understand caching strategy
 - Test files - See examples of how modules are used

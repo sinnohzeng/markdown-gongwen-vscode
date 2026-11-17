@@ -1,4 +1,6 @@
-jest.mock('../../parser', () => ({
+import { vi } from 'vitest';
+
+vi.mock('../../parser', () => ({
   MarkdownParser: class {
     extractDecorations() {
       return [];
@@ -12,10 +14,10 @@ import { TextDocument, TextEditor, Selection, Position, Uri } from '../../test/_
 function makeMockWorkspaceState() {
   const stateMap = new Map<string, unknown>();
   return {
-    get: jest.fn(<T>(key: string, defaultValue: T): T =>
+    get: vi.fn(<T>(key: string, defaultValue: T): T =>
       stateMap.has(key) ? (stateMap.get(key) as T) : defaultValue
     ),
-    update: jest.fn((key: string, value: unknown) => {
+    update: vi.fn((key: string, value: unknown) => {
       if (value === undefined) {
         stateMap.delete(key);
       } else {
@@ -99,7 +101,7 @@ describe('Per-file toggle state', () => {
       const ws = makeMockWorkspaceState();
       const uri = 'file:///test/file-a.md';
       // Pre-populate persisted state: decorations disabled
-      ws.update(`gongwen.decorationsEnabled.${uri}`, false);
+      ws.update(`mdInline.decorationsEnabled.${uri}`, false);
       ws.update.mockClear();
 
       const decorator = makeDecorator(ws);
@@ -107,7 +109,7 @@ describe('Per-file toggle state', () => {
       (decorator as any).activeEditor = editor;
 
       expect(decorator.isEnabled()).toBe(false);
-      expect(ws.get).toHaveBeenCalledWith(`gongwen.decorationsEnabled.${uri}`, true);
+      expect(ws.get).toHaveBeenCalledWith(`mdInline.decorationsEnabled.${uri}`, true);
     });
 
     it('writes to workspaceState on toggle', () => {
@@ -119,7 +121,7 @@ describe('Per-file toggle state', () => {
 
       decorator.toggleDecorations(); // disable
 
-      expect(ws.update).toHaveBeenCalledWith(`gongwen.decorationsEnabled.${uri}`, false);
+      expect(ws.update).toHaveBeenCalledWith(`mdInline.decorationsEnabled.${uri}`, false);
     });
 
     it('new files default to enabled even with workspaceState provided', () => {
@@ -179,8 +181,8 @@ describe('Per-file toggle state', () => {
       // Rename
       decorator.renameFile(oldUri, newUri);
 
-      expect(ws.update).toHaveBeenCalledWith(`gongwen.decorationsEnabled.${newUri}`, false);
-      expect(ws.update).toHaveBeenCalledWith(`gongwen.decorationsEnabled.${oldUri}`, undefined);
+      expect(ws.update).toHaveBeenCalledWith(`mdInline.decorationsEnabled.${newUri}`, false);
+      expect(ws.update).toHaveBeenCalledWith(`mdInline.decorationsEnabled.${oldUri}`, undefined);
     });
 
     it('is a no-op for URIs with no toggle state', () => {

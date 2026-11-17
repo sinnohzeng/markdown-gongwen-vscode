@@ -1,8 +1,8 @@
 import { workspace } from '../../test/__mocks__/vscode';
 import { config } from '../../config';
 
-const mockGet = jest.fn();
-const mockGetConfiguration = jest.fn().mockReturnValue({ get: mockGet });
+const mockGet = vi.fn();
+const mockGetConfiguration = vi.fn().mockReturnValue({ get: mockGet });
 
 (workspace as any).getConfiguration = mockGetConfiguration;
 
@@ -178,7 +178,7 @@ describe('config.colors', () => {
     const keys = [
       'heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6',
       'link', 'listMarker', 'inlineCode', 'inlineCodeBackground', 'emphasis', 'blockquote',
-      'image', 'horizontalRule', 'checkbox',
+      'image', 'horizontalRule', 'checkbox', 'highlight', 'highlightBackground',
     ] as const;
 
     it('each getter reads correct config key', () => {

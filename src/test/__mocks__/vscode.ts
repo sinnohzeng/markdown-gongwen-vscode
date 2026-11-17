@@ -1,6 +1,8 @@
-import * as nodeFs from "fs";
-
 // Mock VS Code API for testing
+import { promises as fs } from 'node:fs';
+import { posix as posixPath } from 'node:path';
+import { vi } from 'vitest';
+
 class MockRange {
   constructor(
     public start: { line: number; character: number },
@@ -68,27 +70,57 @@ export const Position = class {
 
 export const Uri = {
   parse: (value: string) => {
-    const schemeMatch = value.match(/^([^:]+):/);
+    const hashIndex = value.indexOf("#");
+    const baseValue = hashIndex !== -1 ? value.substring(0, hashIndex) : value;
+    const fragment = hashIndex !== -1 ? value.substring(hashIndex + 1) : "";
+    const schemeMatch = baseValue.match(/^([^:]+):/);
     const scheme = schemeMatch ? schemeMatch[1] : "file";
+    const authorityMatch = baseValue.match(/^[a-z][a-z0-9+.-]*:\/\/([^/]*)/i);
+    const authority = authorityMatch?.[1] ?? "";
+    const path = scheme === "file" && !authorityMatch
+      ? baseValue.replace(/^file:\/\//, "")
+      : baseValue.slice((authorityMatch?.[0].length ?? 0));
     return {
+      path,
+      fsPath: path,
+      scheme,
+      authority,
+      fragment,
       toString: () => value,
-      scheme: scheme,
-      fsPath: value.replace(/^file:\/\//, ""),
+      with: function (change: { fragment?: string; path?: string; query?: string }) {
+        const newFrag = change.fragment !== undefined ? change.fragment : fragment;
+        const newPath = change.path ?? path;
+        const base = change.path !== undefined
+          ? `${scheme}://${authority}${newPath}`
+          : baseValue;
+        const fullStr = newFrag ? `${base}#${newFrag}` : base;
+        return Uri.parse(fullStr);
+      },
     };
   },
-  file: (path: string) => ({
-    toString: () => `file://${path}`,
-    scheme: "file",
-    fsPath: path,
-  }),
-  joinPath: (base: any, ...segments: string[]) => {
-    const basePath = base.toString().replace("file://", "");
-    const joined = [basePath, ...segments].join("/");
-    return {
-      toString: () => `file://${joined}`,
+  file: (path: string) => {
+    const uri = {
+      path,
+      fsPath: path,
       scheme: "file",
-      fsPath: joined,
+      authority: "",
+      fragment: "",
+      toString: () => `file://${path}${uri.fragment ? "#" + uri.fragment : ""}`,
+      with: function (change: { fragment?: string; path?: string; query?: string }) {
+        const newPath = change.path ?? uri.path;
+        const newFrag = change.fragment !== undefined ? change.fragment : uri.fragment;
+        const updated = Uri.file(newPath);
+        (updated as any).fragment = newFrag;
+        return updated;
+      },
     };
+    return uri;
+  },
+  joinPath: (base: any, ...segments: string[]) => {
+    const basePath = (base.path ?? base.toString().replace("file://", "")).split("#")[0];
+    const joined = posixPath.normalize([basePath, ...segments].join("/"));
+    if ((base.scheme ?? "file") === "file") return Uri.file(joined);
+    return Uri.parse(`${base.scheme}://${base.authority ?? ""}${joined}`);
   },
 };
 
@@ -178,12 +210,20 @@ class MockTextDocument {
 export const TextDocument = MockTextDocument as any;
 
 class MockTextEditor {
+  public selection: MockSelection;
+
   constructor(
     public document: MockTextDocument,
     public selections: MockSelection[],
-  ) {}
+  ) {
+    this.selection = selections[0] ?? new MockSelection({ line: 0, character: 0 }, { line: 0, character: 0 });
+  }
 
   setDecorations(_decorationType: any, _ranges: MockRange[]): void {
+    // Mock implementation
+  }
+
+  revealRange(_range: MockRange, _revealType?: unknown): void {
     // Mock implementation
   }
 }
@@ -211,22 +251,33 @@ export function resetTextEditorDecorationTypeOptionsCapture(): void {
 }
 
 export const window = {
-  createTextEditorDecorationType: jest.fn((options: unknown) => {
+  createTextEditorDecorationType: vi.fn((options: unknown) => {
     lastTextEditorDecorationTypeOptions = options;
-    return { dispose: jest.fn() };
+    return { dispose: vi.fn() };
   }),
+  createOutputChannel: vi.fn(() => ({
+    appendLine: vi.fn(),
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    show: vi.fn(),
+    dispose: vi.fn(),
+  })),
   activeTextEditor: undefined as any,
   visibleTextEditors: [] as any[],
   activeColorTheme: {
     kind: ColorThemeKind.Dark,
   },
+  showInformationMessage: vi.fn(),
+  showWarningMessage: vi.fn(),
+  showErrorMessage: vi.fn(),
+  showSaveDialog: vi.fn(),
+  showTextDocument: vi.fn(async (document: MockTextDocument) => new MockTextEditor(document, [])),
   onDidChangeActiveTextEditor: () => ({ dispose: () => {} }),
   onDidChangeTextEditorSelection: () => ({ dispose: () => {} }),
   onDidChangeActiveColorTheme: () => ({ dispose: () => {} }),
-  showInformationMessage: jest.fn().mockResolvedValue(undefined),
-  showWarningMessage: jest.fn().mockResolvedValue(undefined),
-  showErrorMessage: jest.fn().mockResolvedValue(undefined),
-  createOutputChannel: jest.fn(() => ({ appendLine: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn(), show: jest.fn(), dispose: jest.fn() })),
 };
 
 export class WorkspaceEdit {
@@ -243,21 +294,22 @@ export class WorkspaceEdit {
 }
 
 export const workspace = {
-  /** 最小 FileSystem 实现：委托 Node fs，覆盖单测中的本地读写场景 */
-  fs: {
-    stat: async (uri: { fsPath: string }) => {
-      const st = await nodeFs.promises.stat(uri.fsPath);
-      return { type: st.isFile() ? 1 : 2, size: st.size };
-    },
-    readFile: async (uri: { fsPath: string }) => nodeFs.promises.readFile(uri.fsPath),
-    writeFile: async (uri: { fsPath: string }, content: Uint8Array) => {
-      await nodeFs.promises.writeFile(uri.fsPath, content);
-    },
-  },
   onDidChangeTextDocument: () => ({ dispose: () => {} }),
   onDidChangeConfiguration: () => ({ dispose: () => {} }),
   onDidRenameFiles: () => ({ dispose: () => {} }),
-  applyEdit: jest.fn().mockResolvedValue(true),
+  applyEdit: vi.fn().mockResolvedValue(true),
+  fs: {
+    stat: vi.fn(async (uri: { fsPath?: string; path?: string }) => fs.stat(uri.fsPath ?? uri.path ?? '')),
+    readFile: vi.fn(async (uri: { fsPath?: string; path?: string }) => fs.readFile(uri.fsPath ?? uri.path ?? '')),
+    writeFile: vi.fn(async (uri: { fsPath?: string; path?: string }, content: Uint8Array) =>
+      fs.writeFile(uri.fsPath ?? uri.path ?? '', content)
+    ),
+  },
+  openTextDocument: vi.fn(async (uri: ReturnType<typeof Uri.file>) => new MockTextDocument(uri, "markdown", 1, "")),
+  asRelativePath: vi.fn((uri: { toString?: () => string } | string) => {
+    const value = typeof uri === "string" ? uri : uri.toString?.() ?? "";
+    return value.replace(/^file:\/\/\/?/, "");
+  }),
   getConfiguration: (section?: string) => ({
     get: <T>(key: string, defaultValue: T): T => {
       // Return default value for all configuration keys in tests
@@ -319,8 +371,23 @@ export const CancellationToken = class {
 };
 
 export const commands = {
-  executeCommand: jest.fn(),
+  executeCommand: vi.fn(),
+  registerCommand: vi.fn((_command: string, _handler: (...args: any[]) => any) => ({ dispose: vi.fn() })),
 };
+
+export const extensions = {
+  getExtension: vi.fn(),
+};
+
+export const languages = {
+  registerDocumentLinkProvider: vi.fn((_selector: unknown, _provider: unknown) => ({ dispose: vi.fn() })),
+  registerHoverProvider: vi.fn((_selector: unknown, _provider: unknown) => ({ dispose: vi.fn() })),
+};
+
+export enum TextEditorRevealType {
+  Default = 0,
+  InCenter = 1,
+}
 
 export enum TextEditorSelectionChangeKind {
   Mouse = 1,

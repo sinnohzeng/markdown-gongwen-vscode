@@ -1,8 +1,59 @@
 import * as vscode from "vscode";
+import { isDocumentResourceUri, uriFromDocumentPath } from "./link-targets/resource-schemes";
 
 export type LinkTarget =
   | { kind: "command"; command: string; args: unknown[] }
   | { kind: "uri"; uri: vscode.Uri };
+
+/**
+ * Percent-decode a markdown href path so `link%20test.md` maps to `link test.md`.
+ *
+ * @param path - Raw href path, possibly percent-encoded
+ * @returns Decoded path, or the original string if decoding fails
+ */
+function decodeMarkdownHrefPath(path: string): string {
+  // joinPath would otherwise look for a filename that literally contains "%20"
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+/**
+ * Split `file.md#heading` so the fragment is not treated as part of the filename.
+ *
+ * @param href - Relative or absolute markdown href
+ * @returns Path and fragment (empty string when no hash is present)
+ */
+function splitMarkdownHref(href: string): { path: string; fragment: string } {
+  const hashIndex = href.indexOf("#");
+  if (hashIndex === -1) {
+    return { path: href, fragment: "" };
+  }
+  return { path: href.slice(0, hashIndex), fragment: href.slice(hashIndex + 1) };
+}
+
+/**
+ * Resolve a local markdown/image path after decoding percent-encoding.
+ *
+ * @param hrefPath - Path without fragment
+ * @param documentUri - URI of the document that contains the href
+ * @returns File URI, or undefined when the path is empty
+ */
+function resolveLocalMarkdownUri(
+  hrefPath: string,
+  documentUri: vscode.Uri,
+): vscode.Uri | undefined {
+  const decoded = decodeMarkdownHrefPath(hrefPath);
+  if (!decoded || !isDocumentResourceUri(documentUri)) {
+    return;
+  }
+  if (decoded.startsWith("/")) {
+    return uriFromDocumentPath(documentUri, decoded);
+  }
+  return vscode.Uri.joinPath(documentUri, "..", decoded);
+}
 
 export function resolveImageTarget(
   url: string,
@@ -13,15 +64,12 @@ export function resolveImageTarget(
     return;
   }
 
-  if (trimmed.startsWith("/")) {
-    return vscode.Uri.file(trimmed);
-  }
-
   if (
     trimmed.startsWith("http://") ||
     trimmed.startsWith("https://") ||
     trimmed.startsWith("data:") ||
-    trimmed.startsWith("file:")
+    trimmed.startsWith("file:") ||
+    trimmed.startsWith("vscode-remote:")
   ) {
     try {
       return vscode.Uri.parse(trimmed);
@@ -30,7 +78,7 @@ export function resolveImageTarget(
     }
   }
 
-  return vscode.Uri.joinPath(documentUri, "..", trimmed);
+  return resolveLocalMarkdownUri(trimmed, documentUri);
 }
 
 export function resolveLinkTarget(
@@ -59,7 +107,8 @@ export function resolveLinkTarget(
     return { kind: "uri", uri: vscode.Uri.parse(trimmed) };
   }
 
-  if (trimmed.startsWith("file:")) {
+  if (trimmed.startsWith("file:") ||
+    trimmed.startsWith("vscode-remote:")) {
     try {
       return { kind: "uri", uri: vscode.Uri.parse(trimmed) };
     } catch {
@@ -67,11 +116,22 @@ export function resolveLinkTarget(
     }
   }
 
-  if (trimmed.startsWith("/")) {
-    return { kind: "uri", uri: vscode.Uri.file(trimmed) };
+  const { path, fragment } = splitMarkdownHref(trimmed);
+  const uri = resolveLocalMarkdownUri(path, documentUri);
+  if (!uri) {
+    return;
   }
 
-  return { kind: "uri", uri: vscode.Uri.joinPath(documentUri, "..", trimmed) };
+  // Relative file plus fragment: open that file then jump to the heading
+  if (fragment) {
+    return {
+      kind: "command",
+      command: "gongwen.navigateToAnchor",
+      args: [fragment, uri.toString()],
+    };
+  }
+
+  return { kind: "uri", uri };
 }
 
 export function toCommandUri(command: string, args: unknown[]): vscode.Uri {
