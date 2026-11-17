@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { execSync } = require("child_process");
+const { execSync, execFileSync } = require("child_process");
 
 /**
  * Release helper script for markdown-gongwen-vscode.
@@ -92,7 +92,32 @@ try {
 
   // Generate CHANGELOG
   log("📝 Prepending release notes to CHANGELOG.md...");
-  run(`npx git-cliff --unreleased --tag ${tagVersion} --prepend CHANGELOG.md`);
+  const previousTag = run("git describe --tags --abbrev=0");
+  let upstreamCommits = null;
+  try {
+    upstreamCommits = run(`git rev-list ${previousTag}..upstream/main`)
+      .split("\n")
+      .filter(Boolean);
+  } catch {
+    log("ℹ️  No upstream/main ref; using the standard unreleased range.");
+  }
+
+  if (upstreamCommits) {
+    // A merge makes every untagged upstream commit look unreleased to git-cliff.
+    // Exclude those ancestors explicitly so the fork's release contains only its
+    // own commits and merge summaries, not the upstream project's old history.
+    const cliffArgs = ["git-cliff", "--unreleased", "--tag", tagVersion];
+    for (const sha of upstreamCommits) {
+      cliffArgs.push("--skip-commit", sha);
+    }
+    cliffArgs.push("--prepend", "CHANGELOG.md");
+    log(`ℹ️  Excluding ${upstreamCommits.length} upstream ancestor commits.`);
+    execFileSync(process.platform === "win32" ? "npx.cmd" : "npx", cliffArgs, {
+      stdio: "inherit",
+    });
+  } else {
+    run(`npx git-cliff --unreleased --tag ${tagVersion} --prepend CHANGELOG.md`);
+  }
 
   // Update package.json version
   log("🔢 Bumping package.json version...");

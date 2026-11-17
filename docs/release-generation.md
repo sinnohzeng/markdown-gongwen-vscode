@@ -2,6 +2,12 @@
 
 This document outlines the steps to generate and publish a new release for the project, following [Conventional Commits](https://www.conventionalcommits.org/) and [Semantic Versioning (SemVer)](https://semver.org/) guidelines.
 
+## Changelog ancestry after upstream merges
+
+During the v2.4.0 preflight on 2026-11-17, git-cliff initially produced 286 lines for the release because an ordinary merge makes every untagged upstream ancestor appear unreleased in this fork. That output included old upstream 1.x history and was rejected before publication.
+
+`scripts/release.js` now lists `<previous-tag>..upstream/main` and passes each ancestor to git-cliff through `--skip-commit`. The regenerated v2.4.0 section contains only nine fork commits and merge summaries, with the correct `v2.3.2..v2.4.0` comparison link. Do not fetch or push a batch of upstream tags, or manually delete generated entries, to work around this. Review the new section and comparison link before every release push.
+
 ## Automated Release (Recommended)
 
 To create a new release automatically, run:
