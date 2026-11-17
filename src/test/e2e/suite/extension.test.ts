@@ -17,6 +17,7 @@ type ParseCacheExport = { get(doc: vscode.TextDocument): PE };
 type DecoratorExport = {
   isEnabled(): boolean;
   activeEditor: vscode.TextEditor | undefined;
+  updateDecorationsForSelection(): void;
   onApply: ((nonEmptyTypeCount: number) => void) | undefined;
 };
 type SvgProcessorExport = {
@@ -1049,9 +1050,9 @@ suite('Extension E2E', () => {
   // ranges — catching bugs where parsing is fine but rendering is silently
   // broken (e.g. applyDecorations() short-circuits, wrong guard, etc.).
   //
-  // updateDecorationsForSelection() is synchronous (no debounce), so a
-  // cursor-move is enough to trigger a fresh setDecorations cycle that the
-  // spy can observe within a short delay.
+  // updateDecorationsForSelection() is synchronous and public. Invoke it
+  // directly so this rendering assertion does not depend on editor focus or
+  // cursor-command event timing; selection-event behavior is covered elsewhere.
 
   test('decorator applies non-empty ranges for markdown content (onApply hook)', async () => {
     assert.ok(decoratorApi, 'decorator not available from ext.exports');
@@ -1066,10 +1067,7 @@ suite('Extension E2E', () => {
     decoratorApi.onApply = (count) => { nonEmptyTypeCount += count; };
 
     try {
-      // cursorMove → onDidChangeTextEditorSelection → updateDecorationsForSelection
-      // → updateDecorationsInternal (synchronous) → applyDecorations → onApply
-      await vscode.commands.executeCommand('cursorMove', { to: 'right' });
-      await delay(300);
+      decoratorApi.updateDecorationsForSelection();
       assert.ok(
         nonEmptyTypeCount > 0,
         `Decorator must apply non-empty ranges; got nonEmptyTypeCount=${nonEmptyTypeCount}`

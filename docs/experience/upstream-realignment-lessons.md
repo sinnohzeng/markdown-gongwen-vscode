@@ -126,3 +126,5 @@ README、AGENTS、功能 done、ADR、发布、覆盖缺口和项目关系必须
 本次默认下载的 VS Code 1.146.0 宿主曾出现扩展已激活、但 CLI 长时间没有汇总；本机 `/usr/local/bin/code` 外层 CLI 又可能提前返回 0，而真实测试仍在 Extension Host 内运行。最终结论来自 `.vscode-test/user-data/logs/<timestamp>/window1/renderer.log` 的 **59 passing (28s)**，以及 exthost 的正常退出记录，而不是“窗口启动了”“进程返回 0”或“没有报错”。
 
 本机 1.100.3 在新版 macOS 上 SIGSEGV、1.105.1 下载中止，都只能记为测试环境未建立，不能记为产品失败。使用 `useInstallation.fromPath` 的本机临时配置应在验证后删除，不把绝对路径硬编码进仓库；CI 仍应保留自己的标准 `npm run test:e2e` 结果作为独立证据。
+
+发布主分支复跑时还出现过 58 通过、1 失败：失败用例通过 `cursorMove` 间接触发同步装饰，依赖编辑器焦点与 UI 事件时序，前一轮通过不能抵消本轮失败。对于验证 `setDecorations` 非空的测试，直接调用公开的同步 `updateDecorationsForSelection()` 并观察 `onApply`，比模拟光标输入更确定；修正后完整 59 项通过。选择事件本身需要另测，但不应让无关焦点条件污染渲染断言。
